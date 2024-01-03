@@ -1,4 +1,4 @@
-Source: asr-cam
+Source: k1x-cam
 Section: unknown
 Priority: optional
 Maintainer: 黎志荣 <>
@@ -6,7 +6,7 @@ Build-Depends: cmake, debhelper (>=11~)
 Standards-Version: 4.1.4
 Homepage: <insert the upstream URL, if relevant>
 
-Package: asr-cam
+Package: k1x-cam
 Architecture: any
 Multi-Arch: foreign
 Depends: ${misc:Depends}, ${shlibs:Depends}, k1x-cam-lib
