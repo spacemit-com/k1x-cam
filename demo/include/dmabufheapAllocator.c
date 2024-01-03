@@ -74,7 +74,10 @@ static int allocBuffer(const char *heap_name, int size, int *buffer_fd, void **v
     buffer->fd = ret;
     buffer->viraddr = addr;
     buffer->size = size;
-    strncpy(buffer->heap_name, heap_name, sizeof(buffer->heap_name));
+    if (strlen(heap_name) < sizeof(buffer->heap_name) + 1)
+        strncpy(buffer->heap_name, heap_name, sizeof(buffer->heap_name));
+    else
+	return -1;
     gBufferTotalSize += size;
     gBufferSizeHightWaterMark =
         gBufferSizeHightWaterMark > gBufferTotalSize ? gBufferSizeHightWaterMark : gBufferTotalSize;
