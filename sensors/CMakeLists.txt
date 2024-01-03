@@ -20,6 +20,7 @@ add_library(cam_sensors ${SRC_FILE})
 target_include_directories(cam_sensors BEFORE PRIVATE ./
 		PUBLIC include ../libs/include vcm/i2c)
 target_compile_definitions(cam_sensors PRIVATE -DCAM_CONFIG_FILE_PATH=\"/tmp/\")
+target_link_libraries(cam_sensors PRIVATE isp cpp vi tuningtools ispeagle cppfw-2.0)
 install(TARGETS cam_sensors LIBRARY DESTINATION usr/lib)
 
 add_subdirectory(test)
