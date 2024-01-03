@@ -1,9 +1,9 @@
-ASR_CAM_VERSION = 1.0.0
-ASR_CAM_SITE = $(TOPDIR)/package/asr-cam
-ASR_CAM_SITE_METHOD = local
-ASR_CAM_INSTALL_TARGET = YES
+K1X_CAM_VERSION = 1.0.0
+K1X_CAM_SITE = $(TOPDIR)/package/k1x-cam
+K1X_CAM_SITE_METHOD = local
+K1X_CAM_INSTALL_TARGET = YES
 
-define ASR_CAM_INSTALL_TARGET_CMDS
+define K1X_CAM_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 package/asr-cam/libs/lib64/libcppfw-2.0.so $(TARGET_DIR)/usr/lib/libcppfw-2.0.so
 	$(INSTALL) -D -m 0755 package/asr-cam/libs/lib64/libcpp.so $(TARGET_DIR)/usr/lib/libcpp.so
 	$(INSTALL) -D -m 0755 package/asr-cam/libs/lib64/libispeagle.so $(TARGET_DIR)/usr/lib/libispeagle.so

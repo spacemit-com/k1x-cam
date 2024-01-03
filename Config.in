@@ -1,4 +1,4 @@
-config BR2_PACKAGE_ASR_CAM
-	bool "asr-cam"
+config BR2_PACKAGE_K1X_CAM
+	bool "k1x-cam"
 	help
-	  ASR CAMERA CORE
+	  K1X CAMERA CORE
