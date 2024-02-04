@@ -1167,12 +1167,6 @@
     /* @m_nVOffset  Size: 1x1  BitWidth: 32_u  Range~[0, 8191]  Type: firmware */
     /* Vertical offset for PD pixel location index */
     0,
-    /* @m_bLRAdjust  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
-    /* 0: mirror off 1: mirror on */
-    0,
-    /* @m_bTBAdjust  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
-    /* 0: flip off 1: flip on */
-    0,
     /* @m_bRefRB  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: do not use chromatic information for green correction 1: use chromatic information for green correction */
     0,

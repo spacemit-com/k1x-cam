@@ -6,11 +6,13 @@
 #ifndef _DUAL_PIPELINE_CAPTURE_TEST_H_
 #define _DUAL_PIPELINE_CAPTURE_TEST_H_
 
+#include "config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
 
-int dual_pipeline_capture_test(int sensorId);
+int dual_pipeline_capture_test(struct testConfig *config);
 
 #ifdef __cplusplus
 }

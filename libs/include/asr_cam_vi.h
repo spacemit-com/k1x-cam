@@ -50,8 +50,6 @@ int32_t ASR_VI_DisableBayerRead(uint32_t nDev);
 
 int32_t ASR_VI_ChnQueueBuffer(uint32_t nChn, IMAGE_BUFFER_S *camBuf);
 
-int32_t ASR_VI_ChnEnableForceShadow(uint32_t nChn, bool bEnable);
-
 #ifdef __cplusplus
 }
 #endif /* extern "C" */

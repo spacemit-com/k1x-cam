@@ -17,7 +17,7 @@ typedef struct {
     int devId;
 } SENSOR_MODULE_HANDLE;
 
-int testSensorInit(void** ppHandle, const char* sensors_name, int devId)
+int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int work_mode)
 {
     int ret = 0;
     int i = 0;
@@ -85,7 +85,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId)
         return -5;
     }
 
-    handle->workMode = 0;
+    handle->workMode = work_mode;
     ASR_SENSOR_Config(handle->sensors_handle, handle->workMode);
     handle->devId = devId;
 

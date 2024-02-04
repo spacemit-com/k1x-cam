@@ -10,33 +10,55 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "cam_module_interface.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
+struct cppTestConfig {
+    int enable;
+    char format[32];
+    int srcFromFile;
+    char srcFile[64];
+    int width;
+    int height;
+};
 
 typedef enum {
-    TEST_WORKMODE_INVALID = 0,
-    TEST_WORKMODE_RAW,
-    TEST_WORKMODE_ONLINE,
-    TEST_WORKMODE_OFFLINE,
-    TEST_WORKMODE_OFFLINE_RAW,
-    TEST_WORKMODE_NUM,
-} TEST_WORKMODE;
+    ISP_WORKMODE_ONLINE = 0,
+    ISP_WORKMODE_RAWDUMP,
+    ISP_WORKMODE_OFFLINE_PREVIEW,
+    ISP_WORKMODE_OFFLINE_CAPTURE,
+    ISP_WORKMODE_NUM,
+} ISP_WORKMODE;
+struct isFeTestConfig {
+    int enable;
+    ISP_WORKMODE workMode;
+    char format[32];
 
-typedef struct {
-    TEST_WORKMODE workMode;
+    char sensorName[32];
     int sensorId;
-    char sensorName[20];
-    int out_width;
-    int out_height;
-} PIPELINECONFIG;
+    int sensorWorkMode;
+    int fps;
 
-typedef struct {
-    PIPELINECONFIG pipeConfig[2];
-    int tuningServer;
-} TESTCONFIG;
+    char srcFile[64];
+    int bitDepth;
+    int inWidth;
+    int inHeight;
+    int outWidth;
+    int outHeight;
+};
 
-int getSinglePipelineTestConfig(TESTCONFIG *config);
+struct testConfig {
+    int tuningServerEnalbe;
+    int showFps;
+    int autoRun;
+    int testFrame;
+    struct cppTestConfig cppConfig[2];
+    struct isFeTestConfig ispFeConfig[2];
+};
+
+int getTestConfig(struct testConfig *config, char *jsonfile);
 
 #ifdef __cplusplus
 }

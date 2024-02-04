@@ -21,16 +21,20 @@ void _init_tuning_objs(struct tuning_objs_config cfg)
 
     for (i = TUNING_OBJS_ISP0; i <= TUNING_OBJS_CPP1; i++) {
         if (cfg.objs_is_enabled[i]) {
-            if (i >= TUNING_OBJS_ISP0 && i <= TUNING_OBJS_ISP1)
+            if (i >= TUNING_OBJS_ISP0 && i <= TUNING_OBJS_ISP1) {
                 tuning_set.objs[i].type = TUNING_MODULE_TYPE_ISP;
-            else if (i >= TUNING_OBJS_CPP0 && i <= TUNING_OBJS_CPP1)
+                tuning_set.objs[i].groupId = i - TUNING_OBJS_ISP0;
+                if (cfg.objs_rawdump_is_enabled[i])
+                    tuning_set.objs[i].dumpRaw = 1;
+                else
+                    tuning_set.objs[i].dumpRaw = 0;
+                snprintf(tuning_set.objs[i].name, sizeof(tuning_set.objs[i].name), "fe_pipe%d", tuning_set.objs[i].groupId);
+            } else if (i >= TUNING_OBJS_CPP0 && i <= TUNING_OBJS_CPP1) {
                 tuning_set.objs[i].type = TUNING_MODULE_TYPE_CPP;
-            tuning_set.objs[i].groupId = 0;
-            tuning_set.objs[i].dumpRaw = 0;
-            if (i >= TUNING_OBJS_ISP0 && i <= TUNING_OBJS_ISP1)
-                snprintf(tuning_set.objs[i].name, sizeof(tuning_set.objs[i].name), "fe_pipe%d", i - TUNING_OBJS_ISP0);
-            else if (i >= TUNING_OBJS_CPP0 && i <= TUNING_OBJS_CPP1)
-                snprintf(tuning_set.objs[i].name, sizeof(tuning_set.objs[i].name), "cpp%d", i - TUNING_OBJS_CPP0);
+                tuning_set.objs[i].groupId = i - TUNING_OBJS_CPP0;
+                tuning_set.objs[i].dumpRaw = 0;
+                snprintf(tuning_set.objs[i].name, sizeof(tuning_set.objs[i].name), "cpp%d", tuning_set.objs[i].groupId);
+            }
             tuning_set.enabled_cnt++;
             tuning_set.config.objs_is_enabled[i] = 1;
         }
@@ -65,6 +69,8 @@ int tuning_server_init(struct tuning_objs_config cfg) {
 
     _init_tuning_objs(cfg);
 
+    trigger.StartDumpRaw = cfg.StartDumpRaw;
+    trigger.EndDumpRaw = cfg.EndDumpRaw;
     trigger.GetModuleCount = ispGetModuleCount;
     trigger.GetModules = ispGetModules;
     tuningHandle = ASR_TuningAssistant_Create(&trigger);

@@ -51,7 +51,7 @@ static SENSOR_MODULE_SETTING_S s5k5e3yx_asr_setting = {
 
 const CapabilityElement s5k5e3yxBackCapCfg[] = {
     {"capSensorPhysicalSize", "2.9, 2.18"},
-    {"capLensFocalLength", "2.78"},
+    {"capLensFocalLength", "2.31"},
     {"capLensOpticalStabMode", "off"},
     {"capLensMinFocusDistanc", ""},
     {"capLensFocusDistanceCalibration", "uncalibrated"},

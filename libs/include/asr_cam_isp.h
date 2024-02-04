@@ -120,25 +120,6 @@ int ASR_ISP_GetFWPara(uint32_t pipelineID, const char *paramter, const char *nam
  */
 int ASR_ISP_TriggerRawCapture(uint32_t pipelineID, IMAGE_BUFFER_S *pFrameInfoBuf, uint32_t hdrCapture);
 
-int ASR_ISP_ReInitPreviewChannel(uint32_t pipelineID, IMAGE_BUFFER_S *pFrameInfoBuf);
-/*
- * Function:
- *  notify isp ready to start hdr raw capture:
- * Params:
- *  1. ZSLCapture, zsl capture if true, otherwise is none zsl capture.
- *  2. *startFrameID, the frameID which indicates the start effective exposure frame.
- */
-int ASR_ISP_NotifyOnceHDRRawCapture(uint32_t pipelineID, uint32_t ZSLCapture, int32_t *startFrameID);
-
-/*
- * Function:
- *  isp pipeline update sensor AE params for new stream in none zsl scene.
- * Notice:
- *  only used when the input restart stream on this pipeline .
- */
-int ASR_ISP_UpdateNoneZslStreamAeParams(uint32_t pipelineID, IMAGE_BUFFER_S *pFrameInfoBuf, int backPreview,
-                                        int updateSnsReg);
-
 int ASR_ISP_SaveSettingFile(uint32_t pipelineID, const char *pFileName);
 int ASR_ISP_LoadSettingFile(uint32_t pipelineID, const char *pFileName);
 int ASR_ISP_SaveIndividualSettingFile(uint32_t pipelineID, const char *pFilterName, const char *pFileName);

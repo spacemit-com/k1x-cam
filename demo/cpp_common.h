@@ -21,6 +21,9 @@ int cpp_start(int groupId);
 int cpp_stop(int groupId);
 int cpp_post_buffer(int groupId, const IMAGE_BUFFER_S *inputBuf, const IMAGE_BUFFER_S *outputBuf, int32_t frameId,
                     FRAME_INFO_S *frameInfo);
+int cpp_load_fw_settingfile(int groupId, char *filename);
+int cpp_save_fw_settingfile(int groupId, char *filename);
+int cpp_test_fw_infs(int groupId);
 
 #ifdef __cplusplus
 }

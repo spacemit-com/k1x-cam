@@ -223,8 +223,6 @@ typedef struct {
     int m_nFullHeight;
     int m_nHOft;
     int m_nVOft;
-    int m_bLRAdjust;
-    int m_bTBAdjust;
     int m_bRefRB;
     int m_bRefCnr;
     int m_nRefNoiseL;
@@ -805,6 +803,8 @@ typedef struct {
 } _isp_afm_stat_frame_t;
 
 typedef struct {
+    int m_bLRAdjust;
+    int m_bTBAdjust;
     int m_nBlkNumber;
     int m_nPDShift;
     int m_nPDConf;

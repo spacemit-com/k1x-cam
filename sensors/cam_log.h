@@ -18,10 +18,10 @@ extern "C" {
 #define KBLU "\x1B[34m"
 #define KWHT "\x1B[37m"
 
-#define CLOGE(fmt, ...) printf(KRED "E: %s(%d): " #fmt KWHT "\n", __func__, __LINE__, ##__VA_ARGS__)
-#define CLOGW(fmt, ...) printf(KMAG "W: %s(%d): " #fmt KWHT "\n", __func__, __LINE__, ##__VA_ARGS__)
-#define CLOGI(fmt, ...) printf(KYEL "I: %s(%d): " #fmt KWHT "\n", __func__, __LINE__, ##__VA_ARGS__)
-#define CLOGD(fmt, ...) printf(KBLU "D: %s(%d): " #fmt KWHT "\n", __func__, __LINE__, ##__VA_ARGS__)
+#define CLOGE(fmt, ...) printf(KRED "E: %s(%d): " #fmt KWHT "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define CLOGW(fmt, ...) printf(KMAG "W: %s(%d): " #fmt KWHT "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define CLOGI(fmt, ...) printf(KYEL "I: %s(%d): " #fmt KWHT "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define CLOGD(fmt, ...) printf(KBLU "D: %s(%d): " #fmt KWHT "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #define CLOGV(fmt, ...) printf(KWHT "V: " fmt "\n", ##__VA_ARGS__)
 
 /* --- change this macro to change the logging level ---*/

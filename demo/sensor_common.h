@@ -22,7 +22,7 @@ typedef struct {
     SENSOR_CONFIG_S* sensor_cfg;
 } SENSOR_MODULE_INFO;
 
-int testSensorInit(void** ppHandle, const char* sensors_name, int devId);
+int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int work_mode);
 int testSensorDeInit(void* phandle);
 int testSensorStart(void* phandle);
 int testSensorStop(void* phandle);

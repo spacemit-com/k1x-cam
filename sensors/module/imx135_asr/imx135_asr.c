@@ -51,7 +51,7 @@ static SENSOR_MODULE_SETTING_S imx135_asr_setting = {
 
 const CapabilityElement imx135BackCapCfg[] = {
     {"capSensorPhysicalSize", "4.7, 3.5"},
-    {"capLensFocalLength", "3.48"},
+    {"capLensFocalLength", "3.46"},
     {"capLensOpticalStabMode", "off"},
     {"capLensMinFocusDistanc", "10"},
     {"capLensFocusDistanceCalibration", "uncalibrated"},

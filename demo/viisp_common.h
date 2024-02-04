@@ -7,7 +7,6 @@
 #define _VIISP_COMMON_H_
 
 #include <stdlib.h>
-#include <sys/time.h>
 
 #include "asr_cam_isp.h"
 #include "asr_cam_vi.h"
@@ -25,6 +24,9 @@ typedef enum {
     VIISP_WORKMODE_OFFLINE_RAW,
     VIISP_WORKMODE_NUM,
 } VIISP_WORKMODE;
+
+#define AUTO_FRAME_NUM (500)
+#define DUMP_FRAME_NUM (AUTO_FRAME_NUM / 2)
 
 int viisp_vi_init();
 int viisp_vi_deInit();
@@ -44,7 +46,18 @@ int viisp_isp_streamOn(int firmwareId);
 int viisp_isp_streamOff(int firmwareId);
 int viisp_isp_queueBuffer(int firmwareId, IMAGE_BUFFER_S* buffer);
 int viisp_isp_triggerRawCapture(int firmwareId, IMAGE_BUFFER_S* buffer);
-void ispout_framerate_stat(uint32_t nChn);
+
+int viisp_vi_onlyrawdump_config(int pipelineId, IMAGE_INFO_S out_info, SENSOR_MODULE_INFO* sensor_info);
+int viisp_vi_onlyrawdump_streamOn(int pipelineId);
+int viisp_vi_onlyrawdump_streamOff(int pipelineId);
+
+int viisp_vi_offline_preview_config(int pipelineId, ISP_PUB_ATTR_S *pstIspPubAttr);
+int viisp_vi_offline_preview_streamOn(int pipelineId);
+int viisp_vi_offline_preview_streamOff(int pipelineId);
+
+int viisp_isp_offline_preview_init(int firmwareId, ISP_PUB_ATTR_S *stIspPubAttr,
+                                   ISP_OFFLINE_ATTR_S *stOfflineAttr, GetFrameInfoCallBack callback);
+int viisp_isp_offline_preview_deinit(int firmwareId);
 
 #ifdef __cplusplus
 }

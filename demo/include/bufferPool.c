@@ -57,6 +57,14 @@ static uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
             buffer_size += planes[1].length;
             break;
         case PIXEL_FORMAT_RAW:
+            bufInfo->numPlanes = 1;
+            planes[0].width = bufInfo->size.width * 2;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = planes[0].width;
+            planes[0].length = ALIGN_N(planes[0].stride * planes[0].height, PAGE_SIZE);
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            break;
         case PIXEL_FORMAT_RAW_10BPP:
             bufInfo->numPlanes = 1;
             bpp = 10;  // temp hard code , must get bpp
@@ -86,6 +94,63 @@ static uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
             planes[0].length =
                 RAW12_DUMP_SIZE(bufInfo->size.width, bufInfo->size.height);  // temp hard code, must get bpp
             buffer_size += planes[0].length;
+            break;
+        case PIXEL_FORMAT_RGB565:
+            bufInfo->numPlanes = 1;
+            planes[0].width = bufInfo->size.width;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = bufInfo->size.width * 2;
+            planes[0].length = ALIGN_N(planes[0].stride * planes[0].height, PAGE_SIZE);
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            break;
+        case PIXEL_FORMAT_RGB888:
+            bufInfo->numPlanes = 1;
+            planes[0].width = bufInfo->size.width;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = bufInfo->size.width * 3;
+            planes[0].length = ALIGN_N(planes[0].stride * planes[0].height, PAGE_SIZE);
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            break;
+        case PIXEL_FORMAT_Y210:
+            bufInfo->numPlanes = 1;
+            planes[0].width = bufInfo->size.width;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = bufInfo->size.width * 4;
+            planes[0].length = ALIGN_N(planes[0].stride * planes[0].height, PAGE_SIZE);
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            break;
+        case PIXEL_FORMAT_P210:
+            bufInfo->numPlanes = 2;
+            planes[0].width = bufInfo->size.width;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = bufInfo->size.width * 2;
+            planes[0].length = planes[0].stride * planes[0].height;
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            planes[1].width = bufInfo->size.width;
+            planes[1].height = bufInfo->size.height;
+            planes[1].stride = bufInfo->size.width * 2;
+            planes[1].length = planes[1].stride * planes[1].height;
+            planes[1].virAddr = 0;
+            buffer_size += planes[1].length;
+            break;
+        case PIXEL_FORMAT_P010:
+            bufInfo->numPlanes = 2;
+            planes[0].width = bufInfo->size.width;
+            planes[0].height = bufInfo->size.height;
+            planes[0].stride = bufInfo->size.width * 2;
+            planes[0].length = planes[0].stride * planes[0].height;
+            planes[0].virAddr = 0;
+            buffer_size += planes[0].length;
+            planes[1].width = bufInfo->size.width;
+            planes[1].height = bufInfo->size.height / 2;
+            planes[1].stride = bufInfo->size.width * 2;
+            planes[1].length = planes[1].stride * planes[1].height;
+            planes[1].virAddr = 0;
+            buffer_size += planes[1].length;
             break;
         default:
             CLOG_INFO("unsupport format %d\n", bufInfo->format);
@@ -278,6 +343,7 @@ int frameinfo_buffer_alloc(IMAGE_BUFFER_S *frameInfoBuf)
 
     memset(frameInfoBuf, 0, sizeof(IMAGE_BUFFER_S));
     frameInfoBuf->numPlanes = 1;
+    //same with: frameInfoBuf->planes[0].length = sizeof(FRAME_INFO_S) + ASR_ISP_GetFwFrameInfoSize();
     frameInfoBuf->planes[0].length = sizeof(FRAME_INFO_S) + sizeof(_isp_fw_frameinfo_t);
     frameInfoBuf->planes[0].virAddr = malloc(frameInfoBuf->planes[0].length);
     frameInfoBuf->type = BUF_ALLOC_TYPE_HEAP;

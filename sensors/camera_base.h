@@ -128,6 +128,7 @@ typedef enum {
 
 // buffer addr info
 typedef struct {
+    void *buffer;  // android native handle to the buffer
     unsigned long addr;
     int32_t fd;
     uint32_t stride;
@@ -1582,6 +1583,8 @@ typedef struct {
     // private
     bool flashNeedIfAuto;
     int32_t totalGainQ8;
+    float devOrientation;
+    CCRect sensorRect;
 } CCFrameMetadataParam;
 
 typedef struct {
