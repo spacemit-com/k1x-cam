@@ -1,0 +1,4 @@
+config BR2_PACKAGE_ASR_CAM
+	bool "asr-cam"
+	help
+	  ASR CAMERA CORE
