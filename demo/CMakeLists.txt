@@ -3,21 +3,64 @@ aux_source_directory(utils SDKTEST_SRC_FILE)
 aux_source_directory(include SDKTEST_SRC_FILE)
 aux_source_directory(include/dmabufheap SDKTEST_SRC_FILE)
 aux_source_directory(extern SDKTEST_SRC_FILE)
-add_executable(sdkTest ${SDKTEST_SRC_FILE})
 
-target_link_libraries(sdkTest PUBLIC isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
-target_link_directories(sdkTest PRIVATE ../libs/lib64/ ./utils/lib64)
+include_directories(./)
+include_directories(./include)
+include_directories(./include/dmabufheap)
+include_directories(./utils)
+include_directories(./extern)
+include_directories(../libs/include)
 
-target_include_directories(sdkTest PRIVATE
-        ./
-        ./include/
-        ./include/dmabufheap
-        ./utils/
-        ../libs/include
-        ./extern/
-    )
+message("test ------------------- ${CMAKE_INSTALL_PREFIX}, ${PROJECT_SOURCE_DIR}, ${CMAKE_BINARY_DIR} ")
+
+add_library(sdkcam SHARED ${SDKTEST_SRC_FILE})
+target_compile_options(sdkcam PUBLIC -lstdc++;-Wall;-Wno-unused;-Werror;-Wno-implicit-fallthrough)
+target_compile_definitions(sdkcam PUBLIC -D_GNU_SOURCE)
+
+target_link_directories(sdkcam PUBLIC ../libs/lib64/)
+target_link_libraries(sdkcam PUBLIC isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
+install(TARGETS sdkcam LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+set(SRC_LIST ./main.c)
+add_executable(sdkTest ${SRC_LIST})
+target_link_directories(sdkTest PRIVATE ./ ../libs/lib64/)
+target_link_libraries(sdkTest PUBLIC sdkcam isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
 
 target_compile_options(sdkTest PRIVATE -lstdc++;-Wall;-Wno-unused;-Werror;-Wno-implicit-fallthrough)
 target_compile_definitions(sdkTest PRIVATE -D_GNU_SOURCE)
 
-install(TARGETS sdkTest RUNTIME DESTINATION usr/bin)
+install(TARGETS sdkTest RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+install(DIRECTORY ../libs/lib64/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
+        FILES_MATCHING PATTERN "*.so"
+        )
+
+install(DIRECTORY ./
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
+
+install(DIRECTORY ./include/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
+install(DIRECTORY ./include/dmabufheap/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
+install(DIRECTORY ./utils/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
+install(DIRECTORY ./extern/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
+
+CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pkgconfig/k1x-cam.pc.cmake"
+        "${CMAKE_BINARY_DIR}/k1x-cam.pc" @ONLY)
+
+install(FILES "${CMAKE_BINARY_DIR}/k1x-cam.pc"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
+

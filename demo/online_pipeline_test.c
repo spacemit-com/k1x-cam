@@ -1476,8 +1476,7 @@ int single_pipeline_online_test(struct testConfig *config)
         testSensorStart(sensorHandle);
         streamOnFlags[pipelineId] = 1;
         CLOG_INFO("sensor stream on");
-        sleep(100);
-        CLOG_INFO("af sensor stream on, sleep 100");
+
         condition_wait(&testAutoRunCond[pipelineId]);
 
         streamOnFlags[pipelineId] = 0;

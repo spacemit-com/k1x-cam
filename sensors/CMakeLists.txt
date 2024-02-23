@@ -16,10 +16,10 @@ foreach(subdir IN ITEMS ${flash_subdirs} ${sensor_subdurs} ${lens_subdirs} ${mod
 	aux_source_directory(${subdir}/ SRC_FILE)
 endforeach()
 
-add_library(cam_sensors ${SRC_FILE})
+add_library(cam_sensors SHARED ${SRC_FILE})
 target_include_directories(cam_sensors BEFORE PRIVATE ./
 		PUBLIC include ../libs/include vcm/i2c)
 target_compile_definitions(cam_sensors PRIVATE -DCAM_CONFIG_FILE_PATH=\"/tmp/\")
-install(TARGETS cam_sensors LIBRARY DESTINATION usr/lib)
+install(TARGETS cam_sensors LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 add_subdirectory(test)

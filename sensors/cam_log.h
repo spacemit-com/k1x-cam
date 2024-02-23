@@ -25,7 +25,7 @@ extern "C" {
 #define CLOGV(fmt, ...) printf(KWHT "V: " fmt "\n", ##__VA_ARGS__)
 
 /* --- change this macro to change the logging level ---*/
-#define CAM_LOG_LEVEL 1
+#define CAM_LOG_LEVEL 2
 
 #define CAM_LOG_ERROR   0
 #define CAM_LOG_WARNING 1
