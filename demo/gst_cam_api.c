@@ -3,115 +3,7 @@
  * All Rights Reserved.
  */
 
-#include <errno.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <sys/stat.h>
-
-#include "bufferPool.h"
-#include "cam_list.h"
-#include "cam_log.h"
-#include "cam_interface.h"
-#include "condition.h"
-#include "config.h"
-#include "cpp_common.h"
-#include "sensor_common.h"
-#include "viisp_common.h"
-#include "tuning_server.h"
-
-#define MAX_BUFFER_RAWDUMP_NUM 5
-#define MAX_BUFFER_NUM   4
-#define MAX_PIPELINE_NUM 2
-#define MAX_FIRMWARE_NUM 2
-#define RAW8_DUMP_SIZE(w, h) ((w / 16 + (w % 16 ? 1 : 0)) * 16 * h)
-#define RAW10_DUMP_SIZE(w, h) ((w / 12 + (w % 12 ? 1 : 0)) * 16 * h)
-#define RAW12_DUMP_SIZE(w, h) ((w / 10 + (w % 10 ? 1 : 0)) * 16 * h)
-#define RAW14_DUMP_SIZE(w, h) ((w / 8 + (w % 8 ? 1 : 0)) * 16 * h)
-#define VRF_INFO_LEN (128)
-
-typedef void* (*threadFunc)(void* param);
-typedef struct {
-    pthread_t threadId;
-    char threadName[20];
-    int threadRunning;
-    threadFunc threadProcessFunc;
-    struct condition cond;
-    int pipelineId;
-    int firmwareId;
-} THREAD_INFO;
-
-typedef struct asrVI_BUFFER_INFO {
-    IMAGE_BUFFER_S* buffer;
-    uint32_t frameId;
-} asrVI_BUFFER_INFO_S;
-
-typedef struct asrISP_BUFFER_INFO {
-    FRAME_INFO_S frameInfo;
-    uint32_t frameId;
-} asrISP_BUFFER_INFO_S;
-
-typedef struct asrTuning_BUFFER_INFO {
-    TUNING_BUFFER_S tuningInfo;
-    char hasVrf;
-} asrTuning_BUFFER_INFO_S;
-
-struct rawdump_info {
-    int width;
-    int height;
-    int format;
-    int start;
-    int count;
-    char addVrf;
-    int bitDepth;
-    uint32_t ispInfoListLen;
-    CAM_VI_WORK_MODE_E viWorkMode;
-    LIST_HANDLE rawdumpList;
-    LIST_HANDLE ispInfoList;
-    LIST_HANDLE isp_done_list;
-    pthread_mutex_t rawdumpListLock;
-    pthread_mutex_t ispInfoListLock;
-    pthread_cond_t rawdumpListCond;
-    BUFFER_POOL *rawdumpPool;
-};
-
-typedef struct VRF_INFO {
-    uint16_t imageWidth;   /* [0  ] Raw image width in pixel number */
-    uint16_t imageHeight;  /* [2  ] Raw image height in pixel number */
-    uint16_t totalGain;    /* [4  ] Total gain for the raw file. Q4 format. 0x0010 means 1x, 0x0028 means 2.5x */
-    uint16_t exposureLine; /* [6  ] Exposure line number for the raw file. Q0 format. 0x0001 means 1 line, 0x0010 means
-                              16 line */
-    uint16_t sensorVts;    /* [8  ] Sensor VTS line number. Q0 format */
-    uint16_t awbBGain1;    /* [10 ] AWB gain set 1(before AWB shift), Q7 format, 0x80 means 1x */
-    uint16_t awbGGain1;    /* [12 ] */
-    uint16_t awbRGain1;    /* [14 ] */
-    uint16_t awbBGain2;    /* [16 ] */
-    uint16_t awbGbGain2;   /* [18 ] */
-    uint16_t awbGrGain2;   /* [20 ] */
-    uint16_t awbRGain2;    /* [22 ] */
-    uint8_t blackLevel;    /* [24 ] In 10 bit */
-    uint8_t bayerOrder;    /* [25 ] 0 BGGR, 1 GBRG, 2 GRBG, 3 RGGB */
-    uint16_t blcApply;     /* [26 ] */
-    uint8_t reserved[78];  /* [28 ~ 105] */
-    uint16_t wbGoldenSignatureRG; /* [106] golden WB signature R*512/G (under version 2.8 and above)*/
-    uint16_t wbGoldenSignatureBG; /* [108] golden WB signature B*512/G (under version 2.8 and above)*/
-    uint16_t wbModuleSignatureRG; /* [110] module WB signature R*512/G (under version 2.8 and above)*/
-    uint16_t wbModuleSignatureBG; /* [112] module WB signature B*512/G (under version 2.8 and above)*/
-    uint8_t drcGainDark;          /* [114] Q4 format, range in [16, 255], (under version 2.9)*/
-    uint8_t drcGain;              /* [115] Q4 format, range in [16, 255], (under version 2.9)*/
-    uint32_t exposureTime;        /* [116] us */
-    uint8_t packRawFlag;          /* [120] 0 - no pack, 1 - pack */
-    uint8_t rawBitDepth;          /* [121] can be one of 8,10,12,14,16 */
-    uint16_t analogGain; /* [122] Analog gain for the raw file. Q4 format. 0x0010 means 1x, 0x0028 means 2.5x */
-    uint8_t version;     /* [124] 0x20 means v2.0, 0x21means v2.1 ... */
-    uint8_t v;           /* [125] 'V'. In ASCII code, can be used for file format identification */
-    uint8_t r;           /* [126] 'R'. In ASCII code, can be used for file format identification */
-    uint8_t f;           /* [127] 'F'. In ASCII code, can be used for file format identification */
-} VRF_INFO_S;            // V2.6
+#include "gst_cam_api.h"
 
 static LIST_HANDLE vi_out_list[MAX_PIPELINE_NUM] = {};
 static LIST_HANDLE isp_out_list[MAX_FIRMWARE_NUM] = {};
@@ -135,6 +27,9 @@ static int testFrame = AUTO_FRAME_NUM;
 static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
 static int showFps = 0;
+
+int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*);
+
 /****************************************************************/
 static uint64_t get_timestamp(void)
 {
@@ -445,6 +340,11 @@ static void ProcThreadDeinit(THREAD_INFO* thread)
     condition_deinit(&thread->cond);
 }
 
+void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf)
+{
+    List_Push(cpp_out_list[0], (void*)outputBuf);
+}
+
 static int preview_cnt[MAX_PIPELINE_NUM] = {0};
 static double viT1[MAX_PIPELINE_NUM] = {0};
 static double viT2[MAX_PIPELINE_NUM] = {0};
@@ -555,6 +455,7 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
     int i = 0;
     char fileName[64], *suffix;
     int streamOnFlag = 0;
+    int ret = 0;
 
     CLOG_DEBUG("mppCpp.modId %d, mppCpp.devId %d, mppCpp.chnId %d, callbackBuf %p", mppCpp.modId, mppCpp.devId,
               mppCpp.chnId, callbackBuf);
@@ -611,7 +512,10 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             if (i == BUFFER_POOL_MAX_SIZE) {
                 CLOG_ERROR("can't find valid vi out buffer");
             }
-            List_Push(cpp_out_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
+            ret = (*gst_get_cpp_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
+            if (ret)
+                return -EINVAL;
+            // List_Push(cpp_out_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
             break;
         default:
             return -EINVAL;
@@ -918,50 +822,6 @@ static int32_t vi_rawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_r
     return 0;
 }
 
-static int rawdump_cnt[MAX_PIPELINE_NUM] = {0};
-static double rawdump_t0[MAX_PIPELINE_NUM] = {0};
-static double rawdump_t1[MAX_PIPELINE_NUM] = {0};
-static int32_t vi_rawdump_onlyrawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_rawdump_buffer)
-{
-    IMAGE_BUFFER_S* buffer = vi_rawdump_buffer->buffer;
-    uint32_t frameId = vi_rawdump_buffer->frameId;
-    char fileName[64];
-    int pipelineId = nChn - VIU_MAX_CHN_NUM;
-
-    if (nChn >= (VIU_MAX_CHN_NUM + VIU_MAX_RAWCHN_NUM)) {
-        CLOG_ERROR("invalid chnId %d", nChn);
-        return -1;
-    }
-    //CLOG_INFO("VI chn %d rawdump buffer frameId %d, buffer %p, closeDown: %d",
-    //           nChn, frameId, buffer, vi_rawdump_buffer->bCloseDown);
-    //CLOG_INFO("rawdump_queue_time : %lu us", get_timestamp());
-
-    if (outputDumpFlag[pipelineId] == 1 || (testAutoRunFlag[pipelineId] &&  frameId == DUMP_FRAME_NUM)) {
-        snprintf(fileName, sizeof(fileName), "%schn%d_frame%d_%dx%d.raw", path, nChn, frameId,
-                         buffer->planes[0].width, buffer->planes[0].height);
-        raw_buffer_save(buffer, fileName);
-        if (outputDumpFlag[pipelineId] == 1)
-            outputDumpFlag[pipelineId] = 0;
-    }
-    if (testAutoRunFlag[pipelineId] && frameId == testFrame) {
-        condition_post(&testAutoRunCond[pipelineId]);
-    } else {
-        viisp_vi_queueBuffer(nChn, buffer);
-    }
-    if (showFps) {
-        rawdump_cnt[pipelineId]++;
-        if (rawdump_cnt[pipelineId] == 1)
-            rawdump_t0[pipelineId] = (double)get_timestamp();
-        if (rawdump_cnt[pipelineId] == 121) {
-            rawdump_t1[pipelineId] = (double)get_timestamp();
-            CLOG_INFO("chn%d rawdump fps: %f", pipelineId,
-                     (120 / (((rawdump_t1[pipelineId] - rawdump_t0[pipelineId]) / 1000000))));
-        }
-    }
-
-    return 0;
-}
-
 static int test_buffer_init(int pipelineId, int firmwareId, IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info)
 {
     int i = 0;
@@ -992,10 +852,11 @@ static int test_buffer_init(int pipelineId, int firmwareId, IMAGE_INFO_S img_inf
     return 0;
 }
 
-static int test_buffer_prepare(int pipelineId, int firmwareId)
+static int test_buffer_prepare(int pipelineId, int firmwareId, int (*gst_cpp_buf_prepare)(void *, IMAGE_BUFFER_S*), void *gst_cpp_buf_prepare_data)
 {
     int i = 0;
     int viChnId = pipelineId;
+    int ret = 0;
 
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(vi_out_buffer_pool[pipelineId]);
@@ -1007,6 +868,11 @@ static int test_buffer_prepare(int pipelineId, int firmwareId)
 
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(cpp_out_buffer_pool[pipelineId]);
+        ret = gst_cpp_buf_prepare(gst_cpp_buf_prepare_data, buffer);
+        if (ret) {
+            CLOG_ERROR("gst_cpp_buf_prepare return %d, error!", ret);
+            return ret;
+        }
         List_Push(cpp_out_list[pipelineId], (void*)buffer);
     }
 
@@ -1167,224 +1033,8 @@ static int test_buffer_viisp_deInit(int pipelineId, int firmwareId)
     return 0;
 }
 
-static int test_buffer_viisp_offline_preview_init(int pipelineId, int firmwareId, struct testConfig *config)
-{
-    int i = 0;
-
-    // buffer list init
-    vi_out_list[pipelineId] = List_Create(0);
-    isp_out_list[firmwareId] = List_Create(0);
-
-    // buffer init
-    vi_out_buffer_pool[pipelineId] =
-        create_buffer_pool(config->ispFeConfig[pipelineId].outWidth,
-                           config->ispFeConfig[pipelineId].outHeight,
-                           get_viisp_output_format(config->ispFeConfig[pipelineId].format),
-                           "vi channel0 out buffer");
-    buffer_pool_alloc(vi_out_buffer_pool[pipelineId], MAX_BUFFER_NUM);
-
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        frameinfo_buffer_alloc(&frameInfoBuf[firmwareId][i]);
-    }
-
-    vi_rawread_buffer_pool[pipelineId] =
-        create_buffer_pool(config->ispFeConfig[pipelineId].inWidth,
-                           config->ispFeConfig[pipelineId].inHeight,
-                           PIXEL_FORMAT_RAW,
-                           "vi rawread channel buffer");
-    buffer_pool_alloc(vi_rawread_buffer_pool[pipelineId], 1);
-
-    return 0;
-}
-
-static int test_buffer_viisp_offline_preview_prepare(int pipelineId, int firmwareId, IMAGE_BUFFER_S* rawImage)
-{
-    int i = 0;
-    int viChnId = pipelineId;
-    int chnRead;
-    IMAGE_BUFFER_S* buffer = NULL;
-    int ret = 0;
-
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        buffer = buffer_pool_get_buffer(vi_out_buffer_pool[pipelineId]);
-        viisp_vi_queueBuffer(viChnId, buffer);
-    }
-
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        viisp_isp_queueBuffer(firmwareId, &frameInfoBuf[firmwareId][i]);
-    }
-
-    VIU_GET_RAW_READ_CHN(pipelineId, chnRead);
-    ret = ASR_VI_ChnQueueBuffer(chnRead, rawImage);
-    if (ret) {
-        CLOG_ERROR("ASR_VI_ChnQueueBuffer to raw read chn failed, ret = %d", ret);
-    }
-
-    return 0;
-}
-
-static int test_buffer_viisp_offline_preview_reset(int pipelineId)
-{
-    int i = 0;
-
-    List_Clear(vi_out_buffer_pool[pipelineId]->buf_list);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        buffer_pool_put_buffer(vi_out_buffer_pool[pipelineId], &vi_out_buffer_pool[pipelineId]->buffers[i]);
-    }
-    buffer_pool_put_buffer(vi_rawread_buffer_pool[pipelineId], &vi_rawread_buffer_pool[pipelineId]->buffers[0]);
-
-    return 0;
-}
-
-static int test_buffer_viisp_offline_preview_deInit(int pipelineId, int firmwareId)
-{
-    int i = 0;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
-
-    if (List_IsEmpty(isp_out_list[firmwareId]) == false) {
-        do {
-            isp_buffer_info = List_Pop(isp_out_list[firmwareId]);
-            if (isp_buffer_info) {
-                free(isp_buffer_info);
-            }
-        } while (isp_buffer_info);
-    }
-    List_Destroy(isp_out_list[firmwareId]);
-    isp_out_list[firmwareId] = NULL;
-
-    if (List_IsEmpty(vi_out_list[pipelineId]) == false) {
-        do {
-            vi_buffer_info = List_Pop(vi_out_list[pipelineId]);
-            if (vi_buffer_info) {
-                free(vi_buffer_info);
-            }
-        } while (vi_buffer_info);
-    }
-    List_Destroy(vi_out_list[pipelineId]);
-    vi_out_list[pipelineId] = NULL;
-
-    buffer_pool_free(vi_out_buffer_pool[pipelineId]);
-    destroy_buffer_pool(vi_out_buffer_pool[pipelineId]);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        frameinfo_buffer_free(&frameInfoBuf[firmwareId][i]);
-    }
-
-    return 0;
-}
-
-static int test_buffer_onlyrawdump_init(int pipelineId, int firmwareId, IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info)
-{
-    int i = 0;
-
-    vi_rawdump_buffer_pool[pipelineId] =
-        create_buffer_pool(sensor_info.sensor_cfg->width, sensor_info.sensor_cfg->height,
-                           toPixelFormatType(sensor_info.sensor_cfg->bitDepth), "vi rawdump channel0 out buffer");
-    buffer_pool_alloc(vi_rawdump_buffer_pool[pipelineId], MAX_BUFFER_RAWDUMP_NUM);
-
-    return 0;
-}
-
-static int test_buffer_onlyrawdump_prepare(int pipelineId, int firmwareId)
-{
-    int i = 0;
-    int viChnId = pipelineId;
-    int rawdumpChnId;
-    IMAGE_BUFFER_S* buffer = NULL;
-
-    for (i = 0; i < MAX_BUFFER_RAWDUMP_NUM; i++) {
-        buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
-        VIU_GET_RAW_CHN(pipelineId, rawdumpChnId);
-        viisp_vi_queueBuffer(rawdumpChnId, buffer);
-    }
-
-    return 0;
-}
-
-static int test_buffer_onlyrawdump_reset(int pipelineId)
-{
-    int i = 0;
-
-    return 0;
-}
-
-static int test_buffer_onlyrawdump_deInit(int pipelineId, int firmwareId)
-{
-    int i = 0;
-
-    buffer_pool_free(vi_rawdump_buffer_pool[pipelineId]);
-    destroy_buffer_pool(vi_rawdump_buffer_pool[pipelineId]);
-
-    return 0;
-}
-
-static int test_buffer_only_cpp_init(int pipelineId, IMAGE_INFO_S inImgInfo, IMAGE_INFO_S outImgInfo)
-{
-    int i = 0;
-
-    cpp_in_list[pipelineId] = List_Create(0);
-    cpp_out_list[pipelineId] = List_Create(0);
-
-    cpp_in_buffer_pool[pipelineId] =
-        create_buffer_pool(inImgInfo.width, inImgInfo.height, inImgInfo.format, "cpp channel0 out buffer");
-    buffer_pool_alloc(cpp_in_buffer_pool[pipelineId], 1);
-
-    cpp_out_buffer_pool[pipelineId] =
-        create_buffer_pool(outImgInfo.width, outImgInfo.height, outImgInfo.format, "cpp channel0 out buffer");
-    buffer_pool_alloc(cpp_out_buffer_pool[pipelineId], MAX_BUFFER_NUM);
-
-    return 0;
-}
-
-static int test_buffer_only_cpp_prepare(int pipelineId)
-{
-    int i = 0;
-    IMAGE_BUFFER_S* buffer = NULL;
-
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        buffer = buffer_pool_get_buffer(cpp_out_buffer_pool[pipelineId]);
-        List_Push(cpp_out_list[pipelineId], (void*)buffer);
-    }
-
-    buffer = buffer_pool_get_buffer(cpp_in_buffer_pool[pipelineId]);
-    List_Push(cpp_in_list[pipelineId], (void*)buffer);
-
-    return 0;
-}
-
-static int test_buffer_only_cpp_reset(int pipelineId)
-{
-    int i = 0;
-
-    List_Clear(cpp_out_buffer_pool[pipelineId]->buf_list);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        buffer_pool_put_buffer(cpp_out_buffer_pool[pipelineId], &cpp_out_buffer_pool[pipelineId]->buffers[i]);
-    }
-
-    List_Clear(cpp_in_buffer_pool[pipelineId]->buf_list);
-    buffer_pool_put_buffer(cpp_in_buffer_pool[pipelineId], &cpp_in_buffer_pool[pipelineId]->buffers[0]);
-
-    return 0;
-}
-
-static int test_buffer_only_cpp_deInit(int pipelineId)
-{
-    List_Destroy(cpp_out_list[pipelineId]);
-    cpp_out_list[pipelineId] = NULL;
-
-    List_Destroy(cpp_in_list[pipelineId]);
-    cpp_in_list[pipelineId] = NULL;
-
-    buffer_pool_free(cpp_out_buffer_pool[pipelineId]);
-    destroy_buffer_pool(cpp_out_buffer_pool[pipelineId]);
-
-    buffer_pool_free(cpp_in_buffer_pool[pipelineId]);
-    destroy_buffer_pool(cpp_in_buffer_pool[pipelineId]);
-    return 0;
-}
-
 /************************************************************************************************/
-int single_pipeline_online_test(struct testConfig *config)
+static int single_pipeline_online_start(struct gstParam *para)
 {
     int ret = 0;
     void* sensorHandle = NULL;
@@ -1395,12 +1045,18 @@ int single_pipeline_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    struct testConfig *config = NULL;
 
-    CLOG_INFO("test start");
-
+    config = malloc(sizeof(struct testConfig));
     if (!config)
         return -1;
 
+    CLOG_INFO("analysis json file");
+    ret = getTestConfig(config, para->jsonfile);
+    if (ret)
+        return -1;
+
+    CLOG_INFO("test start");
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
                          config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
@@ -1460,96 +1116,45 @@ int single_pipeline_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
-    if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+    test_buffer_prepare(pipelineId, firmwareId, para->gst_cpp_buf_prepare, para->gst_cpp_buf_prepare_data);
+    cpp_start(pipelineId);
+    viisp_vi_online_streamOn(pipelineId);
+    viisp_isp_streamOn(firmwareId);
+    testSensorStart(sensorHandle);
+    streamOnFlags[pipelineId] = 1;
+    CLOG_INFO("sensor stream on");
 
-        testAutoRunFlag[pipelineId] = 1;
-        condition_init(&testAutoRunCond[pipelineId]);
+    para->sensorHandle = sensorHandle;
+    para->sensorInfoId = sensor_info.sensorId;
+    para->firmwareId = firmwareId;
+    para->pipelineId = pipelineId;
+    para->out_width = img_info.width;
+    para->out_height = img_info.height;
 
-        test_buffer_prepare(pipelineId, firmwareId);
-        cpp_start(pipelineId);
-        viisp_vi_online_streamOn(pipelineId);
-
-        viisp_isp_streamOn(firmwareId);
-        testSensorStart(sensorHandle);
-        streamOnFlags[pipelineId] = 1;
-        CLOG_INFO("sensor stream on");
-
-        condition_wait(&testAutoRunCond[pipelineId]);
-
-        streamOnFlags[pipelineId] = 0;
-        viisp_vi_online_streamOff(pipelineId);
-        testSensorStop(sensorHandle);
-        viisp_isp_streamOff(firmwareId);
-        cpp_stop(pipelineId);
-        test_buffer_reset(pipelineId);
-        CLOG_INFO("sensor stream off");
-
-        condition_deinit(&testAutoRunCond[pipelineId]);
-    } else {
-        while (1) {
-            char ch;
-            CLOG_INFO("Input a character:");
-            ch = getc(stdin);
-            if (ch == 'q' || ch == 'Q') {
-                CLOG_INFO("enter q exit");
-                break;
-            }
-            if (ch == 's' || ch == 'S') {
-                test_buffer_prepare(pipelineId, firmwareId);
-                cpp_start(pipelineId);
-                viisp_vi_online_streamOn(pipelineId);
-                viisp_isp_streamOn(firmwareId);
-                testSensorStart(sensorHandle);
-                streamOnFlags[pipelineId] = 1;
-                CLOG_INFO("sensor stream on");
-                continue;
-            }
-            if (ch == 'c' || ch == 'C') {
-                streamOnFlags[pipelineId] = 0;
-                viisp_vi_online_streamOff(pipelineId);
-                testSensorStop(sensorHandle);
-                viisp_isp_streamOff(firmwareId);
-                cpp_stop(pipelineId);
-                test_buffer_reset(pipelineId);
-                CLOG_INFO("sensor stream off");
-                continue;
-            }
-            if (ch == 'd' || ch == 'D') {
-                outputDumpFlag[pipelineId] = 1;
-                CLOG_INFO("dump one frame");
-                continue;
-            }
-            if (ch == 'r' || ch == 'R') {
-                IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
-                viisp_vi_queueBuffer(rawdumpChnId, buffer);
-                CLOG_INFO("dump one raw frame");
-                continue;
-            }
-        }
-    }
-
-    if (config->tuningServerEnalbe) {
-        tuning_server_deinit();
-        deinit_rawdump_info(pipelineId);
-    }
-
-    ProcThreadDeinit(&pipelineProcThread[pipelineId]);
-
-    viisp_isp_deinit(firmwareId, sensor_info.sensorId);
-    viisp_vi_deInit();
-
-    test_buffer_deInit(pipelineId, firmwareId);
-
-    cpp_deInit(pipelineId);
-
-    testSensorDeInit(sensorHandle);
-
-    CLOG_INFO("test end");
+    gst_get_cpp_buffer = para->gst_get_cpp_buffer;
 
     return ret;
+}
+static void single_pipeline_online_stop(struct gstParam *para)
+{
+  streamOnFlags[para->pipelineId] = 0;
+  viisp_vi_online_streamOff(para->pipelineId);
+  testSensorStop(para->sensorHandle);
+  viisp_isp_streamOff(para->firmwareId);
+  cpp_stop(para->pipelineId);
+  test_buffer_reset(para->pipelineId);
+  CLOG_INFO("sensor stream off");
+
+  ProcThreadDeinit(&pipelineProcThread[para->pipelineId]);
+
+  viisp_isp_deinit(para->firmwareId, para->sensorInfoId);
+  viisp_vi_deInit();
+
+  test_buffer_deInit(para->pipelineId, para->firmwareId);
+
+  cpp_deInit(para->pipelineId);
+
+  testSensorDeInit(para->sensorHandle);
 }
 
 static int online_test_viisp_init(int out_width, int out_height, int pipelineId, int firmwareId,
@@ -1599,9 +1204,9 @@ static int online_test_viisp_rawDump(int pipelineId)
     return 0;
 }
 
-static int online_test_viisp_streamOn(void* sensorHandle, int pipelineId, int firmwareId)
+static int online_test_viisp_streamOn(void* sensorHandle, int pipelineId, int firmwareId, struct gstParam *para)
 {
-    test_buffer_prepare(pipelineId, firmwareId);
+    test_buffer_prepare(pipelineId, firmwareId, para->gst_cpp_buf_prepare, para->gst_cpp_buf_prepare_data);
     cpp_start(pipelineId);
     viisp_vi_online_streamOn(pipelineId);
     viisp_isp_streamOn(firmwareId);
@@ -1621,7 +1226,7 @@ static int online_test_viisp_streamOff(void* sensorHandle, int pipelineId, int f
     return 0;
 }
 
-int dual_pipeline_online_test(struct testConfig *config)
+static int dual_pipeline_online_start(struct gstParam *para)
 {
     int ret = 0;
     void* sensor0Handle = NULL;
@@ -1633,8 +1238,15 @@ int dual_pipeline_online_test(struct testConfig *config)
     int pipeline1Id = 1;
     int firmware1Id = 1;
     struct tuning_objs_config tuning_cfg = {0};
+    struct testConfig *config = NULL;
 
+    config = malloc(sizeof(struct testConfig));
     if (!config)
+        return -1;
+
+    CLOG_INFO("analysis json file");
+    ret = getTestConfig(config, para->jsonfile);
+    if (ret)
         return -1;
 
     CLOG_INFO("test start");
@@ -1690,95 +1302,22 @@ int dual_pipeline_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
-    if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+    online_test_viisp_streamOn(sensor0Handle, pipeline0Id, firmware0Id, para);
+    streamOnFlags[pipeline0Id] = 1;
+    online_test_viisp_streamOn(sensor1Handle, pipeline1Id, firmware1Id, para);
+    streamOnFlags[pipeline1Id] = 1;
+    CLOG_INFO("sensor stream on");
 
-        testAutoRunFlag[pipeline0Id] = 1;
-        testAutoRunFlag[pipeline1Id] = 1;
-        condition_init(&testAutoRunCond[pipeline0Id]);
-        condition_init(&testAutoRunCond[pipeline1Id]);
-
-        online_test_viisp_streamOn(sensor0Handle, pipeline0Id, firmware0Id);
-        streamOnFlags[pipeline0Id] = 1;
-        online_test_viisp_streamOn(sensor1Handle, pipeline1Id, firmware1Id);
-        streamOnFlags[pipeline1Id] = 1;
-        CLOG_INFO("sensor stream on");
-
-        condition_wait(&testAutoRunCond[pipeline0Id]);
-        condition_wait(&testAutoRunCond[pipeline1Id]);
-
-        streamOnFlags[pipeline0Id] = 0;
-        streamOnFlags[pipeline1Id] = 0;
-        online_test_viisp_streamOff(sensor0Handle, pipeline0Id, firmware0Id);
-        online_test_viisp_streamOff(sensor1Handle, pipeline1Id, firmware1Id);
-        CLOG_INFO("sensor stream off");
-
-        condition_deinit(&testAutoRunCond[pipeline0Id]);
-        condition_deinit(&testAutoRunCond[pipeline1Id]);
-    } else {
-        while (1) {
-            char ch;
-            CLOG_INFO("Input a character:");
-            ch = getc(stdin);
-            if (ch == 'q' || ch == 'Q') {
-                CLOG_INFO("enter q exit");
-                break;
-            }
-            if (ch == 's' || ch == 'S') {
-                online_test_viisp_streamOn(sensor0Handle, pipeline0Id, firmware0Id);
-                streamOnFlags[pipeline0Id] = 1;
-                online_test_viisp_streamOn(sensor1Handle, pipeline1Id, firmware1Id);
-                streamOnFlags[pipeline1Id] = 1;
-                CLOG_INFO("sensor stream on");
-                continue;
-            }
-            if (ch == 'c' || ch == 'C') {
-                streamOnFlags[pipeline0Id] = 0;
-                streamOnFlags[pipeline1Id] = 0;
-                online_test_viisp_streamOff(sensor0Handle, pipeline0Id, firmware0Id);
-                online_test_viisp_streamOff(sensor1Handle, pipeline1Id, firmware1Id);
-                CLOG_INFO("sensor stream off");
-                continue;
-            }
-            if (ch == 'd' || ch == 'D') {
-                outputDumpFlag[pipeline0Id] = 1;
-                outputDumpFlag[pipeline1Id] = 1;
-                CLOG_INFO("dump one frame");
-                continue;
-            }
-            if (ch == 'r' || ch == 'R') {
-                online_test_viisp_rawDump(pipeline0Id);
-                online_test_viisp_rawDump(pipeline1Id);
-                CLOG_INFO("dump one raw frame");
-                continue;
-            }
-        }
-    }
-
-    if (config->tuningServerEnalbe) {
-        tuning_server_deinit();
-        deinit_rawdump_info(pipeline0Id);
-        deinit_rawdump_info(pipeline1Id);
-    }
-
-    ProcThreadDeinit(&pipelineProcThread[pipeline0Id]);
-    ProcThreadDeinit(&pipelineProcThread[pipeline1Id]);
-
-    viisp_vi_deInit();
-    testSensorDeInit(sensor0Handle);
-    online_test_viisp_deInit(pipeline0Id, firmware0Id, sensor0_info);
-    testSensorDeInit(sensor1Handle);
-    online_test_viisp_deInit(pipeline1Id, firmware1Id, sensor1_info);
-
-    CLOG_INFO("test end");
+    // para->sensorHandle = sensorHandle;
+    // para->sensorInfoId = sensor_info.sensorId;
+    // para->firmwareId = firmwareId;
+    // para->pipelineId = pipelineId;
 
     return ret;
 }
 
 /************************************************************************/
-int only_viisp_online_test(struct testConfig *config)
+static int only_viisp_online_start(struct gstParam *para)
 {
     int ret = 0;
     void* sensorHandle = NULL;
@@ -1789,8 +1328,15 @@ int only_viisp_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    struct testConfig *config = NULL;
 
+    config = malloc(sizeof(struct testConfig));
     if (!config)
+        return -1;
+
+    CLOG_INFO("analysis json file");
+    ret = getTestConfig(config, para->jsonfile);
+    if (ret)
         return -1;
 
     CLOG_INFO("test start");
@@ -1849,741 +1395,28 @@ int only_viisp_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
-    if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
-
-        testAutoRunFlag[pipelineId] = 1;
-        condition_init(&testAutoRunCond[pipelineId]);
-
-        test_buffer_viisp_prepare(pipelineId, firmwareId);
-        viisp_vi_online_streamOn(pipelineId);
-        viisp_isp_streamOn(firmwareId);
-        testSensorStart(sensorHandle);
-        streamOnFlags[pipelineId] = 1;
-        CLOG_INFO("sensor stream on");
-
-        condition_wait(&testAutoRunCond[pipelineId]);
-
-        streamOnFlags[pipelineId] = 0;
-        viisp_vi_online_streamOff(pipelineId);
-        testSensorStop(sensorHandle);
-        viisp_isp_streamOff(firmwareId);
-        test_buffer_viisp_reset(pipelineId);
-        CLOG_INFO("sensor stream off");
-
-        condition_deinit(&testAutoRunCond[pipelineId]);
-    } else {
-        while (1) {
-            char ch;
-            CLOG_INFO("Input a character:");
-            ch = getc(stdin);
-            if (ch == 'q' || ch == 'Q') {
-                CLOG_INFO("enter q exit");
-                break;
-            }
-            if (ch == 's' || ch == 'S') {
-                test_buffer_viisp_prepare(pipelineId, firmwareId);
-                viisp_vi_online_streamOn(pipelineId);
-                viisp_isp_streamOn(firmwareId);
-                testSensorStart(sensorHandle);
-                streamOnFlags[pipelineId] = 1;
-                CLOG_INFO("sensor stream on");
-                continue;
-            }
-            if (ch == 'c' || ch == 'C') {
-                streamOnFlags[pipelineId] = 0;
-                viisp_vi_online_streamOff(pipelineId);
-                testSensorStop(sensorHandle);
-                viisp_isp_streamOff(firmwareId);
-                test_buffer_viisp_reset(pipelineId);
-                CLOG_INFO("sensor stream off");
-                continue;
-            }
-            if (ch == 'd' || ch == 'D') {
-                outputDumpFlag[pipelineId] = 1;
-                CLOG_INFO("dump one frame");
-                continue;
-            }
-            if (ch == 'r' || ch == 'R') {
-                IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
-                viisp_vi_queueBuffer(rawdumpChnId, buffer);
-                CLOG_INFO("dump one raw frame");
-                continue;
-            }
-        }
-    }
-
-    if (config->tuningServerEnalbe) {
-        tuning_server_deinit();
-        deinit_rawdump_info(pipelineId);
-    }
-
-    ProcThreadDeinit(&pipelineProcThread[pipelineId]);
-
-    viisp_isp_deinit(firmwareId, sensor_info.sensorId);
-    viisp_vi_deInit();
-
-    test_buffer_viisp_deInit(pipelineId, firmwareId);
-
-    testSensorDeInit(sensorHandle);
-
-    CLOG_INFO("test end");
+    test_buffer_viisp_prepare(pipelineId, firmwareId);
+    viisp_vi_online_streamOn(pipelineId);
+    viisp_isp_streamOn(firmwareId);
+    testSensorStart(sensorHandle);
+    streamOnFlags[pipelineId] = 1;
+    CLOG_INFO("sensor stream on");
 
     return ret;
 }
 
-/************************************************************************/
-static int get_offline_attr_from_vrf_file(char *pFileName, void *bufVirAddr, uint32_t rawImageSize,
-                                   ISP_OFFLINE_ATTR_S *pstOfflineAttr, ISP_PUB_ATTR_S *pstPubAttr)
-{
-    FILE *pFile = NULL;
-    int ret = 0, fileSize = 0, rawType = -1, bayerOrder = -1;
-    struct stat statbuff;
-    uint32_t tempValue = 0, widht = 0, height = 0;
-    unsigned char *pChBuf = NULL;
-
-    if (!pFileName) {
-        printf("Invalid argument!\n");
-        return -1;
-    }
-
-    if (rawImageSize < 1) {
-        printf("raw image size invalid:%d!\n", rawImageSize);
-        return -1;
-    }
-
-    pFile = fopen(pFileName, "rb");
-    if (!pFile) {
-        printf("open %s failed\n!", pFileName);
-        return -1;
-    }
-
-    if (stat(pFileName, &statbuff) < 0) {
-        printf("stat %s failed\n!", pFileName);
-        goto File_Exit;
-    } else {
-        fileSize = statbuff.st_size;
-        if (fileSize < (int)(rawImageSize + 128)) {
-            printf("this %s file doesn't have vrf info\n!", pFileName);
-            goto File_Exit;
-        }
-    }
-
-    ret = fread(bufVirAddr, sizeof(char), fileSize, pFile);
-    if (ret != fileSize) {
-        printf("read vrf failed to addr 0x%p,ret=%d, %s!\n", bufVirAddr, ret, strerror(errno));
-        ret = -1;
-        goto File_Exit;
-    }
-
-    printf("rawImageSize=%d!\n", rawImageSize);
-    pChBuf = (unsigned char *)(bufVirAddr);
-    pChBuf = pChBuf + rawImageSize;  // vrf info
-    // 1. witdh and height
-    widht = (pChBuf[1] << 8) | pChBuf[0];
-    height = (pChBuf[3] << 8) | pChBuf[2];
-    pstPubAttr->stInputSize.width = widht;
-    pstPubAttr->stInputSize.height = height;
-
-    // 2. expTime ns
-    tempValue = (pChBuf[119] << 24) | (pChBuf[118] << 16) | (pChBuf[117] << 8) | pChBuf[116];
-    pstOfflineAttr->exposureTime = tempValue;
-
-    // 3. sensor again
-    tempValue = (pChBuf[123] << 8) | pChBuf[122];
-    pstOfflineAttr->AGain = (tempValue << 4);  // Q4->Q8
-
-    // 4. imageTGain
-    tempValue = (pChBuf[5] << 8) | pChBuf[4];       // Q4
-    pstOfflineAttr->imageTGain = (tempValue << 4);  // Q4->Q8
-
-    // 5. awb gain.
-    tempValue = (pChBuf[23] << 8) | pChBuf[22];  // Q7
-    pstOfflineAttr->wbRGain = (tempValue << 5);  // Q7->Q12
-    tempValue = (pChBuf[21] << 8) | pChBuf[20];  // Q7
-    pstOfflineAttr->wbGGain = (tempValue << 5);  // Q7->Q12
-    tempValue = (pChBuf[17] << 8) | pChBuf[16];  // Q7
-    pstOfflineAttr->wbBGain = (tempValue << 5);  // Q7->Q12
-
-    // 6. BLC in 12bit
-    tempValue = (pChBuf[27] << 8) | pChBuf[26];
-    pstOfflineAttr->blackLevel[0] = tempValue;
-    pstOfflineAttr->blackLevel[1] = tempValue;
-    pstOfflineAttr->blackLevel[2] = tempValue;
-    pstOfflineAttr->blackLevel[3] = tempValue;
-    pstOfflineAttr->blcBitDepth = 12;
-
-    // rawtype:8, 10, 12, 14...
-    rawType = pChBuf[121];
-    switch (rawType) {
-        case 8:
-            pstPubAttr->enRawType = CAM_SENSOR_RAWTYPE_RAW8;
-            break;
-        case 10:
-            pstPubAttr->enRawType = CAM_SENSOR_RAWTYPE_RAW10;
-            break;
-        case 12:
-            pstPubAttr->enRawType = CAM_SENSOR_RAWTYPE_RAW12;
-            break;
-        case 14:
-            pstPubAttr->enRawType = CAM_SENSOR_RAWTYPE_RAW14;
-            break;
-        default:
-            printf("invalid raw type:%d!", rawType);
-            ret = -1;
-            goto File_Exit;
-    }
-
-    // bayer pattern:0 BGGR, 1 GBRG, 2 GRBG, 3 RGGB, 4 Monochrome
-    bayerOrder = pChBuf[25];
-    switch (bayerOrder) {
-        case 0:
-            pstPubAttr->enBayerFmt = ISP_BAYER_PATTERN_BGGR;
-            break;
-        case 1:
-            pstPubAttr->enBayerFmt = ISP_BAYER_PATTERN_GBRG;
-            break;
-        case 2:
-            pstPubAttr->enBayerFmt = ISP_BAYER_PATTERN_GRBG;
-            break;
-        case 3:
-            pstPubAttr->enBayerFmt = ISP_BAYER_PATTERN_RGGB;
-            break;
-        case 4:
-            pstPubAttr->enBayerFmt = ISP_BAYER_PATTERN_MONO;
-            break;
-        default:
-            printf("invalid bayer order:%d!", bayerOrder);
-            ret = -1;
-            goto File_Exit;
-    }
-
-    CLOG_INFO("parse vrf widht=%d,height=%d,expTime=%d,AGain=0x%x,imageTgain=0x%x,awb gain[%d-%d-%d],raw=%d,bayer=%d!\n",
-           widht, height, pstOfflineAttr->exposureTime, pstOfflineAttr->AGain, pstOfflineAttr->imageTGain,
-           pstOfflineAttr->wbRGain, pstOfflineAttr->wbGGain, pstOfflineAttr->wbBGain, rawType, bayerOrder);
-
-    ret = 0;
-
-File_Exit:
-    if (pFile)
-        fclose(pFile);
-
-    return ret;
-}
-
-static int32_t single_preview_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S *vi_buffer)
-{
-    int32_t ret = 0, imageSize = 0;
-    IMAGE_BUFFER_S *buffer = vi_buffer->buffer;
-    uint32_t frameId = vi_buffer->frameId;
-    uint64_t timeStamp = vi_buffer->timeStamp;
-    FILE *pFile = NULL;
-    char filePath[128];
-
-    //CLOG_INFO("preview frame(%u) done timeStamp(%lu)\n", frameId, timeStamp);
-    if (frameId % 100 == 0)
-        CLOG_INFO("frame(%u) done timeStamp(%lu)\n", frameId, timeStamp);
-
-    if (testAutoRunFlag[nChn] == 1) {
-        if (frameId == testFrame/2)
-            outputDumpFlag[nChn] = 1;
-        if (frameId == testFrame)
-            condition_post(&testAutoRunCond[nChn]);
-    }
-    if (outputDumpFlag[nChn] == 1 || frameId == 0) {
-        imageSize = buffer->planes[0].length + buffer->planes[1].length;
-        //snprintf(filePath, 128, "/vendor/etc/camera/%u_ch%d.yuv", frameId, nChn);
-        snprintf(filePath, 128, "%sch%d_frame%u_%dx%d.yuv", path, nChn, frameId,
-                buffer->size.width, buffer->size.height);
-        pFile = fopen(filePath, "wb");
-        ret = fwrite(buffer->planes[0].virAddr, sizeof(char), imageSize, pFile);
-        fclose(pFile);
-        CLOG_INFO("dump the %d frame from ch:%d, write size:%d!\n", frameId, nChn, ret);
-        outputDumpFlag[nChn] = 0;
-    }
-
-    ret = ASR_VI_ChnQueueBuffer(nChn, buffer);
-    if (ret < 0) {
-        CLOG_ERROR("ASR_VI_ChnQueueBuffer failed file:%s line:%d\n", __FILE__, __LINE__);
-    }
-    return 0;
-}
-
-int only_viisp_offline_preview_test(struct testConfig *config)
+int gst_setup_camera_start (struct gstParam *para)
 {
     int ret = 0;
-    int pipelineId = 0;
-    int firmwareId = 0;
-    int viChnId = 0;
-    int rawdumpChnId = 0;
-    ISP_PUB_ATTR_S stIspPubAttr = {0};
-    ISP_OFFLINE_ATTR_S stOfflineAttr = {0};
-    uint32_t rawImageSize = 0;
-    IMAGE_BUFFER_S *buffer = NULL;
-
-    if (!config)
-        return -1;
-
-    CLOG_INFO("test start");
-
-    // buffer init
-    test_buffer_viisp_offline_preview_init(pipelineId, firmwareId, config);
-    switch (config->ispFeConfig[pipelineId].bitDepth) {
-    case 12:
-        rawImageSize = RAW12_DUMP_SIZE(config->ispFeConfig[pipelineId].inWidth,
-                                       config->ispFeConfig[pipelineId].inHeight);
-        break;
-    case 10:
-        rawImageSize = RAW10_DUMP_SIZE(config->ispFeConfig[pipelineId].inWidth,
-                                       config->ispFeConfig[pipelineId].inHeight);
-        break;
-    default:
-        return -1;
-    }
-
-    buffer = buffer_pool_get_buffer(vi_rawread_buffer_pool[pipelineId]);
-    memset(&stIspPubAttr, 0, sizeof(ISP_PUB_ATTR_S));
-    stIspPubAttr.enBayerFmt = ISP_BAYER_PATTERN_BGGR; //update later
-    stIspPubAttr.enRawType = CAM_SENSOR_RAWTYPE_RAW12; //update later
-    stIspPubAttr.stInputSize.width = config->ispFeConfig[pipelineId].inWidth;
-    stIspPubAttr.stInputSize.height = config->ispFeConfig[pipelineId].inHeight;
-    stIspPubAttr.stOutSize.width = config->ispFeConfig[pipelineId].outWidth;
-    stIspPubAttr.stOutSize.height = config->ispFeConfig[pipelineId].outHeight;
-    get_offline_attr_from_vrf_file(config->ispFeConfig[pipelineId].srcFile,
-                                   buffer->planes[0].virAddr,
-                                   rawImageSize, &stOfflineAttr, &stIspPubAttr);
-
-    // viisp init
-    viisp_vi_init();
-    viisp_vi_offline_preview_config(pipelineId, &stIspPubAttr);
-    viChnId = pipelineId;
-    viisp_set_vi_callback(viChnId, single_preview_buffer_callback);
-
-    viisp_isp_offline_preview_init(firmwareId, &stIspPubAttr, &stOfflineAttr, isp_buffer_callback);
-    outputDumpFlag[pipelineId] = 0;
-
-    if (config->showFps)
-        showFps = 1;
-
-    if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
-
-        testAutoRunFlag[pipelineId] = 1;
-        condition_init(&testAutoRunCond[pipelineId]);
-
-        test_buffer_viisp_offline_preview_prepare(pipelineId, firmwareId, buffer);
-        viisp_vi_offline_preview_streamOn(pipelineId);
-        viisp_isp_streamOn(firmwareId);
-        streamOnFlags[pipelineId] = 1;
-        CLOG_INFO("isp stream on");
-
-        condition_wait(&testAutoRunCond[pipelineId]);
-
-        streamOnFlags[pipelineId] = 0;
-        viisp_vi_offline_preview_streamOff(pipelineId);
-        viisp_isp_streamOff(firmwareId);
-        test_buffer_viisp_offline_preview_reset(pipelineId);
-        CLOG_INFO("isp stream off");
-
-        condition_deinit(&testAutoRunCond[pipelineId]);
-    } else {
-        while (1) {
-            char ch;
-            CLOG_INFO("Input a character:");
-            ch = getc(stdin);
-            if (ch == 'q' || ch == 'Q') {
-                CLOG_INFO("enter q exit");
-                break;
-            }
-            if (ch == 's' || ch == 'S') {
-                test_buffer_viisp_offline_preview_prepare(pipelineId, firmwareId, buffer);
-                viisp_vi_offline_preview_streamOn(pipelineId);
-                viisp_isp_streamOn(firmwareId);
-                streamOnFlags[pipelineId] = 1;
-                CLOG_INFO("isp stream on");
-                continue;
-            }
-            if (ch == 'c' || ch == 'C') {
-                streamOnFlags[pipelineId] = 0;
-                viisp_vi_offline_preview_streamOff(pipelineId);
-                viisp_isp_streamOff(firmwareId);
-                test_buffer_viisp_offline_preview_reset(pipelineId);
-                CLOG_INFO("isp stream off");
-                continue;
-            }
-            if (ch == 'd' || ch == 'D') {
-                outputDumpFlag[pipelineId] = 1;
-                CLOG_INFO("dump one frame");
-                continue;
-            }
-        }
-    }
-
-    viisp_isp_offline_preview_deinit(firmwareId);
-    viisp_vi_deInit();
-
-    test_buffer_viisp_offline_preview_deInit(pipelineId, firmwareId);
-    CLOG_INFO("test end");
+    ret = single_pipeline_online_start(para);
 
     return ret;
 }
 
-/************************************************************************/
-int only_rawdump_test(struct testConfig *config)
+int gst_setup_camera_stop (struct gstParam *para)
 {
-    int ret = 0;
-    void* sensorHandle = NULL;
-    SENSOR_MODULE_INFO sensor_info;
-    int pipelineId = 0;
-    int firmwareId = 0;
-    int viChnId = 0;
-    int rawdumpChnId = 0;
-    IMAGE_INFO_S img_info = {};
 
-    if (!config)
-        return -1;
-
-    CLOG_INFO("test start");
-
-    // sensor init
-    ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
-    if (ret) {
-        CLOG_ERROR("testSensorInit failed\n");
-        return ret;
-    }
-    ret = testSensorGetDevInfo(sensorHandle, &sensor_info);
-    if (ret) {
-        CLOG_ERROR("testSensorGetDevInfo failed\n");
-        testSensorDeInit(sensorHandle);
-        return ret;
-    }
-
-    img_info.width = config->ispFeConfig[0].outWidth;
-    img_info.height = config->ispFeConfig[0].outHeight;
-    img_info.format = PIXEL_FORMAT_NV12_DWT;
-
-    // viisp init
-    viisp_vi_init();
-    viisp_vi_onlyrawdump_config(pipelineId, img_info, &sensor_info);
-    VIU_GET_RAW_CHN(pipelineId, rawdumpChnId);
-    viisp_set_vi_callback(rawdumpChnId, vi_rawdump_onlyrawdump_buffer_callback);
-
-    // buffer init
-    test_buffer_onlyrawdump_init(pipelineId, firmwareId, img_info, sensor_info);
-
-    streamOnFlags[pipelineId] = 0;
-    outputDumpFlag[pipelineId] = 0;
-
-    if (config->showFps)
-        showFps = 1;
-
-    if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
-
-        testAutoRunFlag[pipelineId] = 1;
-        condition_init(&testAutoRunCond[pipelineId]);
-
-        test_buffer_onlyrawdump_prepare(pipelineId, firmwareId);
-        viisp_vi_onlyrawdump_streamOn(pipelineId);
-        testSensorStart(sensorHandle);
-        streamOnFlags[pipelineId] = 1;
-        CLOG_INFO("sensor stream on");
-
-        condition_wait(&testAutoRunCond[pipelineId]);
-
-        streamOnFlags[pipelineId] = 0;
-        viisp_vi_onlyrawdump_streamOff(pipelineId);
-        testSensorStop(sensorHandle);
-        test_buffer_onlyrawdump_reset(pipelineId);
-        CLOG_INFO("sensor stream off");
-
-        condition_deinit(&testAutoRunCond[pipelineId]);
-    } else {
-        while (1) {
-            char ch;
-            CLOG_INFO("Input a character:");
-            ch = getc(stdin);
-            if (ch == 'q' || ch == 'Q') {
-                CLOG_INFO("enter q exit");
-                break;
-            }
-            if (ch == 's' || ch == 'S') {
-                test_buffer_onlyrawdump_prepare(pipelineId, firmwareId);
-                viisp_vi_onlyrawdump_streamOn(pipelineId);
-                testSensorStart(sensorHandle);
-                streamOnFlags[pipelineId] = 1;
-                CLOG_INFO("sensor stream on");
-                continue;
-            }
-            if (ch == 'c' || ch == 'C') {
-                streamOnFlags[pipelineId] = 0;
-                viisp_vi_onlyrawdump_streamOff(pipelineId);
-                testSensorStop(sensorHandle);
-                test_buffer_onlyrawdump_reset(pipelineId);
-                CLOG_INFO("sensor stream off");
-                continue;
-            }
-            if (ch == 'd' || ch == 'D') {
-                outputDumpFlag[pipelineId] = 1;
-                CLOG_INFO("dump one frame");
-                continue;
-            }
-        }
-    }
-
-    viisp_vi_deInit();
-
-    test_buffer_onlyrawdump_deInit(pipelineId, firmwareId);
-
-    testSensorDeInit(sensorHandle);
-
-    CLOG_INFO("test end");
-
-    return ret;
-}
-
-/************************************************************************/
-static int frame_done = 0;
-static pthread_cond_t frame_done_cond = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static int cpp_in_cnt = 0;
-static int cpp_out_cnt = 0;
-static int32_t only_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S *callbackBuf, char success)
-{
-    char fileName[64], *suffix;
-
-    switch (callbackBuf->format) {
-        case PIXEL_FORMAT_FBC:
-            suffix = "afbc";
-            break;
-        case PIXEL_FORMAT_NV12:
-        case PIXEL_FORMAT_NV12_DWT:
-            suffix = "nv12";
-            break;
-        default:
-            CLOG_ERROR("callback: invalid video frame PIXEL_FORMAT_E %d", callbackBuf->format);
-            return 0;
-    }
-
-    switch (mppCpp.chnId) {
-        case -1:
-            cpp_in_cnt++;
-            CLOG_INFO("cpp inputBuf %d callback\n", cpp_in_cnt);
-            snprintf(fileName, sizeof(fileName), "%scpp%d_input_%dx%d_s%d_%d.%s",
-                     path, mppCpp.devId,
-                     callbackBuf->planes[0].width, callbackBuf->planes[0].height,
-                     callbackBuf->planes[0].stride, cpp_out_cnt, suffix);
-            if (outputDumpFlag[mppCpp.devId]) {
-                image_buffer_save(callbackBuf, fileName);
-            }
-            break;
-        case 0:
-            cpp_out_cnt++;
-            CLOG_INFO("cpp outputBuf %d callback\n", cpp_out_cnt);
-            snprintf(fileName, sizeof(fileName), "%scpp%d_output_%dx%d_s%d_%d.%s",
-                     path, mppCpp.devId,
-                     callbackBuf->planes[0].width, callbackBuf->planes[0].height,
-                     callbackBuf->planes[0].stride, cpp_out_cnt, suffix);
-            if (outputDumpFlag[mppCpp.devId]) {
-                image_buffer_save(callbackBuf, fileName);
-                outputDumpFlag[mppCpp.devId] = 0;
-            }
-
-            pthread_mutex_lock(&mutex);
-            frame_done = 1;
-            pthread_cond_signal(&frame_done_cond);
-            pthread_mutex_unlock(&mutex);
-            break;
-        default:
-            CLOG_ERROR("invalid chnl %d\n", mppCpp.chnId);
-            return -EINVAL;
-    }
-
-    return 0;
-}
-
-static int image_buffer_load_raw(IMAGE_BUFFER_S *imgBuf, char *path)
-{
-    char fileName[128];
-    FILE *in_file;
-    size_t readLen = 0;
-    int32_t ret = 0;
-
-    switch (imgBuf->format) {
-        case PIXEL_FORMAT_NV12_DWT:
-        case PIXEL_FORMAT_NV12:
-            LayersName[0] = "L0.nv12";
-            break;
-        case PIXEL_FORMAT_FBC_DWT:
-        case PIXEL_FORMAT_FBC:
-            LayersName[0] = "L0.fbc";
-            break;
-        default:
-            printf("invalid pixel format %d\n", imgBuf->format);
-            return -EINVAL;
-    }
-
-    snprintf(fileName, sizeof(fileName), "%s/%s", path, LayersName[0]);
-    in_file = fopen(fileName, "r");
-    if (in_file == NULL) {
-        printf("%s %s failed, %s\n", __func__, fileName, strerror(errno));
-        ret = -1;
-    } else {
-        for (int plane = 0; plane < 2; ++plane) {
-            size_t readsize = imgBuf->planes[plane].length;
-            readLen = fread(imgBuf->planes[plane].virAddr, 1, readsize, in_file);
-            printf("loading %s at length 0x%lx\n", fileName, readLen);
-            if (readLen == 0)
-                perror("fread");
-        }
-        fclose(in_file);
-    }
-
-    snprintf(fileName, sizeof(fileName), "%s/%s", path, LayersName[1]);
-    in_file = fopen(fileName, "r");
-    if (in_file == NULL) {
-        printf("%s %s failed, %s\n", __func__, fileName, strerror(errno));
-        ret = -1;
-    } else {
-        for (int plane = 0; plane < 2; ++plane) {
-            size_t readsize = imgBuf->dwt1[plane].length;
-            readLen = fread(imgBuf->dwt1[plane].virAddr, 1, readsize, in_file);
-            printf("loading %s at length 0x%lx\n", fileName, readLen);
-            if (readLen == 0)
-                perror("fread");
-        }
-        fclose(in_file);
-    }
-
-    snprintf(fileName, sizeof(fileName), "%s/%s", path, LayersName[2]);
-    in_file = fopen(fileName, "r");
-    if (in_file == NULL) {
-        printf("%s %s failed, %s\n", __func__, fileName, strerror(errno));
-        ret = -1;
-    } else {
-        for (int plane = 0; plane < 2; ++plane) {
-            size_t readsize = imgBuf->dwt2[plane].length;
-            readLen = fread(imgBuf->dwt2[plane].virAddr, 1, readsize, in_file);
-            printf("loading %s at length 0x%lx\n", fileName, readLen);
-        }
-        fclose(in_file);
-    }
-
-    snprintf(fileName, sizeof(fileName), "%s/%s", path, LayersName[3]);
-    in_file = fopen(fileName, "r");
-    if (in_file == NULL) {
-        printf("%s %s failed, %s\n", __func__, fileName, strerror(errno));
-        ret = -1;
-    } else {
-        for (int plane = 0; plane < 2; ++plane) {
-            size_t readsize = imgBuf->dwt3[plane].length;
-            readLen += fread(imgBuf->dwt3[plane].virAddr, 1, readsize, in_file);
-            printf("loading %s at length 0x%lx\n", fileName, readLen);
-        }
-        fclose(in_file);
-    }
-
-    snprintf(fileName, sizeof(fileName), "%s/%s", path, LayersName[4]);
-    in_file = fopen(fileName, "r");
-    if (in_file == NULL) {
-        printf("%s %s failed, %s\n", __func__, fileName, strerror(errno));
-        ret = -1;
-    } else {
-        for (int plane = 0; plane < 2; ++plane) {
-            size_t readsize = imgBuf->dwt4[plane].length;
-            readLen += fread(imgBuf->dwt4[plane].virAddr, 1, readsize, in_file);
-            printf("loading %s at length 0x%lx\n", fileName, readLen);
-        }
-        fclose(in_file);
-    }
-
-    return ret;
-}
-
-int only_cpp_test(struct testConfig *config)
-{
-    IMAGE_INFO_S inImgInfo = {0};
-    IMAGE_INFO_S outImgInfo = {0};
-    FRAME_INFO_S frameInfo = {0};
-    IMAGE_BUFFER_S *inputBuf = {0};
-    IMAGE_BUFFER_S *outputBuf = {0};
-    int viChnId = 0;
-    int rawdumpChnId = 0;
-    int pipelineId = 0;
-    int loopNum = 10;
-    int fps = 30;
-    int ret = 0;
-
-    int i;
-    char inSettingFile[64] = "/tmp/cpp_in_setting.data";
-    char outSettingFile[64] = "/tmp/cpp_out_setting.data";
-
-    if (!config)
-        return -1;
-
-    if (config->testFrame)
-        testFrame = config->testFrame;
-    CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
-
-    inImgInfo.width = config->cppConfig[pipelineId].width;
-    inImgInfo.height = config->cppConfig[pipelineId].height;
-    inImgInfo.format = get_viisp_output_format(config->cppConfig[pipelineId].format);//PIXEL_FORMAT_NV12_DWT;
-
-    outImgInfo.width = inImgInfo.width;
-    outImgInfo.height = inImgInfo.height;
-    outImgInfo.format = PIXEL_FORMAT_NV12;
-
-    test_buffer_only_cpp_init(pipelineId, inImgInfo, outImgInfo);
-    test_buffer_only_cpp_prepare(pipelineId);
-
-    inputBuf = List_Pop(cpp_in_list[pipelineId]);
-    ret = image_buffer_load_raw(inputBuf, config->cppConfig[pipelineId].srcFile);
-    if (ret) {
-        CLOG_ERROR("image_buffer_load_raw failed\n");
-        return -1;
-    }
-    // cpp init
-    cpp_init(pipelineId, outImgInfo, only_cpp_buffer_callback);
-
-    cpp_load_fw_settingfile(pipelineId, inSettingFile);
-
-    cpp_start(pipelineId);
-
-    memset(&frameInfo, 0, sizeof(FRAME_INFO_S));
-    frameInfo.imageTGain = 1 << 8;
-    for (i = 0; i < loopNum; i++) {
-        frame_done = 0;
-        frameInfo.frameId = i;
-        if (i % 5 == 0)
-            outputDumpFlag[pipelineId] = 1;
-        cpp_test_fw_infs(pipelineId);
-        pthread_mutex_lock(&mutex);
-        outputBuf = List_Pop(cpp_out_list[pipelineId]);
-        cpp_post_buffer(pipelineId, inputBuf, outputBuf, i, &frameInfo);
-
-        usleep(1000000 / fps);
-        /* Wait for condition signal */
-        while (frame_done == 0) {
-            pthread_cond_wait(&frame_done_cond, &mutex);
-        }
-        List_Push(cpp_out_list[pipelineId], outputBuf);
-        pthread_mutex_unlock(&mutex);
-    }
-    cpp_save_fw_settingfile(pipelineId, outSettingFile);
-    cpp_stop(pipelineId);
-
-    cpp_deInit(pipelineId);
-
-    List_Push(inputBuf, cpp_in_list[pipelineId]);
-    test_buffer_only_cpp_reset(pipelineId);
-    test_buffer_only_cpp_deInit(pipelineId);
+    single_pipeline_online_stop(para);
 
     return 0;
 }
