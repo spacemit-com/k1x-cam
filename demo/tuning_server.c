@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "asr_cam_tuning_assistant.h"
+#include "spm_cam_tuning_assistant.h"
 #include "tuning_server.h"
 
 struct tuning_obj_set {

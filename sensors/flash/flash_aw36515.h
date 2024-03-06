@@ -1,5 +1,5 @@
 /******************************************************************************
- * (C) Copyright [2016 - 2017] ASR International Ltd.
+ * (C) Copyright 2023 Spacemit International Ltd.
  * All Rights Reserved
  ******************************************************************************/
 /*************** struct CCFlashTuningData
@@ -12,7 +12,7 @@ index, typically, we set white led index.
         {//[10] pre-flash
             int index;       //index of table
             int current;     //flash work at xx mA
-            int luminance;   //asr defined lux at xx mA
+            int luminance;   //spm defined lux at xx mA
             int code;        //value which is set to driver
             {
                 int RGain;      //flash R gain
@@ -29,7 +29,7 @@ index, typically, we set white led index.
         {//[20] main-flash
             int index;       //index of table
             int current;     //flash work at xx mA
-            int luminance;   //asr defined lux at xx mA
+            int luminance;   //spm defined lux at xx mA
             int code;        //value which is set to driver
             {
                 int RGain;      //flash R gain
@@ -64,7 +64,7 @@ index, typically, we set white led index.
                     {
                         0,    // index of table, pre-flash must be 0 always
                         40,   // flash work at xx mA
-                        892,  // asr defined lux at xx mA
+                        892,  // spm defined lux at xx mA
                         20,    // value which is set to driver
                         {
                             148,  // flash R gain
@@ -82,7 +82,7 @@ index, typically, we set white led index.
                     {
                         0,     // index of table
                         630,   // flash work at xx mA
-                        1673,  // asr defined lux at xx mA
+                        1673,  // spm defined lux at xx mA
                         80,     // value which is set to driver
                         {
                             8133,  // flash R gain

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include <assert.h>
@@ -9,7 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "asr_comm_cam.h"
+#include "spm_comm_cam.h"
 #include "cam_sensor.h"
 
 #define SENSOR_MAGIC 0x13B105B5
@@ -548,7 +548,7 @@ static int ov13b10_get_aelib_default_settings(void* snsHandle, uint32_t u32Chane
         if (0 == u32ChanelId)
             *ppstAeLibDefault = NULL;
 
-        /* asr aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
+        /* spm aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
          * in pipe0, perhaps you can set the same value of pipe0 to pipe1.
          */
     } else {

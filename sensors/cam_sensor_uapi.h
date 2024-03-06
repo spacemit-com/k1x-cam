@@ -2,7 +2,7 @@
 /*
  * cam_sensor_uapi.h.c - Driver uapi for camera sensor driver
  *
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #ifndef __CAM_SENSOR_UAPI_H__

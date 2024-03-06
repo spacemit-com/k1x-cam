@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -36,15 +36,15 @@ typedef struct {
     int firmwareId;
 } THREAD_INFO;
 
-typedef struct asrVI_BUFFER_INFO {
+typedef struct spmVI_BUFFER_INFO {
     IMAGE_BUFFER_S* buffer;
     uint32_t frameId;
-} asrVI_BUFFER_INFO_S;
+} spmVI_BUFFER_INFO_S;
 
-typedef struct asrISP_BUFFER_INFO {
+typedef struct spmISP_BUFFER_INFO {
     FRAME_INFO_S frameInfo;
     uint32_t frameId;
-} asrISP_BUFFER_INFO_S;
+} spmISP_BUFFER_INFO_S;
 
 static LIST_HANDLE vi_out_list;
 static LIST_HANDLE isp_out_list;
@@ -89,7 +89,7 @@ static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
 
 static bool isp_buffer_list_find_ret(const void* item, const void* condition)
 {
-    asrISP_BUFFER_INFO_S* isp_buffer_info = (asrISP_BUFFER_INFO_S*)item;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = (spmISP_BUFFER_INFO_S*)item;
     uint32_t* frameId = (uint32_t*)condition;
 
     return (isp_buffer_info->frameId == *frameId);
@@ -114,9 +114,9 @@ static void* previewThreadFunc(void* param)
         }
         // CLOG_INFO("thread handle");
         if ((List_IsEmpty(cpp_out_list) == false) && (List_IsEmpty(isp_out_list) == false)) {
-            asrVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list);
+            spmVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list);
             if (vi_buffer_info) {
-                asrISP_BUFFER_INFO_S* isp_buffer_info =
+                spmISP_BUFFER_INFO_S* isp_buffer_info =
                     List_FindItemIf(isp_out_list, isp_buffer_list_find_ret, &(vi_buffer_info->frameId));
                 if (!isp_buffer_info) {
                     CLOG_WARNING("frameId mismatch");
@@ -221,7 +221,7 @@ static void ProcThreadInit(THREAD_INFO* thread)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_create(&thread->threadId, &attr, thread->threadProcessFunc, thread);
-    pthread_setname_np(thread->threadId, thread->threadName);
+    // pthread_setname_np(thread->threadId, thread->threadName);
     pthread_attr_destroy(&attr);
 }
 
@@ -274,7 +274,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     uint32_t frameId = vi_buffer->frameId;
     // char success = vi_buffer->bValid ? 1 : 0;
     // char closeDone = vi_buffer->bCloseDown ? 1 : 0;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
+    spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
 
     if (nChn >= (VIU_MAX_CHN_NUM + VIU_MAX_RAWCHN_NUM)) {
         CLOG_ERROR("invalid chnId %d", nChn);
@@ -287,7 +287,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     }
 
     if (nChn == 0) {
-        vi_buffer_info = malloc(sizeof(asrVI_BUFFER_INFO_S));
+        vi_buffer_info = malloc(sizeof(spmVI_BUFFER_INFO_S));
         if (vi_buffer_info) {
             vi_buffer_info->buffer = buffer;
             vi_buffer_info->frameId = frameId;
@@ -317,13 +317,13 @@ static int isp_buffer_callback(uint32_t pipelineID, void* pstFrameinfoBuf)
     IMAGE_BUFFER_S* buffer = (IMAGE_BUFFER_S*)pstFrameinfoBuf;
     FRAME_INFO_S* data = buffer->planes[0].virAddr;
     int frameId = data->frameId;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
     CLOG_DEBUG("ISP pipelineID %d out buffer frameId %d", pipelineID, frameId);
     if (!streamOnFlag) {
         return 0;
     }
 
-    isp_buffer_info = malloc(sizeof(asrISP_BUFFER_INFO_S));
+    isp_buffer_info = malloc(sizeof(spmISP_BUFFER_INFO_S));
     if (isp_buffer_info) {
         memcpy(&isp_buffer_info->frameInfo, data, sizeof(FRAME_INFO_S));
         isp_buffer_info->frameId = frameId;
@@ -524,8 +524,8 @@ static int test_buffer_reset(int pipelineId)
 static int test_buffer_deInit()
 {
     int i = 0;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
 
     List_Destroy(cpp_out_list);
     cpp_out_list = NULL;

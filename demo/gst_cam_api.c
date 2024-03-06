@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -156,7 +156,7 @@ static int raw_buffer_save(const IMAGE_BUFFER_S* imgBuf, char* fileName)
 
 static bool isp_buffer_list_find_ret(const void* item, const void* condition)
 {
-    asrISP_BUFFER_INFO_S* isp_buffer_info = (asrISP_BUFFER_INFO_S*)item;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = (spmISP_BUFFER_INFO_S*)item;
     uint32_t* frameId = (uint32_t*)condition;
 
     return (isp_buffer_info->frameId == *frameId);
@@ -178,9 +178,9 @@ static void* testThreadFunc(void* param)
         condition_timedwait(&thread->cond, 1000);
         // CLOG_INFO("thread handle");
         if ((List_IsEmpty(cpp_out_list[pipelineId]) == false) && (List_IsEmpty(isp_out_list[firmwareId]) == false)) {
-            asrVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list[pipelineId]);
+            spmVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list[pipelineId]);
             if (vi_buffer_info) {
-                asrISP_BUFFER_INFO_S* isp_buffer_info =
+                spmISP_BUFFER_INFO_S* isp_buffer_info =
                     List_FindItemIf(isp_out_list[firmwareId], isp_buffer_list_find_ret, &(vi_buffer_info->frameId));
                 if (!isp_buffer_info) {
                     CLOG_WARNING("frameId mismatch");
@@ -283,9 +283,9 @@ static void* testThreadFunc_viisp(void* param)
         condition_timedwait(&thread->cond, 1000);
         // CLOG_INFO("thread handle");
         if (List_IsEmpty(isp_out_list[firmwareId]) == false) {
-            asrVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list[pipelineId]);
+            spmVI_BUFFER_INFO_S* vi_buffer_info = List_Pop(vi_out_list[pipelineId]);
             if (vi_buffer_info) {
-                asrISP_BUFFER_INFO_S* isp_buffer_info =
+                spmISP_BUFFER_INFO_S* isp_buffer_info =
                     List_FindItemIf(isp_out_list[firmwareId], isp_buffer_list_find_ret, &(vi_buffer_info->frameId));
                 if (!isp_buffer_info) {
                     CLOG_WARNING("frameId mismatch");
@@ -356,7 +356,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     uint32_t frameId = vi_buffer->frameId;
     // char success = vi_buffer->bValid ? 1 : 0;
     // char closeDone = vi_buffer->bCloseDown ? 1 : 0;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
+    spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
     int pipelineId = nChn;
     int streamOnFlag = 0;
 
@@ -371,7 +371,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
         return 0;
     }
     // viisp_vi_queueBuffer(nChn, buffer);
-    vi_buffer_info = malloc(sizeof(asrVI_BUFFER_INFO_S));
+    vi_buffer_info = malloc(sizeof(spmVI_BUFFER_INFO_S));
     if (vi_buffer_info) {
         vi_buffer_info->buffer = buffer;
         vi_buffer_info->frameId = frameId;
@@ -417,8 +417,8 @@ static int isp_buffer_callback(uint32_t pipelineID, void* pstFrameinfoBuf)
     IMAGE_BUFFER_S* buffer = (IMAGE_BUFFER_S*)pstFrameinfoBuf;
     FRAME_INFO_S* data = buffer->planes[0].virAddr;
     int frameId = data->frameId;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrISP_BUFFER_INFO_S* isp_buffer_info1 = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info1 = NULL;
     int streamOnFlag = 0;
 
     CLOG_DEBUG("ISP pipelineID %d out buffer frameId %d", pipelineID, frameId);
@@ -427,7 +427,7 @@ static int isp_buffer_callback(uint32_t pipelineID, void* pstFrameinfoBuf)
         return 0;
     }
 
-    isp_buffer_info = malloc(sizeof(asrISP_BUFFER_INFO_S));
+    isp_buffer_info = malloc(sizeof(spmISP_BUFFER_INFO_S));
     if (isp_buffer_info) {
         memcpy(&isp_buffer_info->frameInfo, data, sizeof(FRAME_INFO_S));
         isp_buffer_info->frameId = frameId;
@@ -613,9 +613,9 @@ static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint
 {
     uint32_t i;
     int ret = 0;
-    asrTuning_BUFFER_INFO_S *tunBuffer = NULL;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrISP_BUFFER_INFO_S* isp_buffer_info1 = NULL;
+    spmTuning_BUFFER_INFO_S *tunBuffer = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info1 = NULL;
     IMAGE_BUFFER_S *buffer;
     uint32_t rawChn = 0;
     int cnt = 0;
@@ -704,8 +704,8 @@ static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint
 
 static int32_t ispEndDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId)
 {
-    asrTuning_BUFFER_INFO_S *tunBuffer = NULL;
-    asrISP_BUFFER_INFO_S *isp_buffer_info = NULL;
+    spmTuning_BUFFER_INFO_S *tunBuffer = NULL;
+    spmISP_BUFFER_INFO_S *isp_buffer_info = NULL;
     uint32_t pipelineID;
 
     if (groupId > 1) {
@@ -756,7 +756,7 @@ static int32_t ispEndDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId)
 
 static int getRawDump(int pipelineId, IMAGE_BUFFER_S *inputBuffer, int frameId)
 {
-    asrTuning_BUFFER_INFO_S *tunBuffer = NULL;
+    spmTuning_BUFFER_INFO_S *tunBuffer = NULL;
     int len;
 
     tunBuffer = malloc(sizeof(*tunBuffer));
@@ -899,8 +899,8 @@ static int test_buffer_reset(int pipelineId)
 static int test_buffer_deInit(int pipelineId, int firmwareId)
 {
     int i = 0;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
 
     List_Destroy(cpp_out_list[pipelineId]);
     cpp_out_list[pipelineId] = NULL;
@@ -996,8 +996,8 @@ static int test_buffer_viisp_reset(int pipelineId)
 static int test_buffer_viisp_deInit(int pipelineId, int firmwareId)
 {
     int i = 0;
-    asrISP_BUFFER_INFO_S* isp_buffer_info = NULL;
-    asrVI_BUFFER_INFO_S* vi_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
 
     if (List_IsEmpty(isp_out_list[firmwareId]) == false) {
         do {

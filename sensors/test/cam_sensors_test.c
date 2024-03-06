@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2022 SPM Micro Limited
  * All Rights Reserved.
  */
 
@@ -11,9 +11,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "asr_cam_sensors.h"
-#include "asr_comm_sensors.h"
-#include "asr_isp_sensor_comm.h"
+#include "spm_cam_sensors.h"
+#include "spm_comm_sensors.h"
+#include "spm_isp_sensor_comm.h"
 #include "cam_log.h"
 
 int main(int argc, char* argv[])
@@ -35,13 +35,13 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    ret = ASR_SENSORS_MODULE_Detect(sensors_name, devId);
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
     if (ret) {
         CLOG_ERROR("detect sensor fail");
         return ret;
     }
 
-    ret = ASR_SENSORS_MODULE_Init(&sensors_handle, sensors_name, devId, &sensors_module_info);
+    ret = SPM_SENSORS_MODULE_Init(&sensors_handle, sensors_name, devId, &sensors_module_info);
     if (ret) {
         CLOG_ERROR("sensors module init fail");
         return ret;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         CLOG_INFO("sensors module has no sensor");
     }
 
-    ret = ASR_SENSORS_MODULE_EnumCapability(sensors_handle, &sensors_cap);
+    ret = SPM_SENSORS_MODULE_EnumCapability(sensors_handle, &sensors_cap);
     if (ret == 0) {
         CLOG_INFO("sensor config info number %d", sensors_cap.sensor_capability.snr_config_num);
         for (i = 0; i < sensors_cap.sensor_capability.snr_config_num; i++) {
@@ -75,12 +75,12 @@ int main(int argc, char* argv[])
         goto out;
     }
 
-    ret = ASR_SENSOR_Open(sensors_handle);
+    ret = SPM_SENSOR_Open(sensors_handle);
     if (ret) {
         goto out;
     }
 
-    ret = ASR_SENSOR_GetOps(sensors_handle, &sensor_ops);
+    ret = SPM_SENSOR_GetOps(sensors_handle, &sensor_ops);
     if (ret) {
         goto out_sensor;
     }
@@ -95,26 +95,26 @@ int main(int argc, char* argv[])
         }
         if (ch <= '9' && ch >= '0') {
             int work_mode = ch - '0';
-            ASR_SENSOR_Config(sensors_handle, work_mode);
+            SPM_SENSOR_Config(sensors_handle, work_mode);
             CLOG_INFO("config sensor work mode %d", work_mode);
             continue;
         }
         if (ch == 's' || ch == 'S') {
-            ASR_SENSOR_StreamOn(sensors_handle);
+            SPM_SENSOR_StreamOn(sensors_handle);
             CLOG_INFO("sensor stream on");
             continue;
         }
         if (ch == 'c' || ch == 'C') {
-            ASR_SENSOR_StreamOff(sensors_handle);
+            SPM_SENSOR_StreamOff(sensors_handle);
             CLOG_INFO("sensor stream off");
             continue;
         }
     }
 out_sensor:
-    ASR_SENSOR_Close(sensors_handle);
+    SPM_SENSOR_Close(sensors_handle);
 
 out:
-    ASR_SENSORS_MODULE_Deinit(sensors_handle);
+    SPM_SENSORS_MODULE_Deinit(sensors_handle);
 
     return ret;
 }

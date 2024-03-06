@@ -1,4 +1,4 @@
-config BR2_PACKAGE_ASR_CAM
-	bool "asr-cam"
+config BR2_PACKAGE_SPACEMIT_CAM
+	bool "cam-test"
 	help
-	  ASR CAMERA CORE
+	  SPACEMIT CAMERA CORE

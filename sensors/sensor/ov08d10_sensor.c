@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include <assert.h>
@@ -9,7 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "../module/ov08d10_asr/ov08d10_asr.h"
+#include "../module/ov08d10_spm/ov08d10_spm.h"
 #include "cam_sensor.h"
 
 #define SENSOR_MAGIC 0x08D105B5
@@ -409,13 +409,13 @@ static int ov08d10_sensor_fps_set(void* snsHandle, float f32Fps)
     expLine = sensor_context->hdrIntTime[0] * 1000 / sensor_context->lineTime;
     if (expLine <= (sensor_context->initVTS - OV08D10_VTS_ADJUST)) {
         sensor_context->vts[0] = sensor_context->initVTS;
-        if (sensor_context->work_info.work_mode == OV08D10_ASR_3264x2448_10bit_LINEAR_30_2LANE)
+        if (sensor_context->work_info.work_mode == OV08D10_SPM_3264x2448_10bit_LINEAR_30_2LANE)
             setting_def_vts = OV08D10_8M30_VTS;
-        else if (sensor_context->work_info.work_mode == OV08D10_ASR_1632x1224_10bit_LINEAR_30_2LANE)
+        else if (sensor_context->work_info.work_mode == OV08D10_SPM_1632x1224_10bit_LINEAR_30_2LANE)
             setting_def_vts = OV08D10_2M30_VTS;
-        else if (sensor_context->work_info.work_mode == OV08D10_ASR_1920x1080_10bit_LINEAR_30_2LANE)
+        else if (sensor_context->work_info.work_mode == OV08D10_SPM_1920x1080_10bit_LINEAR_30_2LANE)
             setting_def_vts = OV08D10_1080P30_VTS;
-        else if (sensor_context->work_info.work_mode == OV08D10_ASR_640x480_10bit_LINEAR_30_1LANE)
+        else if (sensor_context->work_info.work_mode == OV08D10_SPM_640x480_10bit_LINEAR_30_1LANE)
             setting_def_vts = OV08D10_VGA30_VTS;
 
         reg_dummyline = (sensor_context->vts[0] - setting_def_vts) * 2;
@@ -449,13 +449,13 @@ static int ov08d10_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId,
         sensor_context->vts[0] = expLine + OV08D10_VTS_ADJUST;
     else
         sensor_context->vts[0] = sensor_context->initVTS;
-    if (sensor_context->work_info.work_mode == OV08D10_ASR_3264x2448_10bit_LINEAR_30_2LANE)
+    if (sensor_context->work_info.work_mode == OV08D10_SPM_3264x2448_10bit_LINEAR_30_2LANE)
         setting_def_vts = OV08D10_8M30_VTS;
-    else if (sensor_context->work_info.work_mode == OV08D10_ASR_1632x1224_10bit_LINEAR_30_2LANE)
+    else if (sensor_context->work_info.work_mode == OV08D10_SPM_1632x1224_10bit_LINEAR_30_2LANE)
         setting_def_vts = OV08D10_2M30_VTS;
-    else if (sensor_context->work_info.work_mode == OV08D10_ASR_1920x1080_10bit_LINEAR_30_2LANE)
+    else if (sensor_context->work_info.work_mode == OV08D10_SPM_1920x1080_10bit_LINEAR_30_2LANE)
         setting_def_vts = OV08D10_1080P30_VTS;
-    else if (sensor_context->work_info.work_mode == OV08D10_ASR_640x480_10bit_LINEAR_30_1LANE)
+    else if (sensor_context->work_info.work_mode == OV08D10_SPM_640x480_10bit_LINEAR_30_1LANE)
         setting_def_vts = OV08D10_VGA30_VTS;
 
     reg_dummyline = (sensor_context->vts[0] - setting_def_vts) * 2;
@@ -527,7 +527,7 @@ static int ov08d10_get_aelib_default_settings(void* snsHandle, uint32_t u32Chane
         if (0 == u32ChanelId)
             *ppstAeLibDefault = NULL;
 
-        /* asr aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
+        /* spm aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
          * in pipe0, perhaps you can set the same value of pipe0 to pipe1.
          */
     } else {

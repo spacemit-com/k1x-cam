@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -7,9 +7,10 @@
 #define _VIISP_COMMON_H_
 
 #include <stdlib.h>
+#include <sys/time.h>
 
-#include "asr_cam_isp.h"
-#include "asr_cam_vi.h"
+#include "spm_cam_isp.h"
+#include "spm_cam_vi.h"
 #include "cam_interface.h"
 #include "sensor_common.h"
 
@@ -46,6 +47,7 @@ int viisp_isp_streamOn(int firmwareId);
 int viisp_isp_streamOff(int firmwareId);
 int viisp_isp_queueBuffer(int firmwareId, IMAGE_BUFFER_S* buffer);
 int viisp_isp_triggerRawCapture(int firmwareId, IMAGE_BUFFER_S* buffer);
+void ispout_framerate_stat(uint32_t nChn);
 
 int viisp_vi_onlyrawdump_config(int pipelineId, IMAGE_INFO_S out_info, SENSOR_MODULE_INFO* sensor_info);
 int viisp_vi_onlyrawdump_streamOn(int pipelineId);

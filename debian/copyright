@@ -31,17 +31,17 @@ Files:     CMakeLists.txt
            demo/viisp_common.h
            libs/include/CPPGlobalDefine.h
            libs/include/ISPGlobalDefine.h
-           libs/include/asr_cam_tuning_assistant.h
-           libs/include/asr_cam_vi.h
-           libs/include/asr_comm_cam.h
-           libs/include/asr_comm_tuning.h
-           libs/include/asr_comm_vi.h
-           libs/include/asr_isp_sensor_comm.h
+           libs/include/spm_cam_tuning_assistant.h
+           libs/include/spm_cam_vi.h
+           libs/include/spm_comm_cam.h
+           libs/include/spm_comm_tuning.h
+           libs/include/spm_comm_vi.h
+           libs/include/spm_isp_sensor_comm.h
            libs/include/cam_cpp.h
            libs/include/cam_module_interface.h
            sensors/CMakeLists.txt
-           sensors/cam_asr_otp_handle.c
-           sensors/cam_asr_otp_handle.h
+           sensors/cam_spm_otp_handle.c
+           sensors/cam_spm_otp_handle.h
            sensors/cam_log.h
            sensors/cam_sensor_uapi.h
            sensors/cam_sensors_module.c
@@ -50,29 +50,29 @@ Files:     CMakeLists.txt
            sensors/camera_base.h
            sensors/flash/aw36515_led.c
            sensors/flash/cam_led.h
-           sensors/include/asr_cam_sensors.h
-           sensors/include/asr_comm_sensors.h
-           sensors/module/gc2375h_asr/gc2375h_asr.c
-           sensors/module/gc2375h_asr/gc2375h_asr.h
-           sensors/module/gc2375h_asr/gc2375h_asr_setting.h
-           sensors/module/gc5035_asr/gc5035_asr.c
-           sensors/module/gc5035_asr/gc5035_asr.h
-           sensors/module/gc5035_asr/gc5035_asr_setting.h
-           sensors/module/imx135_asr/imx135_asr.c
-           sensors/module/imx135_asr/imx135_asr.h
-           sensors/module/imx135_asr/imx135_asr_setting.h
-           sensors/module/os05a10_asr/os05a10_asr.c
-           sensors/module/os05a10_asr/os05a10_asr.h
-           sensors/module/os05a10_asr/os05a10_asr_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr.c
-           sensors/module/ov08d10_asr/ov08d10_asr.h
-           sensors/module/ov08d10_asr/ov08d10_asr_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr.c
-           sensors/module/ov13b10_asr/ov13b10_asr.h
-           sensors/module/ov13b10_asr/ov13b10_asr_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr.c
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_setting.h
+           sensors/include/spm_cam_sensors.h
+           sensors/include/spm_comm_sensors.h
+           sensors/module/gc2375h_spm/gc2375h_spm.c
+           sensors/module/gc2375h_spm/gc2375h_spm.h
+           sensors/module/gc2375h_spm/gc2375h_spm_setting.h
+           sensors/module/gc5035_spm/gc5035_spm.c
+           sensors/module/gc5035_spm/gc5035_spm.h
+           sensors/module/gc5035_spm/gc5035_spm_setting.h
+           sensors/module/imx135_spm/imx135_spm.c
+           sensors/module/imx135_spm/imx135_spm.h
+           sensors/module/imx135_spm/imx135_spm_setting.h
+           sensors/module/os05a10_spm/os05a10_spm.c
+           sensors/module/os05a10_spm/os05a10_spm.h
+           sensors/module/os05a10_spm/os05a10_spm_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm.c
+           sensors/module/ov08d10_spm/ov08d10_spm.h
+           sensors/module/ov08d10_spm/ov08d10_spm_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm.c
+           sensors/module/ov13b10_spm/ov13b10_spm.h
+           sensors/module/ov13b10_spm/ov13b10_spm_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm.c
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_setting.h
            sensors/sensor/cam_sensor.c
            sensors/sensor/cam_sensor.h
            sensors/sensor/gc2375h_sensor.c
@@ -91,14 +91,14 @@ Files:     CMakeLists.txt
            sensors/vcm/gt9772_vcm.c
            sensors/vcm/i2c/i2c_common.c
            sensors/vcm/i2c/i2c_common.h
-Copyright: 2019-2023 ASR Micro Limited
-           [2016 - 2017] ASR International Ltd.
+Copyright: 2023 Spacemit Limited
+           2023 Spacemit International Ltd.
 License:   __NO_LICENSE__
 
 Files:     Config.in
-           asr-cam.mk
+           spm-cam.mk
            bak/Config.in
-           bak/asr-cam.mk
+           bak/spm-cam.mk
            demo/CMakeLists.txt
            demo/tuning_server.c
            demo/tuning_server.h
@@ -107,48 +107,48 @@ Files:     Config.in
            sensors/module/common/common_FlickerSetting.h
            sensors/module/common/common_rawhdr_default_setting.h
            sensors/module/dove_struct_to_settingfile.py
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_cpp_nightshot_setting.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_cpp_preview_setting.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_cpp_snapshot_setting.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_cpp_video_setting.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_isp_setting.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_isp_setting_video.h
-           sensors/module/gc2375h_asr/gc2375h_asr_rear_secondary_nightshot_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_cpp_nightshot_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_cpp_preview_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_cpp_snapshot_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_cpp_video_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_isp_setting.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_isp_setting_video.h
-           sensors/module/gc5035_asr/gc5035_asr_rear_secondary_nightshot_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_cpp_nightshot_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_cpp_preview_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_cpp_snapshot_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_cpp_video_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_isp_setting.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_isp_setting_video.h
-           sensors/module/imx135_asr/imx135_asr_rear_primary_nightshot_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_cpp_nightshot_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_cpp_preview_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_cpp_snapshot_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_cpp_video_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_isp_setting.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_isp_setting_video.h
-           sensors/module/ov08d10_asr/ov08d10_asr_front_nightshot_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_cpp_nightshot_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_cpp_preview_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_cpp_snapshot_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_cpp_video_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_isp_setting.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_isp_setting_video.h
-           sensors/module/ov13b10_asr/ov13b10_asr_rear_primary_nightshot_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_cpp_nightshot_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_cpp_preview_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_cpp_snapshot_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_cpp_video_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_isp_setting.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_isp_setting_video.h
-           sensors/module/s5k5e3yx_asr/s5k5e3yx_asr_front_nightshot_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_cpp_nightshot_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_cpp_preview_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_cpp_snapshot_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_cpp_video_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_isp_setting.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_isp_setting_video.h
+           sensors/module/gc2375h_spm/gc2375h_spm_rear_secondary_nightshot_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_cpp_nightshot_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_cpp_preview_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_cpp_snapshot_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_cpp_video_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_isp_setting.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_isp_setting_video.h
+           sensors/module/gc5035_spm/gc5035_spm_rear_secondary_nightshot_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_cpp_nightshot_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_cpp_preview_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_cpp_snapshot_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_cpp_video_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_isp_setting.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_isp_setting_video.h
+           sensors/module/imx135_spm/imx135_spm_rear_primary_nightshot_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_cpp_nightshot_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_cpp_preview_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_cpp_snapshot_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_cpp_video_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_isp_setting.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_isp_setting_video.h
+           sensors/module/ov08d10_spm/ov08d10_spm_front_nightshot_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_cpp_nightshot_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_cpp_preview_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_cpp_snapshot_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_cpp_video_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_isp_setting.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_isp_setting_video.h
+           sensors/module/ov13b10_spm/ov13b10_spm_rear_primary_nightshot_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_cpp_nightshot_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_cpp_preview_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_cpp_snapshot_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_cpp_video_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_isp_setting.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_isp_setting_video.h
+           sensors/module/s5k5e3yx_spm/s5k5e3yx_spm_front_nightshot_setting.h
 Copyright: __NO_COPYRIGHT_NOR_LICENSE__
 License:   __NO_COPYRIGHT_NOR_LICENSE__
 
@@ -174,14 +174,14 @@ License:   Apache-2.0
  On Debian systems, the complete text of the Apache License Version 2.0
   can be found in `/usr/share/common-licenses/Apache-2.0'.
 
-Files:     libs/include/asr_cam_isp.h
-           libs/include/asr_isp_comm.h
-Copyright: 2022 ASR Micro Limited
+Files:     libs/include/spm_cam_isp.h
+           libs/include/spm_isp_comm.h
+Copyright: 2023 Spacemit Limited
 License:   __UNKNOWN__
  *****************************************************************************
 
 Files:     sensors/flash/flash_aw36515.h
-Copyright: [2016 - 2017] ASR International Ltd.
+Copyright: 2023 Spacemit International Ltd.
 License:   __UNKNOWN__
  struct CCFlashTuningData
  char name[64];    //name for

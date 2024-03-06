@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include "bufferPool.h"

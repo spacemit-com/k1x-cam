@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -54,20 +54,20 @@ typedef struct {
     int firmwareId;
 } THREAD_INFO;
 
-typedef struct asrVI_BUFFER_INFO {
+typedef struct spmVI_BUFFER_INFO {
     IMAGE_BUFFER_S* buffer;
     uint32_t frameId;
-} asrVI_BUFFER_INFO_S;
+} spmVI_BUFFER_INFO_S;
 
-typedef struct asrISP_BUFFER_INFO {
+typedef struct spmISP_BUFFER_INFO {
     FRAME_INFO_S frameInfo;
     uint32_t frameId;
-} asrISP_BUFFER_INFO_S;
+} spmISP_BUFFER_INFO_S;
 
-typedef struct asrTuning_BUFFER_INFO {
+typedef struct spmTuning_BUFFER_INFO {
     TUNING_BUFFER_S tuningInfo;
     char hasVrf;
-} asrTuning_BUFFER_INFO_S;
+} spmTuning_BUFFER_INFO_S;
 
 struct rawdump_info {
     int width;

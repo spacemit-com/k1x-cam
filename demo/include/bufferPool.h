@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -18,7 +18,7 @@
 #define RAW10_DUMP_SIZE(w, h) ((w / 12 + (w % 12 ? 1 : 0)) * 16 * h)
 #define RAW12_DUMP_SIZE(w, h) ((w / 10 + (w % 10 ? 1 : 0)) * 16 * h)
 
-typedef struct asrBUFFER_POOL_S {
+typedef struct spmBUFFER_POOL_S {
     IMAGE_BUFFER_S bufInfo;
     BUFFER_S mem_block[5];
     LIST_HANDLE buf_list;

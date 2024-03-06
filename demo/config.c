@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include <unistd.h>
@@ -62,8 +62,6 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
     if (!item) {
         CLOG_INFO("get test_frame failed");
         config->testFrame = 0;
-        //ret = -1;
-        //goto out;
     } else
         config->testFrame = cjson_get_int(item);
 
@@ -118,7 +116,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
         snprintf(config->cppConfig[idx].format,
                 sizeof(config->cppConfig[idx].format),
-		"%s",
+                "%s",
                 cjson_get_str(grandc));
 
         grandc = cjson_get_object(child, "src_from_file");
@@ -140,7 +138,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         } else {
             snprintf(config->cppConfig[idx].srcFile,
                     sizeof(config->cppConfig[idx].srcFile),
-		    "%s",
+                    "%s",
                     cjson_get_str(grandc));
         }
 
@@ -237,7 +235,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
             }
             snprintf(config->ispFeConfig[idx].sensorName,
                     sizeof(config->ispFeConfig[idx].sensorName),
-		    "%s",
+                    "%s",
                     cjson_get_str(grandc));
 
             grandc = cjson_get_object(child, "sensor_id");
@@ -272,7 +270,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
             }
             snprintf(config->ispFeConfig[idx].srcFile,
                     sizeof(config->ispFeConfig[idx].srcFile),
-		    "%s",
+                    "%s",
                     cjson_get_str(grandc));
 
             grandc = cjson_get_object(child, "in_width");
@@ -308,7 +306,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
         snprintf(config->ispFeConfig[idx].format,
                 sizeof(config->ispFeConfig[idx].format),
-		"%s",
+                "%s",
                 cjson_get_str(grandc));
 
         grandc = cjson_get_object(child, "out_width");

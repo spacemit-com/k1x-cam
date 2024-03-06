@@ -1,4 +1,4 @@
-# Copyright(c) 2022 ASR Micro Limited
+# Copyright(c) 2023 Spacemit Limited
 # All Rights Reserved.
 
 file(GLOB flash_subdirs LIST_DIRECTORIES true RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "flash/*")

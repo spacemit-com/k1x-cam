@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -10,12 +10,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "asr_comm_cam.h"
-#include "asr_comm_sensors.h"
-#include "asr_isp_sensor_comm.h"
+#include "spm_comm_cam.h"
+#include "spm_comm_sensors.h"
+#include "spm_isp_sensor_comm.h"
 #include "cam_log.h"
 #include "cam_sensor_uapi.h"
-#include "asr_cam_sensors.h"
+#include "spm_cam_sensors.h"
 #include "camera_base.h"
 
 #ifdef __cplusplus

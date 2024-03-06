@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -12,9 +12,9 @@
 extern "C" {
 #endif /* extern "C" */
 
-#include "asr_cam_sensors.h"
-#include "asr_comm_sensors.h"
-#include "asr_isp_sensor_comm.h"
+#include "spm_cam_sensors.h"
+#include "spm_comm_sensors.h"
+#include "spm_isp_sensor_comm.h"
 
 typedef struct {
     int sensorId;

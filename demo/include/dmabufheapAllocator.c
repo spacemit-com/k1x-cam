@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -74,10 +74,7 @@ static int allocBuffer(const char *heap_name, int size, int *buffer_fd, void **v
     buffer->fd = ret;
     buffer->viraddr = addr;
     buffer->size = size;
-    if (strlen(heap_name) < sizeof(buffer->heap_name) + 1)
-        strncpy(buffer->heap_name, heap_name, sizeof(buffer->heap_name));
-    else
-	return -1;
+    strncpy(buffer->heap_name, heap_name, sizeof(buffer->heap_name) - 1);
     gBufferTotalSize += size;
     gBufferSizeHightWaterMark =
         gBufferSizeHightWaterMark > gBufferTotalSize ? gBufferSizeHightWaterMark : gBufferTotalSize;

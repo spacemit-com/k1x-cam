@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include "sensor_common.h"
@@ -29,13 +29,13 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -1;
     }
 
-    ret = ASR_SENSORS_MODULE_Detect(sensors_name, devId);
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
     if (ret) {
         CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
         return ret;
     }
 
-    ret = ASR_SENSORS_MODULE_Init(&handle->sensors_handle, sensors_name, devId, &handle->sensors_module_info);
+    ret = SPM_SENSORS_MODULE_Init(&handle->sensors_handle, sensors_name, devId, &handle->sensors_module_info);
     if (ret) {
         CLOG_ERROR("sensors module %s devId %d init fail", sensors_name, devId);
         return ret;
@@ -52,7 +52,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         CLOG_INFO("sensors module has no sensor");
     }
 
-    ret = ASR_SENSORS_MODULE_EnumCapability(handle->sensors_handle, &handle->sensors_cap);
+    ret = SPM_SENSORS_MODULE_EnumCapability(handle->sensors_handle, &handle->sensors_cap);
     if (ret == 0) {
         CLOG_INFO("sensor config info number %d", handle->sensors_cap.sensor_capability.snr_config_num);
         for (i = 0; i < handle->sensors_cap.sensor_capability.snr_config_num; i++) {
@@ -73,20 +73,20 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -3;
     }
 
-    ret = ASR_SENSOR_Open(handle->sensors_handle);
+    ret = SPM_SENSOR_Open(handle->sensors_handle);
     if (ret) {
         CLOG_ERROR("%s: open sensor failed!", __FUNCTION__);
         return -4;
     }
 
-    ret = ASR_SENSOR_GetOps(handle->sensors_handle, &handle->sensor_ops);
+    ret = SPM_SENSOR_GetOps(handle->sensors_handle, &handle->sensor_ops);
     if (ret) {
         CLOG_ERROR("%s: get ops failed!", __FUNCTION__);
         return -5;
     }
 
     handle->workMode = work_mode;
-    ASR_SENSOR_Config(handle->sensors_handle, handle->workMode);
+    SPM_SENSOR_Config(handle->sensors_handle, handle->workMode);
     handle->devId = devId;
 
     *ppHandle = handle;
@@ -101,8 +101,8 @@ int testSensorDeInit(void* phandle)
         return -1;
     }
 
-    ASR_SENSOR_Close(handle->sensors_handle);
-    ASR_SENSORS_MODULE_Deinit(handle->sensors_handle);
+    SPM_SENSOR_Close(handle->sensors_handle);
+    SPM_SENSORS_MODULE_Deinit(handle->sensors_handle);
     free(handle);
 
     return 0;
@@ -115,7 +115,7 @@ int testSensorStart(void* phandle)
         CLOG_ERROR("invalid input para handle %p", handle);
         return -1;
     }
-    ASR_SENSOR_StreamOn(handle->sensors_handle);
+    SPM_SENSOR_StreamOn(handle->sensors_handle);
 
     return 0;
 }
@@ -127,7 +127,7 @@ int testSensorStop(void* phandle)
         CLOG_ERROR("invalid input para handle %p", handle);
         return -1;
     }
-    ASR_SENSOR_StreamOff(handle->sensors_handle);
+    SPM_SENSOR_StreamOff(handle->sensors_handle);
 
     return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include "cam_sensors_module.h"
@@ -10,9 +10,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "asr_cam_sensors.h"
+#include "spm_cam_sensors.h"
 #include "cam_sensors_module_list.h"
-#include "cam_asr_otp_handle.h"
+#include "cam_spm_otp_handle.h"
 
 typedef struct SENSORS_MODULE_CONTEXT {
     int devId;
@@ -168,7 +168,7 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     return ret;
 }
 /**********************************************************************************************/
-CAM_API int ASR_SENSORS_MODULE_Detect(const char* name, int devId)
+CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId)
 {
     int ret = 0;
     int module_id;
@@ -198,7 +198,7 @@ out:
     return ret;
 }
 
-CAM_API int ASR_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info)
+CAM_API int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info)
 {
     int module_id;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -248,7 +248,7 @@ CAM_API int ASR_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId,
     return 0;
 }
 
-CAM_API int ASR_SENSORS_MODULE_Deinit(void* handle)
+CAM_API int SPM_SENSORS_MODULE_Deinit(void* handle)
 {
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
 
@@ -279,7 +279,7 @@ CAM_API int ASR_SENSORS_MODULE_Deinit(void* handle)
     return 0;
 }
 
-CAM_API int ASR_SENSORS_MODULE_EnumCapability(void* handle, SENSORS_MODULE_CAPABILITY_S* cap)
+CAM_API int SPM_SENSORS_MODULE_EnumCapability(void* handle, SENSORS_MODULE_CAPABILITY_S* cap)
 {
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
 
@@ -298,7 +298,7 @@ CAM_API int ASR_SENSORS_MODULE_EnumCapability(void* handle, SENSORS_MODULE_CAPAB
     return 0;
 }
 
-CAM_API int ASR_SENSORS_MODULE_ProcessOTPData(void* handle, SENSOR_OTP_DATA_S* otp_data)
+CAM_API int SPM_SENSORS_MODULE_ProcessOTPData(void* handle, SENSOR_OTP_DATA_S* otp_data)
 {
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     int ret = 0;
@@ -318,17 +318,17 @@ CAM_API int ASR_SENSORS_MODULE_ProcessOTPData(void* handle, SENSOR_OTP_DATA_S* o
         return ret;
 
     //2. process
-    ret = cam_asr_otp_handle_ctx_init(sensors_module_context->devId);
+    ret = cam_spm_otp_handle_ctx_init(sensors_module_context->devId);
     if (ret) {
         return ret;
     }
 
-    ret = cam_asr_otp_handle_ctx_set_lsc_params(otp_data->lsc_profile, OTP_LSC_PROFILE_LEN);
+    ret = cam_spm_otp_handle_ctx_set_lsc_params(otp_data->lsc_profile, OTP_LSC_PROFILE_LEN);
     if (ret) {
         goto Safe_Exit;
     }
 
-    ret = cam_asr_otp_handle_ctx_process_lsc_data(otp_data->lsc_merged_profile[0], LSC_PROFILE_DIMENSION * OTP_LSC_PROFILE_LEN);
+    ret = cam_spm_otp_handle_ctx_process_lsc_data(otp_data->lsc_merged_profile[0], LSC_PROFILE_DIMENSION * OTP_LSC_PROFILE_LEN);
     if (ret)
         goto Safe_Exit;
 
@@ -341,12 +341,12 @@ CAM_API int ASR_SENSORS_MODULE_ProcessOTPData(void* handle, SENSOR_OTP_DATA_S* o
 
     CLOG_INFO("sensor%d merge otp data successful.", sensors_module_context->devId);
 Safe_Exit:
-    cam_asr_otp_handle_ctx_deinit();
+    cam_spm_otp_handle_ctx_deinit();
     return ret;
 }
 
 /*sensor*/
-CAM_API int ASR_SENSOR_Open(void* handle)
+CAM_API int SPM_SENSOR_Open(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -367,7 +367,7 @@ CAM_API int ASR_SENSOR_Open(void* handle)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_Close(void* handle)
+CAM_API int SPM_SENSOR_Close(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -388,7 +388,7 @@ CAM_API int ASR_SENSOR_Close(void* handle)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_Config(void* handle, int32_t work_mode)
+CAM_API int SPM_SENSOR_Config(void* handle, int32_t work_mode)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -416,7 +416,7 @@ CAM_API int ASR_SENSOR_Config(void* handle, int32_t work_mode)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_setTestPatternMode(void* handle, int test_pattern_mode)
+CAM_API int SPM_SENSOR_setTestPatternMode(void* handle, int test_pattern_mode)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -428,7 +428,7 @@ CAM_API int ASR_SENSOR_setTestPatternMode(void* handle, int test_pattern_mode)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_SetParam(void* handle, const SENSOR_INIT_ATTR_S* sensor_init_attr)
+CAM_API int SPM_SENSOR_SetParam(void* handle, const SENSOR_INIT_ATTR_S* sensor_init_attr)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -445,7 +445,7 @@ CAM_API int ASR_SENSOR_SetParam(void* handle, const SENSOR_INIT_ATTR_S* sensor_i
     return ret;
 }
 
-CAM_API int ASR_SENSOR_StreamOn(void* handle)
+CAM_API int SPM_SENSOR_StreamOn(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -461,7 +461,7 @@ CAM_API int ASR_SENSOR_StreamOn(void* handle)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_StreamOff(void* handle)
+CAM_API int SPM_SENSOR_StreamOff(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -478,7 +478,7 @@ CAM_API int ASR_SENSOR_StreamOff(void* handle)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_GetOps(void* handle, ISP_SENSOR_REGISTER_S* ops)
+CAM_API int SPM_SENSOR_GetOps(void* handle, ISP_SENSOR_REGISTER_S* ops)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -497,7 +497,7 @@ CAM_API int ASR_SENSOR_GetOps(void* handle, ISP_SENSOR_REGISTER_S* ops)
     return ret;
 }
 
-CAM_API int ASR_SENSOR_ReadReg(void* handle, uint16_t regAddr, uint16_t* value)
+CAM_API int SPM_SENSOR_ReadReg(void* handle, uint16_t regAddr, uint16_t* value)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -515,7 +515,7 @@ CAM_API int ASR_SENSOR_ReadReg(void* handle, uint16_t regAddr, uint16_t* value)
     return ret;
 }
 
-CAM_API int ASR_VCM_Open(void* handle)
+CAM_API int SPM_VCM_Open(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -538,7 +538,7 @@ CAM_API int ASR_VCM_Open(void* handle)
     return ret;
 }
 
-CAM_API int ASR_VCM_Close(void* handle)
+CAM_API int SPM_VCM_Close(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -559,7 +559,7 @@ CAM_API int ASR_VCM_Close(void* handle)
     return ret;
 }
 
-CAM_API int ASR_VCM_GetOps(void* handle, ISP_AF_MOTOR_REGISTER_S* ops)
+CAM_API int SPM_VCM_GetOps(void* handle, ISP_AF_MOTOR_REGISTER_S* ops)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -577,7 +577,7 @@ CAM_API int ASR_VCM_GetOps(void* handle, ISP_AF_MOTOR_REGISTER_S* ops)
 
     return ret;
 }
-CAM_API int ASR_FLASH_Open(void* handle)
+CAM_API int SPM_FLASH_Open(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -600,7 +600,7 @@ CAM_API int ASR_FLASH_Open(void* handle)
     return ret;
 }
 
-CAM_API int ASR_FLASH_Close(void* handle)
+CAM_API int SPM_FLASH_Close(void* handle)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -621,7 +621,7 @@ CAM_API int ASR_FLASH_Close(void* handle)
     return ret;
 }
 
-CAM_API int ASR_FLASH_SetMode(void* handle, int mode)
+CAM_API int SPM_FLASH_SetMode(void* handle, int mode)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -639,7 +639,7 @@ CAM_API int ASR_FLASH_SetMode(void* handle, int mode)
     return ret;
 }
 
-CAM_API int ASR_GetDeviceInfo(void* handle, void* devCapInfo)
+CAM_API int SPM_GetDeviceInfo(void* handle, void* devCapInfo)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 
@@ -40,19 +40,19 @@ extern "C" {
 #define IMAGE_BUFFER_MAX_PLANES 4
 #define DWT_MAX_PLANES          2
 
-typedef struct asrSIZE_S {
+typedef struct spmSIZE_S {
     uint32_t width;
     uint32_t height;
 } SIZE_S;
 
-typedef struct asrRECT_S {
+typedef struct spmRECT_S {
     int32_t x;
     int32_t y;
     uint32_t width;
     uint32_t height;
 } RECT_S;
 
-typedef enum asrPIXEL_FORMAT_E {
+typedef enum spmPIXEL_FORMAT_E {
     PIXEL_FORMAT_NV12,
     PIXEL_FORMAT_NV12_DWT,
     PIXEL_FORMAT_FBC,
@@ -74,7 +74,7 @@ typedef enum asrPIXEL_FORMAT_E {
     PIXEL_FORMAT_MAX,
 } PIXEL_FORMAT_E;
 
-typedef struct asrIMAGE_BUFFER_PLANE_S {
+typedef struct spmIMAGE_BUFFER_PLANE_S {
     uint32_t width;
     uint32_t height;
     uint32_t stride;
@@ -85,7 +85,7 @@ typedef struct asrIMAGE_BUFFER_PLANE_S {
     int fd;
 } IMAGE_BUFFER_PLANE_S;
 
-typedef struct asrIMAGE_BUFFER_S {
+typedef struct spmIMAGE_BUFFER_S {
     SIZE_S size;
     PIXEL_FORMAT_E format;
     uint32_t numPlanes;
@@ -102,7 +102,7 @@ typedef struct asrIMAGE_BUFFER_S {
     } m;
 } IMAGE_BUFFER_S;
 
-typedef enum asrTOUCH_TAG {
+typedef enum spmTOUCH_TAG {
     CC_ISP_TOUCH_TAG_IDLE = 0,
     CC_ISP_TOUCH_TAG_TOUCH_AE_NO_FLASH,
     CC_ISP_TOUCH_TAG_TOUCH_AF_NO_FLASH,
@@ -116,7 +116,7 @@ typedef enum asrTOUCH_TAG {
 #define CC_MAX_FACE_COUNT 10
 #endif
 
-typedef struct asrFRAME_INFO {
+typedef struct spmFRAME_INFO {
     // fill by isp sdk
     int frameId;
     int imageTGain;     // Q8

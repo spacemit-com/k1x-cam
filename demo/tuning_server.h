@@ -1,7 +1,7 @@
 #ifndef __TUNING_SERVE_H
 #define __TUNING_SERVE_H
 
-#include "asr_cam_tuning_assistant.h"
+#include "spm_cam_tuning_assistant.h"
 
 enum tuning_objs_index {
     TUNING_OBJS_ISP0 = 0,

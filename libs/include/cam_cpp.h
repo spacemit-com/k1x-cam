@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #ifndef __CAM_CPP_H__
@@ -20,7 +20,7 @@ extern "C" {
 #define CPP_MAX_IMAGE_WIDTH  (4224)
 #define CPP_MAX_IMAGE_HEIGHT (3136)
 
-typedef struct asrMPP_CHN_S {
+typedef struct spmMPP_CHN_S {
     int32_t modId;
     int32_t devId;
     int32_t chnId;
@@ -34,7 +34,7 @@ typedef enum {
     CPP_GRP_MODE_MAX,
 } CPP_GRP_WORKMODE_E;
 
-typedef struct asrCPP_GRP_ATTR_S {
+typedef struct spmCPP_GRP_ATTR_S {
     uint32_t width;
     uint32_t height;
     PIXEL_FORMAT_E format;

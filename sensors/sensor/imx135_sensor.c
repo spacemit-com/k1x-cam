@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 ASR Micro Limited
+ * Copyright (C) 2023 Spacemit Limited
  * All Rights Reserved.
  */
 #include <assert.h>
@@ -9,7 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "asr_comm_cam.h"
+#include "spm_comm_cam.h"
 #include "cam_sensor.h"
 
 #define SENSOR_MAGIC 0x1355B5
@@ -487,6 +487,7 @@ static int imx135_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
+//	printf("exp time: %d us, L:%d\n", u32ExpoTime, expLine);
 
     return 0;
 }
@@ -503,10 +504,12 @@ static int imx135_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
+	uint32_t tval = *pAgainVal;
+
     pthread_mutex_lock(&sensor_context->apiLock);
-    if (*pAgainVal < 0x0100) //Q8 1x
+    if (*pAgainVal < 0x0100) //Q8 1x (265 is 1x)
         AGain_Reg = 0x0;
-    else if (*pAgainVal > 0x1000) //16x
+    else if (*pAgainVal > 0x1000) //16x (256x16 is 16x)
         AGain_Reg = 0x00F0;
     else //Gain_an = 256 / (256 - reg);  reg: 0~240
         AGain_Reg = ((*pAgainVal - 256) * 256 ) / *pAgainVal;
@@ -529,7 +532,7 @@ static int imx135_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     *pAgainVal = (0x0100 * 256) / (256 - AGain_Reg);  // Q8
     *pDgainVal = DGain_Reg << 4;  // Q8 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
-
+//printf("again: %x (%x), dgain: %x\n", *pAgainVal, tval, *pDgainVal);
     return ret;
 }
 
@@ -552,7 +555,7 @@ static int imx135_get_aelib_default_settings(void* snsHandle, uint32_t u32Chanel
         if (0 == u32ChanelId)
             *ppstAeLibDefault = NULL;
 
-        /* asr aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
+        /* spm aelib needn't set setting for pipe1(short exposure),because setting of short exposure has already existed
          * in pipe0, perhaps you can set the same value of pipe0 to pipe1.
          */
     } else {
@@ -721,6 +724,55 @@ static int imx135_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
         ret = imx135_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
     }
 
+#if 0	//read sensor reg setting
+
+    fprintf(stderr, "-----------------start read sensor reg----------------\n");
+    int i;
+    struct regval_tab* sensor_table = NULL;
+
+    sensor_table = (struct regval_tab*)calloc(sensor_context->work_info.setting_table_size, sizeof(struct regval_tab));
+    if (NULL == sensor_table) {
+        CLOG_ERROR("sensor_table malloc memory failed!");
+        ret = -ENOMEM;
+        goto out;
+    }
+    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
+        sensor_table[i].reg = sensor_context->work_info.setting_table[i].reg;
+        sensor_table[i].val = 0;
+    }
+
+    struct cam_burst_i2c_data reg_table_data;
+    reg_table_data.addr = sensor_context->i2c_addr;
+    reg_table_data.reg_len = imx135_reg_addr_byte;
+    reg_table_data.val_len = imx135_reg_data_byte;
+    reg_table_data.tab = sensor_table;
+    reg_table_data.num = sensor_context->work_info.setting_table_size;
+    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
+    if (ret) {
+        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
+        goto out;
+    }
+
+    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
+        if ((sensor_table[i].reg != sensor_context->work_info.setting_table[i].reg)
+            || (sensor_table[i].val != sensor_context->work_info.setting_table[i].val)) {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
+                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
+        } else if ((sensor_table[i].reg == sensor_context->work_info.setting_table[i].reg)
+            || (sensor_table[i].val == sensor_context->work_info.setting_table[i].val)) {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
+                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
+        } else {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
+                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
+        }
+    }
+	free(sensor_table);
+
+	fprintf(stderr, "-----------------finish read sensor reg----------------\n");
+
+#endif
+
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
@@ -757,6 +809,51 @@ static int imx135_stream_on(void* handle)
         imx135_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
+#if 0	//read sensor reg setting
+
+    fprintf(stderr, "-----------------start read sensor reg----------------\n");
+    int iii;
+    struct regval_tab* sensor_table = NULL;
+    sensor_table = (struct regval_tab*)calloc(sensor_context->sensorRegs[0].u32RegNum, sizeof(struct regval_tab));
+    if (NULL == sensor_table) {
+        CLOG_ERROR("sensor_table malloc memory failed!");
+        ret = -ENOMEM;
+    }
+    for (iii = 0; iii < sensor_context->sensorRegs[0].u32RegNum; iii++) {
+        sensor_table[iii].reg = sensor_context->sensorRegs[0].astI2cData[iii].u32RegAddr;
+        sensor_table[iii].val = 0;
+    }
+
+    struct cam_burst_i2c_data reg_table_data;
+    reg_table_data.addr = sensor_context->i2c_addr;
+    reg_table_data.reg_len = imx135_reg_addr_byte;
+    reg_table_data.val_len = imx135_reg_data_byte;
+    reg_table_data.tab = sensor_table;
+    reg_table_data.num = sensor_context->sensorRegs[0].u32RegNum;
+    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
+    if (ret) {
+        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
+    }
+
+    for (iii = 0; iii < sensor_context->sensorRegs[0].u32RegNum; iii++) {
+        if ((sensor_table[iii].reg != sensor_context->sensorRegs[0].astI2cData[iii].u32RegAddr)
+            || (sensor_table[iii].val != sensor_context->sensorRegs[0].astI2cData[iii].u32Data)) {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
+            sensor_table[iii].reg, sensor_table[iii].val,sensor_context->sensorRegs[0].astI2cData[iii].u32RegAddr,sensor_context->sensorRegs[0].astI2cData[iii].u32Data);
+        } else if ((sensor_table[iii].reg == sensor_context->work_info.setting_table[iii].reg)
+            || (sensor_table[iii].val == sensor_context->work_info.setting_table[iii].val)) {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
+            sensor_table[iii].reg, sensor_table[iii].val,sensor_context->sensorRegs[0].astI2cData[iii].u32RegAddr,sensor_context->sensorRegs[0].astI2cData[iii].u32Data);
+        } else {
+            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
+            sensor_table[iii].reg, sensor_table[iii].val,sensor_context->sensorRegs[0].astI2cData[iii].u32RegAddr,sensor_context->sensorRegs[0].astI2cData[iii].u32Data);
+        }
+    }
+    free(sensor_table);
+    fprintf(stderr, "-----------------finish read sensor reg----------------\n");
+
+#endif
+
     ret = imx135_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
 
     sensor_context->stream_on_flag = 1;

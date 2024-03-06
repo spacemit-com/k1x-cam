@@ -22,14 +22,15 @@ target_link_libraries(sdkcam PUBLIC isp cpp vi cam_sensors tuningtools ispeagle 
 install(TARGETS sdkcam LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 set(SRC_LIST ./main.c)
-add_executable(sdkTest ${SRC_LIST})
-target_link_directories(sdkTest PRIVATE ./ ../libs/lib64/)
-target_link_libraries(sdkTest PUBLIC sdkcam isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
+add_executable(cam-test ${SRC_LIST})
+#target_link_directories(cam-test PRIVATE ./ ../libs/lib64/)
+target_link_directories(cam-test PRIVATE ./ ../libs/lib64/ /usr/lib/)
+target_link_libraries(cam-test PUBLIC sdkcam isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
 
-target_compile_options(sdkTest PRIVATE -lstdc++;-Wall;-Wno-unused;-Werror;-Wno-implicit-fallthrough)
-target_compile_definitions(sdkTest PRIVATE -D_GNU_SOURCE)
+target_compile_options(cam-test PRIVATE -lstdc++;-Wall;-Wno-unused;-Werror;-Wno-implicit-fallthrough)
+target_compile_definitions(cam-test PRIVATE -D_GNU_SOURCE)
 
-install(TARGETS sdkTest RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS cam-test RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install(DIRECTORY ../libs/lib64/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
