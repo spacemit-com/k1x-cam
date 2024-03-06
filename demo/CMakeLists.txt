@@ -23,8 +23,7 @@ install(TARGETS sdkcam LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 set(SRC_LIST ./main.c)
 add_executable(cam-test ${SRC_LIST})
-#target_link_directories(cam-test PRIVATE ./ ../libs/lib64/)
-target_link_directories(cam-test PRIVATE ./ ../libs/lib64/ /usr/lib/)
+target_link_directories(cam-test PRIVATE ./ ../libs/lib64/)
 target_link_libraries(cam-test PUBLIC sdkcam isp cpp vi cam_sensors tuningtools ispeagle cppfw-2.0)
 
 target_compile_options(cam-test PRIVATE -lstdc++;-Wall;-Wno-unused;-Werror;-Wno-implicit-fallthrough)
