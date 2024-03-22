@@ -28,7 +28,7 @@ static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
 static int showFps = 0;
 
-int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*);
+int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*, int);
 
 /****************************************************************/
 static uint64_t get_timestamp(void)
@@ -186,14 +186,14 @@ static void* testThreadFunc(void* param)
                     CLOG_WARNING("frameId mismatch");
                     isp_buffer_info = List_GetBeginItem(isp_out_list[firmwareId]);
                 }
-
                 {
                     IMAGE_BUFFER_S* outputBuf = List_Pop(cpp_out_list[pipelineId]);
                     IMAGE_BUFFER_S* inputBuf = vi_buffer_info->buffer;
                     FRAME_INFO_S* frameInfo = &isp_buffer_info->frameInfo;
                     int32_t frameId = vi_buffer_info->frameId;
+
                     CLOG_DEBUG("cpp_post_buffer inputBuf %p, outputBuf %p, frameId %d, frameInfo %p", inputBuf,
-                               outputBuf, frameId, frameInfo);
+                                outputBuf, frameId, frameInfo);
                     cpp_post_buffer(pipelineId, inputBuf, outputBuf, frameId, frameInfo);
                 }
                 if (isp_buffer_info->frameId <= vi_buffer_info->frameId) {
@@ -340,9 +340,9 @@ static void ProcThreadDeinit(THREAD_INFO* thread)
     condition_deinit(&thread->cond);
 }
 
-void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf)
+void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf, int index)
 {
-    List_Push(cpp_out_list[0], (void*)outputBuf);
+    List_Push(cpp_out_list[0], (void*)&cpp_out_buffer_pool[0]->buffers[index]);
 }
 
 static int preview_cnt[MAX_PIPELINE_NUM] = {0};
@@ -512,7 +512,7 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             if (i == BUFFER_POOL_MAX_SIZE) {
                 CLOG_ERROR("can't find valid vi out buffer");
             }
-            ret = (*gst_get_cpp_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
+            ret = (*gst_get_cpp_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_pool[mppCpp.devId]->buffers[i], i);
             if (ret)
                 return -EINVAL;
             // List_Push(cpp_out_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);

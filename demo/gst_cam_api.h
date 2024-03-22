@@ -125,7 +125,7 @@ typedef struct VRF_INFO {
 struct gstParam {
     char *jsonfile;
 
-    int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*);
+    int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*, int);
     int (*gst_cpp_buf_prepare)(void *, IMAGE_BUFFER_S*);
     void *gst_cpp_buf_prepare_data;
     int sensorInfoId;
@@ -135,7 +135,7 @@ struct gstParam {
     int out_height;
     int out_width;
 };
-void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf);
+void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf, int index);
 
 int gst_setup_camera_start(struct gstParam *para);
 int gst_setup_camera_stop(struct gstParam *para);

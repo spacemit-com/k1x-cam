@@ -1,5 +1,5 @@
 
-//SPM_ISP_Eagle_Firmware_V0.1
+//ASR_ISP_Eagle_Firmware_V0.1
 {
     /* @m_nRevisionNumber  Size: 1x1  BitWidth: 32_u  Range~[0, 262144]  Type: fw_info */
     /* Firmware revision number */

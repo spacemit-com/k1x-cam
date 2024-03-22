@@ -4,11 +4,11 @@
  */
 
 #include "cam_list.h"
-
+#include "cam_log.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <pthread.h>
 /* ------------------------------------------------------------------------ */
 
 #define LIST_MAGIC_ID 0x4C495354
@@ -44,6 +44,7 @@ typedef struct LIST {
     LIST_NODE_S *head;
     LIST_NODE_S *tail;
     const LIST_NODE_S *lastFound;
+    pthread_mutex_t mutex;
 } LIST_S, *LIST_S_PTR;
 
 inline static LIST_S *List_HandleToList(LIST_HANDLE handle)
@@ -81,7 +82,7 @@ LIST_HANDLE List_Create(bool allowRepeatItem)
     MEMORY_ZERO_OBJECT(result);
     result->magicId = LIST_MAGIC_ID;
     result->allowRepeatItem = allowRepeatItem;
-
+    pthread_mutex_init(&result->mutex, NULL);
     return List_ListToHandle(result);
 }
 
@@ -111,8 +112,17 @@ inline ssize_t List_GetSize(LIST_HANDLE handle)
 inline bool List_IsEmpty(LIST_HANDLE handle)
 {
     LIST_S *list = List_HandleToList(handle);
+    bool ret;
 
-    return (list ? (list->size < 1) : true);
+    if (list) {
+        pthread_mutex_lock(&list->mutex);
+        ret = (list->size < 1);
+        pthread_mutex_unlock(&list->mutex);
+    } else {
+        ret = true;
+    }
+
+    return ret;
 }
 
 LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item)
@@ -131,6 +141,7 @@ LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item)
     }
 
     MEMORY_ZERO_OBJECT(result);
+    pthread_mutex_lock(&list->mutex);
     result->item = (void *)item;
     result->list = list;
     result->previous = list->tail;
@@ -145,7 +156,7 @@ LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item)
 
     list->tail = result;
     list->size++;
-
+    pthread_mutex_unlock(&list->mutex);
     return List_NodeToIterator(result);
 }
 
@@ -157,13 +168,13 @@ void *List_Pop(LIST_HANDLE handle)
     if (!list) {
         return NULL;
     }
-
+    pthread_mutex_lock(&list->mutex);
     if (list->head) {
         result = list->head->item;
     }
 
     List_EraseByIterator(List_NodeToIterator(list->head));
-
+    pthread_mutex_unlock(&list->mutex);
     return result;
 }
 
