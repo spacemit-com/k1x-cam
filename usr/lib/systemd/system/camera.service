@@ -16,6 +16,7 @@ Description=camera service
 Type=oneshot
 EnvironmentFile=/etc/init.d/camera.sh
 ExecStart=/etc/init.d/camera.sh
+ExecStartPost=/bin/udevadm control --reload-rules
 RemainAfterExit=yes
 
 [Install]
