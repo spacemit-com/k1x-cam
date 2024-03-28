@@ -23,5 +23,13 @@ for node in $isp_pipe_nodes; do
     chmod 777 $node
 done
 
+video_nodes=$(find /dev/ -name "video*")
+
+for node in $video_nodes; do
+    chmod 666 $node
+done
+
+udevadm control --reload-rules
+
 chmod 666 /dev/dma_heap/system
 
