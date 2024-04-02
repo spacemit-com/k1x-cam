@@ -168,8 +168,8 @@ static int imx135_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
 
     switch (work_mode) {
         case IMX135_SPM_4208x3120_10bit_LINEAR_30_4LANE: {
-            snr_info->linetime = IMX135_LINETIME_13M30_10bit_LINEAR;  // ns
-            snr_info->vts = IMX135_VMAX_13M30_10bit_LINEAR;	//Tline = hts/pclk
+            snr_info->linetime = IMX135_LINETIME_13M30_10bit_LINEAR;  // ns, Tline = hts/pclk
+            snr_info->vts = IMX135_VMAX_13M30_10bit_LINEAR;
             snr_info->f32maxFps = 30;
             snr_info->exp_time[0] = 0xc10 * snr_info->linetime / 1000;	//export time (us) = vts (<=vts) x Tline
             snr_info->again[0] = 1 * 0x100;   // Q8 format

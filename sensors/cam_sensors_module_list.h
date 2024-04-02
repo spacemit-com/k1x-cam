@@ -21,6 +21,7 @@ extern SENSOR_OBJ_S imx135Obj;
 extern SENSOR_OBJ_S s5k5e3yxObj;
 extern SENSOR_OBJ_S gc2375hObj;
 extern SENSOR_OBJ_S ov16a10Obj;
+extern SENSOR_OBJ_S sc031Obj;
 
 /*module*/
 extern MODULE_OBJ_S os05a10_spm_Obj;
@@ -31,6 +32,7 @@ extern MODULE_OBJ_S imx135_spm_Obj;
 extern MODULE_OBJ_S s5k5e3yx_spm_Obj;
 extern MODULE_OBJ_S gc2375h_spm_Obj;
 extern MODULE_OBJ_S ov16a10_spm_Obj;
+extern MODULE_OBJ_S sc031_spm_Obj;
 
 /*vcm*/
 extern VCM_OBJ_S gt9772VcmObj;
@@ -57,6 +59,7 @@ SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&s5k5e3yx_spm_Obj, &s5k5e3yxObj, NULL, NULL},
     {&gc2375h_spm_Obj, &gc2375hObj, NULL, NULL},
     {&ov16a10_spm_Obj, &ov16a10Obj, NULL, NULL},
+    {&sc031_spm_Obj, &sc031Obj, NULL, NULL},
 };
 
 #ifdef __cplusplus

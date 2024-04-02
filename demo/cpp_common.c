@@ -72,6 +72,12 @@ int cpp_post_buffer(int groupId, const IMAGE_BUFFER_S *inputBuf, const IMAGE_BUF
                     FRAME_INFO_S *frameInfo)
 {
     int ret = 0;
+
+    if (outputBuf == NULL) {
+        CLOG_ERROR("%s: outputBuf NULL, return failed -1!", __func__);
+        return -1;
+    }
+
     ret = cam_cpp_post_buffer(groupId, inputBuf, outputBuf, frameInfo);
     if (ret != 0)
         CLOG_ERROR("%s: cam_cpp_post_buffer group %d failed", __func__, groupId);

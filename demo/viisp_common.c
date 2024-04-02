@@ -8,7 +8,7 @@
 
 #include "cam_log.h"
 
-#define EN_ISP_TUNING
+// #define EN_ISP_TUNING
 static const char ispInputFwFile[2][128] = {"/tmp/isp0_input_setting.data", "/tmp/isp1_input_setting.data"};
 static const char ispOutputFwFile[2][128] = {"/tmp/isp0_output_setting.data", "/tmp/isp1_output_setting.data"};
 static const char ispIndividualSettingFile[2][128] = {"/tmp/isp0_cae_setting.data", "/tmp/isp1_cae_setting.data"};
