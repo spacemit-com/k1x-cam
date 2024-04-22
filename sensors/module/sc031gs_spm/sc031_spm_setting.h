@@ -11,9 +11,6 @@
 extern "C" {
 #endif /* extern "C" */
 
-
-
-
 struct regval_tab sc031_spm_640x480_10bit_30fps_tab[] = {
 #if 0
 	{0x0100, 0x00},

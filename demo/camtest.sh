@@ -1,8 +1,8 @@
 #!/bin/sh
 
-dumpdir="/data/vendor_de/camera"
-resDir="/tmp/cam_jindie/dump"
-jsonDir="/tmp/cam_jindie/cfgs"
+dumpdir="/tmp/camera"
+resDir="/root/dump"
+jsonDir="/root/cfgs"
 fPrefix="camtest_"
 fSuffix=".json"
 
@@ -17,7 +17,7 @@ do
     for file in ${files}
     do
         echo "=====test ${file} start====="
-        /tmp/cam_jindie/cam-test ./${file}
+        cam-test ./${file}
         dir=${file#${fPrefix}}
         dir=${dir%${fSuffix}}
         subdir="${resDir}/${i}/${dir}"

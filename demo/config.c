@@ -60,10 +60,23 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
 
     item = cjson_get_object(root, "test_frame");
     if (!item) {
-        CLOG_INFO("get test_frame failed");
-        config->testFrame = 0;
-    } else
+        CLOG_INFO("get test_frame failed, set test_frame: 500, dump_one_frame:250 as default");
+        config->testFrame = 500;
+        config->dumpFrame = 250;
+    } else {
         config->testFrame = cjson_get_int(item);
+        config->testFrame = (config->testFrame < 6) ? 6 : config->testFrame;
+
+        item = cjson_get_object(root, "dump_one_frame");
+        if (!item) {
+            CLOG_INFO("get dump_one_frame failed, set to %d", config->testFrame / 2);
+            config->dumpFrame = config->testFrame / 2;
+        } else {
+            config->dumpFrame = cjson_get_int(item);
+            config->dumpFrame = (config->dumpFrame > config->testFrame - 1) ? config->testFrame - 1 : config->dumpFrame;
+        }
+    }
+    CLOG_INFO("set test_frame: %d, dump_one_frame: %d", config->testFrame, config->dumpFrame);
 
     item = cjson_get_object(root, "cpp_node");
     if (!item) {

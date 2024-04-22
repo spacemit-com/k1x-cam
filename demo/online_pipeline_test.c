@@ -131,7 +131,8 @@ static struct rawdump_info g_rawdump_info[MAX_PIPELINE_NUM] = {0};
 static char path[32] = "/tmp/";
 static char *LayersName[5] = {"L0.nv12", "L1.raw", "L2.raw", "L3.raw", "L4.raw"};
 
-static int testFrame = AUTO_FRAME_NUM;
+static int dumpFrame = AUTO_FRAME_NUM;
+static int testFrame = 2 * AUTO_FRAME_NUM;
 static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
 static int showFps = 0;
@@ -491,7 +492,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     if (testAutoRunFlag[pipelineId]) {
         if (frameId == testFrame)
             condition_post(&testAutoRunCond[pipelineId]);
-        if (frameId == testFrame/2) {
+        if (frameId == dumpFrame) {
             outputDumpFlag[pipelineId] = 1;
             buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
             viisp_vi_queueBuffer(nChn + VIU_MAX_CHN_NUM, buffer);
@@ -1460,10 +1461,11 @@ int single_pipeline_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+
     if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
@@ -1689,10 +1691,11 @@ int dual_pipeline_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+
     if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipeline0Id] = 1;
         testAutoRunFlag[pipeline1Id] = 1;
@@ -1849,9 +1852,8 @@ int only_viisp_online_test(struct testConfig *config)
         showFps = 1;
 
     if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+        dumpFrame = config->dumpFrame;
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
@@ -2086,7 +2088,7 @@ static int32_t single_preview_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S *
         CLOG_INFO("frame(%u) done timeStamp(%lu)\n", frameId, timeStamp);
 
     if (testAutoRunFlag[nChn] == 1) {
-        if (frameId == testFrame/2)
+        if (frameId == dumpFrame)
             outputDumpFlag[nChn] = 1;
         if (frameId == testFrame)
             condition_post(&testAutoRunCond[nChn]);
@@ -2166,10 +2168,11 @@ int only_viisp_offline_preview_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+
     if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
@@ -2281,10 +2284,11 @@ int only_rawdump_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+
     if (config->autoRun) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
@@ -2527,9 +2531,9 @@ int only_cpp_test(struct testConfig *config)
     if (!config)
         return -1;
 
-    if (config->testFrame)
-        testFrame = config->testFrame;
-    CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+    // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
     inImgInfo.width = config->cppConfig[pipelineId].width;
     inImgInfo.height = config->cppConfig[pipelineId].height;

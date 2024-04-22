@@ -67,7 +67,9 @@ static IMAGE_BUFFER_S frameInfoCaptureBuf;
 static int captureFrameId;
 static int testAutoRunFlag = {0};
 static struct condition testAutoRunCond;
-static int testFrame = AUTO_FRAME_NUM;
+static int dumpFrame = AUTO_FRAME_NUM;
+static int testFrame = 2 * AUTO_FRAME_NUM;
+
 /****************************************************************/
 static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
 {
@@ -293,7 +295,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
             vi_buffer_info->frameId = frameId;
             List_Push(vi_out_list, (void*)vi_buffer_info);
         }
-        if (frameId == testFrame/2) {
+        if (frameId == dumpFrame) {
             outputDumpFlag = 1;
             takePictureFlag = 1;
             viisp_vi_queueBuffer(2, &vi_rawdump_buffer_capture_pool->buffers[0]);
@@ -682,10 +684,11 @@ int dual_pipeline_capture_test(struct testConfig *config)
     outputDumpFlag = 0;
     takePictureFlag = 0;
 
+    testFrame =  config->testFrame;
+    dumpFrame = config->dumpFrame;
+
     if (config->autoRun == 1) {
-        if (config->testFrame)
-            testFrame = config->testFrame;
-        CLOG_INFO("sensor config parse, testFrame:%d, ", config->testFrame);
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag = 1;
         condition_init(&testAutoRunCond);

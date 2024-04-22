@@ -54,6 +54,7 @@ struct testConfig {
     int showFps;
     int autoRun;
     int testFrame;
+    int dumpFrame;
     struct cppTestConfig cppConfig[2];
     struct isFeTestConfig ispFeConfig[2];
 };
