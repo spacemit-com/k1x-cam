@@ -404,7 +404,7 @@ static void* testThreadFunc_viisp(void* param)
                     get_suffix(inputBuf->format, suffix, sizeof(suffix));
                     if (frameId % 100 == 0)
                         CLOG_INFO("get viisp buffer, frameId %d, format: %d", frameId, inputBuf->format);
-                    if (outputDumpFlag[firmwareId]) {
+                    if (outputDumpFlag[firmwareId] || frameId == dumpFrame) {
                         snprintf(fileName, sizeof(fileName), "%svi%d_output_%dx%d_s%d%s", path, firmwareId,
                                 inputBuf->planes[0].width, inputBuf->planes[0].height, inputBuf->planes[0].stride,
                                 suffix);
@@ -904,7 +904,8 @@ static int32_t vi_rawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_r
     CLOG_INFO("VI chn %d rawdump buffer frameId %d, buffer %p, closeDown: %d",
               nChn, frameId, buffer->planes[0].virAddr, vi_rawdump_buffer->bCloseDown);
 
-    if (buffer->planes[0].virAddr == vi_rawdump_buffer_pool[pipelineId]->buffers[0].planes[0].virAddr) {
+    tmpdump = 0;
+    if (buffer->planes[0].virAddr == vi_rawdump_buffer_pool[pipelineId]->buffers[0].planes[0].virAddr && tmpdump) {
         snprintf(fileName, sizeof(fileName), "%sraw_output%d_%dx%d.raw", path, pipelineId, buffer->size.width,
                  buffer->size.height);
         raw_buffer_save(buffer, fileName);
@@ -1851,8 +1852,10 @@ int only_viisp_online_test(struct testConfig *config)
     if (config->showFps)
         showFps = 1;
 
+    dumpFrame = config->dumpFrame;
+    testFrame = config->testFrame;
+
     if (config->autoRun) {
-        dumpFrame = config->dumpFrame;
         // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
 
         testAutoRunFlag[pipelineId] = 1;
