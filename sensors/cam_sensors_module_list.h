@@ -18,6 +18,7 @@ extern SENSOR_OBJ_S ov13b10Obj;
 extern SENSOR_OBJ_S ov08d10Obj;
 extern SENSOR_OBJ_S gc5035Obj;
 extern SENSOR_OBJ_S imx135Obj;
+extern SENSOR_OBJ_S imx219Obj;
 extern SENSOR_OBJ_S s5k5e3yxObj;
 extern SENSOR_OBJ_S gc2375hObj;
 extern SENSOR_OBJ_S ov16a10Obj;
@@ -30,6 +31,7 @@ extern MODULE_OBJ_S ov13b10_spm_Obj;
 extern MODULE_OBJ_S ov08d10_spm_Obj;
 extern MODULE_OBJ_S gc5035_spm_Obj;
 extern MODULE_OBJ_S imx135_spm_Obj;
+extern MODULE_OBJ_S imx219_spm_Obj;
 extern MODULE_OBJ_S s5k5e3yx_spm_Obj;
 extern MODULE_OBJ_S gc2375h_spm_Obj;
 extern MODULE_OBJ_S ov16a10_spm_Obj;
@@ -58,6 +60,7 @@ SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&ov08d10_spm_Obj, &ov08d10Obj, NULL, NULL},
     {&gc5035_spm_Obj, &gc5035Obj, NULL, NULL},
     {&imx135_spm_Obj, &imx135Obj, &dw9714VcmObj, &aw36515FlashObj},
+    {&imx219_spm_Obj, &imx219Obj, NULL, NULL},
     {&s5k5e3yx_spm_Obj, &s5k5e3yxObj, NULL, NULL},
     {&gc2375h_spm_Obj, &gc2375hObj, NULL, NULL},
     {&ov16a10_spm_Obj, &ov16a10Obj, NULL, NULL},

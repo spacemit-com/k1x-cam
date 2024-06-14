@@ -12,14 +12,14 @@ extern "C" {
 #endif /* extern "C" */
 
 struct regval_tab ov8856_spm_2560x1440_10bit_30fps_tab[] = {
-    //@@3840x2160  30fps 1200Mbps/lane
+    //@@2560x1440 30fps 1200Mbps/lane
     // MCLK: 24Mhz
-    // resolution: 3840x2160
+    // resolution: 2560x1440
     // Mipi : 4 lane
     // Mipi data rate: 360Mbps/Lane (hts x vts x fps x 10bit / 4)
     // FPS      :30fps
-    // HTS      :1932(380c:380d)
-    // VTS      :2482(380e:380f)
+    // HTS      :1932 -> 0x78c(380c:380d)
+    // VTS      :2482 -> 0x9b2(380e:380f)
     // PCLK/system clk     :143856720HZ
     // Htime=htsx1/pclk= 13.430 us; Vblank= ? ms
     {0x0100, 0x43},

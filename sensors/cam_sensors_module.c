@@ -139,7 +139,7 @@ static int sensors_module_find_obj(const char* name)
         }
     }
 
-    CLOG_ERROR("don't find matched sensors module %s in sensors_module_list", name);
+    CLOG_ERROR("don't find matched sensors module %s in sensors_module_list (%d)", name, module_num);
     return -1;
 }
 
