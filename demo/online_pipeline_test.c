@@ -1385,6 +1385,20 @@ static int test_buffer_only_cpp_deInit(int pipelineId)
     return 0;
 }
 
+int detect_camera(char* sensors_name, int devId)
+{
+    int ret = 0;
+
+    CLOG_INFO("start detect sensor %s devId %d", sensors_name, devId);
+
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
+    if (ret) {
+        CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
+        return ret;
+    }
+
+    return 0;
+}
 /************************************************************************************************/
 int single_pipeline_online_test(struct testConfig *config)
 {

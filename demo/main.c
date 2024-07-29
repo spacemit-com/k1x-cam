@@ -63,6 +63,10 @@ int main(int argc, char* argv[])
     struct testConfig config = {0};
     int ret = 0;
 
+    if (argc == 3) {
+        return detect_camera(argv[1], atoi(argv[2]));
+    }
+
     if (argc == 2) {
         ret = getTestConfig(&config, argv[1]);
     } else {

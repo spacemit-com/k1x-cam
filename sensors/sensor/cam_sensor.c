@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-static int snsdev_fd[CAM_SNS_MAX_DEV_NUM] = {};
+static int snsdev_fd[CAM_SNS_MAX_DEV_NUM] = {-1, -1, -1};
 
 int sensor_hw_init(int sns_id)
 {
@@ -47,7 +47,7 @@ int sensor_hw_exit(int sns_id)
 
     if (snsdev_fd[sns_id] > 0)
         close(snsdev_fd[sns_id]);
-    snsdev_fd[sns_id] = 0;
+    snsdev_fd[sns_id] = -1;
 
     return ret;
 }
@@ -61,7 +61,7 @@ int sensor_hw_unreset(int sns_id)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -84,7 +84,7 @@ int sensor_hw_reset(int sns_id)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -106,7 +106,7 @@ int sensor_set_power_voltage(int sns_id, uint8_t regulator_id, uint32_t voltage)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -131,7 +131,7 @@ int sensor_set_power_on(int sns_id, uint8_t regulator_id, uint8_t on)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -156,7 +156,7 @@ int sensor_set_gpio_enable(int sns_id, uint8_t gpio_id, uint8_t enable)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -181,7 +181,7 @@ int sensor_set_mclk_rate(int sns_id, uint32_t clk_rate)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -204,7 +204,7 @@ int sensor_set_mclk_enable(int sns_id, uint32_t clk_enable)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -227,7 +227,7 @@ int sensor_write_register(int sns_id, struct cam_i2c_data* data)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -249,7 +249,7 @@ int sensor_read_register(int sns_id, struct cam_i2c_data* data)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -271,7 +271,7 @@ int sensor_write_burst_register(int sns_id, struct cam_burst_i2c_data* data)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -293,7 +293,7 @@ int sensor_read_burst_register(int sns_id, struct cam_burst_i2c_data* data)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -315,7 +315,7 @@ int sensor_mipi_clock_set(unsigned int sns_id, unsigned int mipi_clock)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }
@@ -342,7 +342,7 @@ int sensor_get_hw_info(int sns_id, struct cam_sensor_info* info)
         CLOG_ERROR("sns_id %d is invalid, max sensor number %d\n", sns_id, CAM_SNS_MAX_DEV_NUM);
         return -EINVAL;
     }
-    if (snsdev_fd[sns_id] == 0) {
+    if (snsdev_fd[sns_id] < 0) {
         CLOG_ERROR("sensor%d not opened, please init sensor first", sns_id);
         return -EPERM;
     }

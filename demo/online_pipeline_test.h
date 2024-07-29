@@ -18,6 +18,7 @@ int only_rawdump_test(struct testConfig *config);
 int only_viisp_online_test(struct testConfig *config);
 int only_viisp_offline_preview_test(struct testConfig *config);
 int only_cpp_test(struct testConfig *config);
+int detect_camera(char* sensors_name, int devId);
 
 #ifdef __cplusplus
 }
