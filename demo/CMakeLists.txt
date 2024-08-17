@@ -3,12 +3,14 @@ aux_source_directory(utils SDKTEST_SRC_FILE)
 aux_source_directory(include SDKTEST_SRC_FILE)
 aux_source_directory(include/dmabufheap SDKTEST_SRC_FILE)
 aux_source_directory(extern SDKTEST_SRC_FILE)
+aux_source_directory(gst_api SDKTEST_SRC_FILE)
 
 include_directories(./)
 include_directories(./include)
 include_directories(./include/dmabufheap)
 include_directories(./utils)
 include_directories(./extern)
+include_directories(./gst_api/)
 include_directories(../libs/include)
 
 message("test ------------------- ${CMAKE_INSTALL_PREFIX}, ${PROJECT_SOURCE_DIR}, ${CMAKE_BINARY_DIR} ")
@@ -51,7 +53,6 @@ install(DIRECTORY ../sensors/include/
         FILES_MATCHING PATTERN "*.h"
         )
 
-
 install(DIRECTORY ./include/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         FILES_MATCHING PATTERN "*.h"
@@ -68,7 +69,10 @@ install(DIRECTORY ./extern/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         FILES_MATCHING PATTERN "*.h"
         )
-
+install(DIRECTORY ./gst_api/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
 CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pkgconfig/k1x-cam.pc.cmake"
         "${CMAKE_BINARY_DIR}/k1x-cam.pc" @ONLY)
 

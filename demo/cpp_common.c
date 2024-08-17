@@ -22,7 +22,10 @@ int cpp_init(int groupId, IMAGE_INFO_S config, CppCallback callback)
     attr.width = config.width;
     attr.height = config.height;
     attr.format = config.format;
-    attr.mode = (attr.width > 1920) ? CPP_GRP_SLICE_MODE : CPP_GRP_FRAME_MODE;
+    // attr.mode = (attr.width > 1920) ? CPP_GRP_SLICE_MODE : CPP_GRP_FRAME_MODE;
+    attr.mode = CPP_GRP_FRAME_MODE;
+
+    CLOG_INFO("cpp attr.mode is %d\n", attr.mode);
     ret = cam_cpp_set_grp_attr(groupId, &attr);
     if (ret < 0) {
         CLOG_ERROR("cam_cpp_set_grp_attr %d failed, %dx%d@%d", groupId, attr.width, attr.height, attr.format);

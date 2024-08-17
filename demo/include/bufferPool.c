@@ -12,7 +12,7 @@
 
 #define ALIGN_N(x, n) (((x) + (n)-1) & (~((n)-1)))
 
-static uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
+uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
 {
     bool has_dwt = false;
     uint32_t buffer_size = 0;
@@ -239,8 +239,8 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     IMAGE_BUFFER_S *buffer = NULL;
     IMAGE_BUFFER_PLANE_S *planes = NULL;
 
-    if (buffer_count > 5) {
-        CLOG_ERROR("pool(%s) buffer count(%u) could not be larger than %u\n", pool->name, buffer_count, 5);
+    if (buffer_count > BUFFER_POOL_MAX_SIZE) {
+        CLOG_ERROR("pool(%s) buffer count(%u) could not be larger than %u\n", pool->name, buffer_count, BUFFER_POOL_MAX_SIZE);
         return -1;
     }
 

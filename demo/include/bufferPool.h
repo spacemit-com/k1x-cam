@@ -20,7 +20,7 @@
 
 typedef struct spmBUFFER_POOL_S {
     IMAGE_BUFFER_S bufInfo;
-    BUFFER_S mem_block[5];
+    BUFFER_S mem_block[BUFFER_POOL_MAX_SIZE];
     LIST_HANDLE buf_list;
     IMAGE_BUFFER_S buffers[BUFFER_POOL_MAX_SIZE];
     uint32_t size;
@@ -35,6 +35,7 @@ void buffer_pool_free(BUFFER_POOL *pool);
 IMAGE_BUFFER_S *buffer_pool_get_buffer(BUFFER_POOL *pool);
 void buffer_pool_put_buffer(BUFFER_POOL *pool, IMAGE_BUFFER_S *buffer);
 int buffer_pool_invlide_cache(BUFFER_POOL *pool, IMAGE_BUFFER_S *imageBuffer);
+uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align);
 
 int frameinfo_buffer_alloc(IMAGE_BUFFER_S *frameInfoBuf);
 int frameinfo_buffer_free(IMAGE_BUFFER_S *frameInfoBuf);

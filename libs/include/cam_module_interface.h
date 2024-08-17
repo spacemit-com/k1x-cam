@@ -95,6 +95,7 @@ typedef struct spmIMAGE_BUFFER_S {
     IMAGE_BUFFER_PLANE_S dwt3[DWT_MAX_PLANES];
     IMAGE_BUFFER_PLANE_S dwt4[DWT_MAX_PLANES];
     uint32_t type;
+    double viT1;
     union {
         uint64_t phyAddr;
         int32_t blockId;

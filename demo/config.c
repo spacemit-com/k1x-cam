@@ -231,6 +231,8 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_CAPTURE;
         } else if (!strcmp(cjson_get_str(grandc), "offline_preview")) {
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_PREVIEW;
+        } else if (!strcmp(cjson_get_str(grandc), "slice_capture")) {
+            config->ispFeConfig[idx].workMode = ISP_WORKMODE_SLICE_CAPTURE;
         } else {
             CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture");
             ret -1;
