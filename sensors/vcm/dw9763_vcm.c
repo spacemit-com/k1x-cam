@@ -129,7 +129,7 @@ static int dw9763_write_burst_register(void* handle, struct regval_tab* reg_tabl
     return ret;
 }
 
-static int dw9763_vcm_init(void** pHandle)
+static int dw9763_vcm_init(void** pHandle, int i2c_bus, int i2c_addr)
 {
     uint16_t regval=0;
 
@@ -145,8 +145,11 @@ static int dw9763_vcm_init(void** pHandle)
     vcm_context->name = VCM_NAME;
     vcm_context->magic = VCM_MAGIC;
     vcm_context->i2c_addr = 0xc;
-    vcm_context->twsi_no = 0;
     vcm_context->current_position = 0;
+    if (i2c_bus > -1 && i2c_bus < 9)
+        vcm_context->twsi_no = i2c_bus;
+    else
+        vcm_context->twsi_no = 0;
 
     i2c_fd = i2_ctrl_open(vcm_context->twsi_no);
     if (i2c_fd < 0) {

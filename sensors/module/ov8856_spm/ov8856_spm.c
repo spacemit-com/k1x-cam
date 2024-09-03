@@ -166,7 +166,7 @@ static int ov8856_spm_get_sensor_vendor_id(SENSOR_VENDOR_ID_S* vendor_id)
 
 static int readenv_atoi(char *env) {
   char *p;
-  //getenv函数是gcc自带的函数，在stdlib.h头文件中声明
+  //getenv???gcc?????,?stdlib.h??????
   if (( p = getenv(env) ))
   	return (atoi(p));
   else

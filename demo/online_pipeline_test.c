@@ -1391,7 +1391,7 @@ int detect_camera(char* sensors_name, int devId)
 
     CLOG_INFO("start detect sensor %s devId %d", sensors_name, devId);
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, -1);
     if (ret) {
         CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
         return ret;
@@ -1399,6 +1399,7 @@ int detect_camera(char* sensors_name, int devId)
 
     return 0;
 }
+
 /************************************************************************************************/
 int single_pipeline_online_test(struct testConfig *config)
 {
@@ -1419,11 +1420,13 @@ int single_pipeline_online_test(struct testConfig *config)
 
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
+                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
+                         config);
     if (ret) {
         CLOG_ERROR("testSensorInit failed\n");
         return ret;
     }
+
     ret = testSensorGetDevInfo(sensorHandle, &sensor_info);
     if (ret) {
         CLOG_ERROR("testSensorGetDevInfo failed\n");
@@ -1442,6 +1445,7 @@ int single_pipeline_online_test(struct testConfig *config)
     viChnId = pipelineId;
     viisp_set_vi_callback(viChnId, vi_buffer_callback);
     viisp_isp_init(firmwareId, img_info, &sensor_info, isp_buffer_callback, false);
+
     VIU_GET_RAW_CHN(pipelineId, rawdumpChnId);
     viisp_set_vi_callback(rawdumpChnId, vi_rawdump_buffer_callback);
 
@@ -1536,6 +1540,7 @@ int single_pipeline_online_test(struct testConfig *config)
             if (ch == 'd' || ch == 'D') {
                 outputDumpFlag[pipelineId] = 1;
                 CLOG_INFO("dump one frame");
+                testSensorAuxFlashMode(sensorHandle, 0);
                 continue;
             }
             if (ch == 'r' || ch == 'R') {
@@ -1649,18 +1654,24 @@ int dual_pipeline_online_test(struct testConfig *config)
     int pipeline1Id = 1;
     int firmware1Id = 1;
     struct tuning_objs_config tuning_cfg = {0};
+    // AUX_DEVICE_INFO aux_device;
+
+    CLOG_INFO("test start");
 
     if (!config)
         return -1;
 
-    CLOG_INFO("test start");
+    // aux_device.aux_dev_id = config->auxDevice;
+    // aux_device.vcm_i2c_bus = config->vcmI2cBus;
 
     // sensor init
     testSensorInit(&sensor0Handle, config->ispFeConfig[0].sensorName,
-                    config->ispFeConfig[0].sensorId, config->ispFeConfig[0].workMode);
+                    config->ispFeConfig[0].sensorId, config->ispFeConfig[0].workMode,
+                    config);
     testSensorGetDevInfo(sensor0Handle, &sensor0_info);
     testSensorInit(&sensor1Handle, config->ispFeConfig[1].sensorName,
-                    config->ispFeConfig[1].sensorId, config->ispFeConfig[1].workMode);
+                    config->ispFeConfig[1].sensorId, config->ispFeConfig[1].workMode,
+                    config);
     testSensorGetDevInfo(sensor1Handle, &sensor1_info);
 
     // viisp init
@@ -1806,15 +1817,20 @@ int only_viisp_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    // AUX_DEVICE_INFO aux_device;
+
+    CLOG_INFO("test start");
 
     if (!config)
         return -1;
 
-    CLOG_INFO("test start");
+    // aux_device.aux_dev_id = config->auxDevice;
+    // aux_device.vcm_i2c_bus = config->vcmI2cBus;
 
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
+                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
+                         config);
     if (ret) {
         CLOG_ERROR("testSensorInit failed\n");
         return ret;
@@ -2270,7 +2286,8 @@ int only_rawdump_test(struct testConfig *config)
 
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
+                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
+                         config);
     if (ret) {
         CLOG_ERROR("testSensorInit failed\n");
         return ret;

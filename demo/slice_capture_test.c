@@ -22,8 +22,6 @@
 #include "cpp_common.h"
 #include "sensor_common.h"
 #include "viisp_common.h"
-#include "gst_slice_pipeline.h"
-
 #define MAX_BUFFER_NUM   4
 #define MAX_CAP_BUFFER_NUM   8
 
@@ -41,7 +39,6 @@ typedef enum {
     CAP_CPP_POST_FINISH,
     CAP_ISP_NUM,
 } CAPTURE_STATE;
-
 typedef enum {
     LIST_CAP_RAWDUMP = 0,
     LIST_CAP_VI,
@@ -49,6 +46,27 @@ typedef enum {
     LIST_CAP_ISP_REPEAT,
     LIST_CAP_NUM,
 } CAPTURE_LIST;
+
+typedef void* (*threadFunc)(void* param);
+typedef struct {
+    pthread_t threadId;
+    char threadName[20];
+    int threadRunning;
+    threadFunc threadProcessFunc;
+    struct condition cond;
+    int pipelineId;
+    int firmwareId;
+} THREAD_INFO;
+
+typedef struct spmVI_BUFFER_INFO {
+    IMAGE_BUFFER_S* buffer;
+    uint32_t frameId;
+} spmVI_BUFFER_INFO_S;
+
+typedef struct spmISP_BUFFER_INFO {
+    FRAME_INFO_S frameInfo;
+    uint32_t frameId;
+} spmISP_BUFFER_INFO_S;
 
 typedef struct spmISP_CAP_BUFFER_INFO {
     IMAGE_BUFFER_S buffer;
@@ -80,13 +98,14 @@ static IMAGE_BUFFER_S frameInfoBuf[MAX_BUFFER_NUM];
 static BUFFER_POOL* vi_out_buffer_capture_pool;
 static BUFFER_POOL* cpp_out_buffer_capture_pool;
 static BUFFER_POOL* vi_rawdump_buffer_capture_pool;
+static int testAutoRunFlag = {0};
+static struct condition testAutoRunCond;
 static int dumpFrame = AUTO_FRAME_NUM;
 static int testFrame = 2 * AUTO_FRAME_NUM;
 
 static atomic_int flag_tirg = 0;
 static long isp_capture_list_num = 0;
 
-static int (*gst_get_cam_buffer)(IMAGE_BUFFER_S*, int);
 static uint64_t get_timestamp(void)
 {
     uint64_t tmp;
@@ -444,6 +463,10 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
         }
 
         condition_post(&pipelineProcThread.cond);
+        if (frameId >= testFrame) {
+            usleep(1000);
+            condition_post(&testAutoRunCond);
+        }
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
             if (buffer->planes[0].virAddr == vi_out_buffer_capture_pool->buffers[i].planes[0].virAddr) {
@@ -631,9 +654,8 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                     CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
                         List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
                         isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
-					ret = (*gst_get_cam_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_capture_pool->buffers[i], i);
-					if (ret)
-						return -EINVAL;
+
+                    buffer_pool_put_buffer(cpp_out_buffer_capture_pool, &cpp_out_buffer_capture_pool->buffers[i]);
                 }
                 {
                     preview_cnt[mppCpp.devId+2]++;
@@ -854,12 +876,11 @@ static int test_buffer_deInit()
     return 0;
 }
 
-static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info, int (*gst_cam_buf_prepare)(void *, IMAGE_BUFFER_S*), void *gst_cam_buf_prepare_data)
+static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info)
 {
     spmISP_CAP_BUFFER_INFO_S* isp_cap_buffer_info = NULL;
     IMAGE_BUFFER_S *fCaptureBuf;
-    int i, ret = 0;
-    IMAGE_BUFFER_S* buffer = NULL;
+    int i,ret = 0;
 
     // buffer list init
     rawdump_capture_list = List_Create(0);
@@ -896,15 +917,6 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
         create_buffer_pool(img_info.width, img_info.height, img_info.format, "cpp channel0 out buffer");
     buffer_pool_alloc(cpp_out_buffer_capture_pool, MAX_CAP_BUFFER_NUM);
 
-    for (i = 0; i < MAX_CAP_BUFFER_NUM; i++) {
-        buffer = &cpp_out_buffer_capture_pool->buffers[i];
-        ret = gst_cam_buf_prepare(gst_cam_buf_prepare_data, buffer);
-        if (ret) {
-            CLOG_ERROR("gst_cam_buf_prepare return %d, error!", ret);
-            return ret;
-        }
-    }
-
     vi_rawdump_buffer_capture_pool =
         create_buffer_pool(sensor_info.sensor_cfg->width, sensor_info.sensor_cfg->height,
                            toPixelFormatType(sensor_info.sensor_cfg->bitDepth), "vi rawdump channel0 out buffer");
@@ -936,14 +948,8 @@ static int test_buffer_capture_deInit()
     return 0;
 }
 
-void slice_pipeline_release_buffer(IMAGE_BUFFER_S* outputBuf, int index)
-{
-    buffer_pool_put_buffer(cpp_out_buffer_capture_pool, outputBuf);
-    condition_post(&cppProcessProcThread.cond);
-}
-
 /************************************************************************************************/
-int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
+int slice_capture_test(struct testConfig *config)
 {
     int i, ret = 0;
     void* sensorHandle = NULL;
@@ -962,6 +968,9 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
     IMAGE_INFO_S img1_out_info = {};
 
     CLOG_INFO("test start");
+
+    if (!config)
+        return -1;
 
     atomic_store(&flag_tirg, 1);
     viChn0Id = pipeline0Id;
@@ -1001,7 +1010,7 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
 
     // buffer init
     test_buffer_init(img0_out_info, sensor_info);
-    test_buffer_capture_init(img1_out_info, sensor_info, para->gst_cam_buf_prepare, para->gst_cam_buf_prepare_data);
+    test_buffer_capture_init(img1_out_info, sensor_info);
 
     // thread init
     strcpy(pipelineProcThread.threadName, "previewFunc");
@@ -1027,60 +1036,96 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
     testFrame =  config->testFrame;
     dumpFrame = config->dumpFrame;
 
-    cpp_start(pipeline1Id);
-    viisp_vi_offline_streamOn(pipeline1Id);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
-        viisp_vi_queueBuffer(2, rawdump_buffer);
+    if (config->autoRun == 1) {
+        // CLOG_INFO("sensor config parse, testFrame:%d, showFps:%d", config->testFrame, showFps);
+
+        testAutoRunFlag = 1;
+        condition_init(&testAutoRunCond);
+
+        cpp_start(pipeline1Id);
+        viisp_vi_offline_streamOn(pipeline1Id);
+        test_buffer_prepare(pipeline0Id, firmwareId);
+        cpp_start(pipeline0Id);
+        viisp_vi_online_streamOn(pipeline0Id);
+        viisp_isp_streamOn(firmwareId);
+        testSensorStart(sensorHandle);
+        streamOnFlag = 1;
+
+        for (i = 0; i < MAX_BUFFER_NUM; i++) {
+            rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
+            viisp_vi_queueBuffer(2, rawdump_buffer);
+        }
+        CLOG_INFO("sensor stream on");
+
+        condition_wait(&testAutoRunCond);
+
+        streamOnFlag = 0;
+        viisp_vi_offline_streamOff(pipeline1Id);
+        cpp_stop(pipeline1Id);
+
+        viisp_vi_online_streamOff(pipeline0Id);
+        testSensorStop(sensorHandle);
+        viisp_isp_streamOff(firmwareId);
+        cpp_stop(pipeline0Id);
+        test_buffer_reset(pipeline0Id);
+        CLOG_INFO("sensor stream off");
+
+        condition_deinit(&testAutoRunCond);
+    } else {
+        while (1) {
+            char ch;
+            CLOG_INFO("Input a character:");
+            ch = getc(stdin);
+            if (ch == 'q' || ch == 'Q') {
+                CLOG_INFO("enter q exit");
+                break;
+            }
+            if (ch == 's' || ch == 'S') {
+                cpp_start(pipeline1Id);
+                viisp_vi_offline_streamOn(pipeline1Id);
+
+                test_buffer_prepare(pipeline0Id, firmwareId);
+                cpp_start(pipeline0Id);
+                viisp_vi_online_streamOn(pipeline0Id);
+                viisp_isp_streamOn(firmwareId);
+                testSensorStart(sensorHandle);
+                streamOnFlag = 1;
+
+                for (i = 0; i < MAX_BUFFER_NUM; i++) {
+                    rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
+                    viisp_vi_queueBuffer(2, rawdump_buffer);
+                }
+                CLOG_INFO("sensor stream on");
+                continue;
+            }
+            if (ch == 'c' || ch == 'C') {
+                streamOnFlag = 0;
+                viisp_vi_offline_streamOff(pipeline1Id);
+                cpp_stop(pipeline1Id);
+
+                viisp_vi_online_streamOff(pipeline0Id);
+                testSensorStop(sensorHandle);
+                viisp_isp_streamOff(firmwareId);
+                cpp_stop(pipeline0Id);
+                test_buffer_reset(pipeline0Id);
+                CLOG_INFO("sensor stream off");
+                continue;
+            }
+        }
     }
-    CLOG_INFO("queue rawdump_buffer all");
 
-    test_buffer_prepare(pipeline0Id, firmwareId);
-	cpp_start(pipeline0Id);
-    viisp_vi_online_streamOn(pipeline0Id);
-    viisp_isp_streamOn(firmwareId);
-    testSensorStart(sensorHandle);
-    streamOnFlag = 1;
-
-    CLOG_INFO("sensor stream on");
-
-    para->sensorHandle = sensorHandle;
-    para->sensorInfoId = sensor_info.sensorId;
-    para->firmwareId = firmwareId;
-    para->pipeline0Id = pipeline0Id;
-    para->pipeline1Id = pipeline1Id;
-    para->out_width = img1_out_info.width;
-    para->out_height = img1_out_info.height;
-
-    gst_get_cam_buffer = para->gst_get_cam_buffer;
-
-    return ret;
-}
-
-int slice_pipeline_stop(struct gstParam *para)
-{
-    CLOG_INFO("sensor stream off");
-	usleep(10000);
-    streamOnFlag = 0;
-    viisp_vi_offline_streamOff(para->pipeline1Id);
-    cpp_stop(para->pipeline1Id);
-
-    viisp_vi_online_streamOff(para->pipeline0Id);
-    testSensorStop(para->sensorHandle);
-    viisp_isp_streamOff(para->firmwareId);
-    cpp_stop(para->pipeline0Id);
-    test_buffer_reset(para->pipeline0Id);
     ProcThreadDeinit(&cppProcessProcThread);
     ProcThreadDeinit(&rawProcessProcThread);
     ProcThreadDeinit(&pipelineProcThread);
 
-    viisp_isp_deinit(para->firmwareId, para->sensorInfoId);
+    viisp_isp_deinit(firmwareId, sensor_info.sensorId);
     viisp_vi_deInit();
-    testSensorDeInit(para->sensorHandle);
-    cpp_deInit(para->pipeline0Id);
+    testSensorDeInit(sensorHandle);
+    cpp_deInit(pipeline0Id);
 
     test_buffer_capture_deInit();
     test_buffer_deInit();
+    CLOG_INFO("test end");
 
-    return 0;
+    return ret;
 }

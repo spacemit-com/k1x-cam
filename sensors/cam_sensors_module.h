@@ -96,7 +96,7 @@ typedef struct MODULE_OBJ {
 
 typedef struct VCM_OBJ {
     const char* name;
-    int (*pfnInit)(void** pHandle);
+    int (*pfnInit)(void** pHandle, int cust_i2c_bus, int cust_i2c_addr);
     int (*pfnDeinit)(void* handle);
     int (*pfnGetVcmOps)(void* handle, ISP_AF_MOTOR_REGISTER_S* pVcmFuncOps);
 } VCM_OBJ_S;

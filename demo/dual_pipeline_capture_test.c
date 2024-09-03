@@ -617,11 +617,15 @@ int dual_pipeline_capture_test(struct testConfig *config)
     IMAGE_INFO_S img0_out_info = {};
     IMAGE_INFO_S img1_in_info = {};
     IMAGE_INFO_S img1_out_info = {};
+    // AUX_DEVICE_INFO aux_device;
+
+    CLOG_INFO("test start");
 
     if (!config)
         return -1;
 
-    CLOG_INFO("test start");
+    // aux_device.aux_dev_id = config->auxDevice;
+    // aux_device.vcm_i2c_bus = config->vcmI2cBus;
 
     viChn0Id = pipeline0Id;
     viChn1Id = pipeline1Id;
@@ -630,7 +634,8 @@ int dual_pipeline_capture_test(struct testConfig *config)
 
     // sensor init
     testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                    config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
+                    config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
+                    config);
     testSensorGetDevInfo(sensorHandle, &sensor_info);
     img0_out_info.width = config->ispFeConfig[0].outWidth;
     img0_out_info.height = config->ispFeConfig[0].outHeight;
@@ -765,6 +770,7 @@ int dual_pipeline_capture_test(struct testConfig *config)
             }
             if (ch == 't' || ch == 'T') {
                 takePictureFlag = 1;
+                testSensorAuxFlashMode(sensorHandle, 0);
                 viisp_vi_queueBuffer(rawdumpChnId, &vi_rawdump_buffer_capture_pool->buffers[0]);
                 CLOG_INFO("take picture");
                 continue;

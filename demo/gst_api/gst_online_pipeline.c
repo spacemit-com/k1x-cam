@@ -825,7 +825,8 @@ int single_pipeline_online_start(struct gstParam *para, struct testConfig *confi
     CLOG_INFO("test start");
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
-                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode);
+                         config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
+                         config);
     if (ret) {
         CLOG_ERROR("testSensorInit failed\n");
         return ret;

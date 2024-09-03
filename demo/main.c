@@ -8,6 +8,7 @@
 
 #include "dual_pipeline_capture_test.h"
 #include "online_pipeline_test.h"
+#include "slice_capture_test.h"
 #include "config.h"
 
 void showTestConfig(struct testConfig config)
@@ -17,6 +18,9 @@ void showTestConfig(struct testConfig config)
     printf("tuningServerScene: %d\n", config.tuningServerEnalbe);
     printf("show_fps: %d\n", config.showFps);
     printf("auto_run: %d\n", config.autoRun);
+    printf("test_frame: %d\n", config.testFrame);
+    printf("dump_one_frame: %d\n", config.dumpFrame);
+
     for (i = 0; i < 2; i++) {
         printf("cpp%d enable: %d\n", i, config.cppConfig[i].enable);
         printf("cpp%d src_path: %s\n", i,  config.cppConfig[i].srcFile);
@@ -38,6 +42,33 @@ void showTestConfig(struct testConfig config)
         printf("isp%d in_width: %d\n", i, config.ispFeConfig[i].inWidth);
         printf("isp%d in_height: %d\n", i, config.ispFeConfig[i].inHeight);
     }
+
+    if (config.useSnrNode) {
+        for (i = 0; i < config.useSnrNode; i++) {
+            printf("sensor name: %s\n", config.snrConfig[i].sensorName);
+            if (config.snrConfig[i].snrI2cAddr == -1)
+                printf("sensor addr: default\n");
+            else
+                printf("sensor addr: 0x%x\n", config.snrConfig[i].snrI2cAddr);
+
+            if (config.snrConfig[i].vcmEnable) {
+                printf("vcm_name: %s\n", config.snrConfig[i].vcmName);
+                if (config.snrConfig[i].vcmI2cBus != -1) {
+                    printf("vcm i2c bus: %d\n", config.snrConfig[i].vcmI2cBus);
+                } else {
+                    printf("vcm i2c bus: default (if use)\n");
+                }
+                if (config.snrConfig[i].vcmI2cAddr != -1) {
+                    printf("vcm i2c addr: %d\n", config.snrConfig[i].vcmI2cAddr);
+                } else {
+                    printf("vcm i2c addr: default (if use)\n");
+                }
+            }
+
+            if (config.snrConfig[i].flashEnable)
+                printf("flash_name: %s\n", config.snrConfig[i].flashName);
+        }
+    }
 }
 
 int checkTestConfig(struct testConfig *cfg)
@@ -54,6 +85,7 @@ int checkTestConfig(struct testConfig *cfg)
         printf("isp0 offline capture not complemented in demo. Refs to isp1 offline capture case.\n");
         return -1;
     }
+
     return 0;
 }
 
@@ -93,6 +125,10 @@ int main(int argc, char* argv[])
             if (config.ispFeConfig[0].workMode == ISP_WORKMODE_ONLINE &&
                 config.ispFeConfig[1].workMode == ISP_WORKMODE_OFFLINE_CAPTURE)
                 caseId = 2;
+            if (config.ispFeConfig[0].workMode == ISP_WORKMODE_ONLINE &&
+                config.ispFeConfig[1].workMode == ISP_WORKMODE_SLICE_CAPTURE) {
+                caseId = 7;
+            }
         }
     } else if (config.cppConfig[0].enable && !config.cppConfig[1].enable) {
         if (config.ispFeConfig[0].enable && !config.ispFeConfig[1].enable) {
@@ -132,6 +168,9 @@ int main(int argc, char* argv[])
         break;
     case 6:
         only_cpp_test(&config);
+        break;
+    case 7:
+        slice_capture_test(&config);
         break;
     default:
         break;

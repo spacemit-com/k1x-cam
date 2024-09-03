@@ -314,7 +314,15 @@ void buffer_pool_free(BUFFER_POOL *pool)
     List_Clear(pool->buf_list);
     for (i = 0; i < pool->size; i++) dmabufheapFree(&pool->mem_block[i]);
 }
+ssize_t get_buffer_residue_num(BUFFER_POOL *pool)
+{
+    IMAGE_BUFFER_S *buffer = NULL;
 
+    if (!pool->buf_list)
+        return -1;
+
+    return List_GetSize(pool->buf_list);
+}
 IMAGE_BUFFER_S *buffer_pool_get_buffer(BUFFER_POOL *pool)
 {
     IMAGE_BUFFER_S *buffer = NULL;
@@ -353,7 +361,7 @@ int frameinfo_buffer_alloc(IMAGE_BUFFER_S *frameInfoBuf)
         return -1;
     } else {
         memset(frameInfoBuf->planes[0].virAddr, 0, frameInfoBuf->planes[0].length);
-        CLOG_INFO("malloc (%zu+%zu) for frameinfo buffer!\n", sizeof(FRAME_INFO_S), sizeof(_isp_fw_frameinfo_t));
+        CLOG_DEBUG("malloc (%zu+%zu) for frameinfo buffer!\n", sizeof(FRAME_INFO_S), sizeof(_isp_fw_frameinfo_t));
     }
 
     return ret;

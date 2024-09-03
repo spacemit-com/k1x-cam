@@ -71,7 +71,6 @@ int gst_setup_camera_start (struct gstParam *para)
 int gst_setup_camera_stop (struct gstParam *para)
 {
     int ret = 0;
-        printf("ZRong ----------- %s:%d \n", __func__, __LINE__);
 
     if (!gconfig) {
         printf("no config! please check\n");
@@ -82,11 +81,7 @@ int gst_setup_camera_stop (struct gstParam *para)
         if (gconfig->ispFeConfig[0].enable && gconfig->ispFeConfig[1].enable) {
             if (gconfig->ispFeConfig[0].workMode == ISP_WORKMODE_ONLINE &&
                 gconfig->ispFeConfig[1].workMode == ISP_WORKMODE_SLICE_CAPTURE) {
-        printf("ZRong ----------- %s:%d \n", __func__, __LINE__);
-
                 ret = slice_pipeline_stop(para);
-        printf("ZRong ----------- %s:%d \n", __func__, __LINE__);
-
             }
         }
     } else if (gconfig->cppConfig[0].enable && !gconfig->cppConfig[1].enable) {

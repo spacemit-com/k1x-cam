@@ -163,7 +163,7 @@ static int dw9714_vcm_stream_on(void* handle)
     return ret;
 }
 
-static int dw9714_vcm_init(void** pHandle)
+static int dw9714_vcm_init(void** pHandle, int i2c_bus, int i2c_addr)
 {
     VCM_CONTEXT_S* vcm_context = NULL;
 
@@ -176,9 +176,15 @@ static int dw9714_vcm_init(void** pHandle)
     }
     vcm_context->name = VCM_NAME;
     vcm_context->magic = VCM_MAGIC;
-    vcm_context->i2c_addr = 0x0c;
-    vcm_context->twsi_no = 0;
     vcm_context->current_position = 0;
+    if (i2c_bus != -1)
+        vcm_context->twsi_no = i2c_bus;
+    else
+        vcm_context->twsi_no = 1;
+    if (i2c_addr != -1)
+        vcm_context->i2c_addr = i2c_addr;
+    else
+        vcm_context->i2c_addr = 0x0c;
 
     i2c_fd = i2_ctrl_open(vcm_context->twsi_no);
     if (i2c_fd < 0) {
@@ -187,6 +193,7 @@ static int dw9714_vcm_init(void** pHandle)
     }
     dw9714_vcm_stream_on(vcm_context);
     *pHandle = vcm_context;
+
     return 0;
 }
 

@@ -21,6 +21,8 @@ extern SENSOR_OBJ_S imx135Obj;
 extern SENSOR_OBJ_S imx219Obj;
 extern SENSOR_OBJ_S s5k5e3yxObj;
 extern SENSOR_OBJ_S gc2375hObj;
+extern SENSOR_OBJ_S gc08a0Obj;
+extern SENSOR_OBJ_S gc13a0Obj;
 extern SENSOR_OBJ_S ov16a10Obj;
 extern SENSOR_OBJ_S sc031Obj;
 extern SENSOR_OBJ_S ov8856Obj;
@@ -34,6 +36,9 @@ extern MODULE_OBJ_S imx135_spm_Obj;
 extern MODULE_OBJ_S imx219_spm_Obj;
 extern MODULE_OBJ_S s5k5e3yx_spm_Obj;
 extern MODULE_OBJ_S gc2375h_spm_Obj;
+extern MODULE_OBJ_S gc13a0_spm_Obj;
+extern MODULE_OBJ_S gc08a8_spm_Obj;
+
 extern MODULE_OBJ_S ov16a10_spm_Obj;
 extern MODULE_OBJ_S sc031_spm_Obj;
 extern MODULE_OBJ_S ov8856_spm_Obj;
@@ -45,7 +50,7 @@ extern VCM_OBJ_S dw9763VcmObj;
 
 /*flash*/
 extern FLASH_OBJ_S aw36515FlashObj;
-
+extern FLASH_OBJ_S aw3641eFlashObj;
 /*sensors module*/
 typedef struct SENSORS_MODULE_OBJ {
     MODULE_OBJ_S* module_obj_p;
@@ -63,9 +68,23 @@ SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&imx219_spm_Obj, &imx219Obj, NULL, NULL},
     {&s5k5e3yx_spm_Obj, &s5k5e3yxObj, NULL, NULL},
     {&gc2375h_spm_Obj, &gc2375hObj, NULL, NULL},
+    {&gc13a0_spm_Obj, &gc13a0Obj, &dw9714VcmObj, &aw3641eFlashObj},
+    {&gc08a8_spm_Obj, &gc08a0Obj, NULL, NULL},
+
     {&ov16a10_spm_Obj, &ov16a10Obj, NULL, NULL},
     {&sc031_spm_Obj, &sc031Obj, NULL, NULL},
     {&ov8856_spm_Obj, &ov8856Obj, NULL, NULL},
+};
+
+VCM_OBJ_S *sensors_vcms_list[] = {
+    &gt9772VcmObj,
+    &dw9714VcmObj,
+    &dw9763VcmObj,
+};
+
+FLASH_OBJ_S *sensors_flashs_list[] = {
+    &aw36515FlashObj,
+    &aw3641eFlashObj,
 };
 
 #ifdef __cplusplus

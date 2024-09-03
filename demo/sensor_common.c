@@ -13,11 +13,14 @@ typedef struct {
     SENSORS_MODULE_INFO_S sensors_module_info;
     SENSORS_MODULE_CAPABILITY_S sensors_cap;
     ISP_SENSOR_REGISTER_S sensor_ops;
+    ISP_AF_MOTOR_REGISTER_S af_ops;
+    struct SensorTestConfig snr_test_cfg[2];
+    int snr_test_idx;
     int workMode;
     int devId;
 } SENSOR_MODULE_HANDLE;
 
-int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int work_mode)
+int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int work_mode, struct testConfig *config)
 {
     int ret = 0;
     int i = 0;
@@ -29,13 +32,28 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -1;
     }
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
+    memcpy (handle->snr_test_cfg, config->snrConfig, sizeof(config->snrConfig));
+
+    if (config->useSnrNode) {
+        for (i = 0; i < config->useSnrNode; i++) {
+            if (!strcmp(config->snrConfig[i].sensorName, sensors_name)) {
+                handle->snr_test_idx = i;
+                break;
+            } 
+        }
+        if (i >= config->useSnrNode) {
+            CLOG_ERROR("sensors name no match(%d) ", config->useSnrNode);
+            return -1;
+        }
+    }
+
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, handle->snr_test_cfg[handle->snr_test_idx].snrI2cAddr);
     if (ret) {
         CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
         return ret;
     }
 
-    ret = SPM_SENSORS_MODULE_Init(&handle->sensors_handle, sensors_name, devId, &handle->sensors_module_info);
+    ret = SPM_SENSORS_MODULE_Init(&handle->sensors_handle, sensors_name, devId, &handle->sensors_module_info, handle->snr_test_cfg[handle->snr_test_idx].snrI2cAddr);
     if (ret) {
         CLOG_ERROR("sensors module %s devId %d init fail", sensors_name, devId);
         return ret;
@@ -85,11 +103,63 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -5;
     }
 
+    if (config->useSnrNode) {
+        if (handle->snr_test_cfg[handle->snr_test_idx].vcmEnable) {
+            ret = SPM_VCM_Open(handle->sensors_handle,
+                               handle->snr_test_cfg[handle->snr_test_idx].vcmEnable,
+                               handle->snr_test_cfg[handle->snr_test_idx].vcmName,
+                               handle->snr_test_cfg[handle->snr_test_idx].vcmI2cBus,
+                               handle->snr_test_cfg[handle->snr_test_idx].vcmI2cAddr);
+            if (ret) {
+                CLOG_ERROR("SPM_VCM_Open failed, (%d)\n", ret);
+                return ret;
+            }
+
+            ret = SPM_VCM_GetOps(handle->sensors_handle, &handle->af_ops);
+            if (ret) {
+                SPM_VCM_Close(handle->sensors_handle);
+                CLOG_ERROR("SPM_VCM_GetOps failed, (%d)\n", ret);
+                return ret;
+            }
+        }
+
+        if (handle->snr_test_cfg[handle->snr_test_idx].flashEnable) {
+            ret = SPM_FLASH_Open(handle->sensors_handle,
+                                 handle->snr_test_cfg[handle->snr_test_idx].flashEnable,
+                                 handle->snr_test_cfg[handle->snr_test_idx].flashName);
+            if (ret) {
+                CLOG_ERROR("SPM_FLASH_Open failed\n");
+                return ret;
+            }
+        }
+    }
     handle->workMode = work_mode;
     SPM_SENSOR_Config(handle->sensors_handle, handle->workMode);
     handle->devId = devId;
 
     *ppHandle = handle;
+    return 0;
+}
+
+int testSensorAuxFlashMode(void* phandle, int mode)
+{
+    SENSOR_MODULE_HANDLE* handle = (SENSOR_MODULE_HANDLE*)phandle;
+    int ret = 0;
+
+    if (!handle) {
+        CLOG_ERROR("invalid input para handle %p", handle);
+        return -1;
+    }
+
+    if (handle->snr_test_cfg[handle->snr_test_idx].flashEnable) {
+        ret = SPM_FLASH_SetMode (handle->sensors_handle, 0);
+        if (ret) {
+            SPM_FLASH_Close(handle->sensors_handle);
+            CLOG_ERROR("SPM_FLASH_SetMode failed\n");
+            return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -100,6 +170,11 @@ int testSensorDeInit(void* phandle)
         CLOG_ERROR("invalid input para handle %p", handle);
         return -1;
     }
+
+    if (handle->snr_test_cfg[handle->snr_test_idx].vcmEnable)
+        SPM_VCM_Close(handle->sensors_handle);
+    if (handle->snr_test_cfg[handle->snr_test_idx].flashEnable)
+        SPM_FLASH_Close(handle->sensors_handle);
 
     SPM_SENSOR_Close(handle->sensors_handle);
     SPM_SENSORS_MODULE_Deinit(handle->sensors_handle);
@@ -142,6 +217,9 @@ int testSensorGetDevInfo(void* phandle, SENSOR_MODULE_INFO* sensorInfo)
 
     sensorInfo->sensorId = handle->devId;
     sensorInfo->pSensorOps = &handle->sensor_ops;
+    sensorInfo->pAfOps = &handle->af_ops;
+    sensorInfo->vcm_en = 0;
+    // sensorInfo->vcm_en = handle->snr_test_cfg[handle->snr_test_idx].vcmEnable;
     sensorInfo->sensor_cfg = &handle->sensors_cap.sensor_capability.snr_config[handle->workMode];
 
     return 0;
