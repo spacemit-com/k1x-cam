@@ -222,7 +222,7 @@ static void* previewThreadFunc(void* param)
 
     do {
         condition_timedwait(&thread->cond, 1000);
-        if (!thread->threadRunning) {
+        if (!thread->threadRunning || streamOnFlag == 0) {
             break;
         }
 
@@ -282,7 +282,7 @@ static void* rawProcessThreadFunc(void* param)
     do {
 try_again:
         condition_wait(&thread->cond);
-        if (!thread->threadRunning) {
+        if (!thread->threadRunning || streamOnFlag == 0) {
             break;
         }
 
@@ -358,7 +358,7 @@ static void* cppProcessThreadFunc(void* param)
 
     do {
         condition_wait(&thread->cond);
-        if (!thread->threadRunning) {
+        if (!thread->threadRunning || streamOnFlag == 0) {
             break;
         }
 
@@ -442,7 +442,6 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
             vi_buffer_info->frameId = frameId;
             List_Push(vi_out_list, (void*)vi_buffer_info);
         }
-
         condition_post(&pipelineProcThread.cond);
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
@@ -498,7 +497,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
         CLOG_INFO("VI chn%d frameId %d, cnt: %d, %d, rawnum: %ld, time: %llu us, fid: %d",
              nChn, frameId, rawBufferBackCnt, rawBufferQueueCnt, List_GetSize(rawdump_capture_list), usetime, frameCapId);
 #else
-        CLOG_DEBUG("VI chn%d frameId %d, cnt: %d, %d, rawnum: %ld, fid: %d",
+        CLOG_INFO("VI chn%d frameId %d, cnt: %d, %d, rawnum: %ld, fid: %d",
              nChn, frameId, rawBufferBackCnt, rawBufferQueueCnt, List_GetSize(rawdump_capture_list), frameCapId);
 #endif
     }
@@ -628,9 +627,9 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                     CLOG_ERROR("can't find valid cpp capture out buffer");
                 } else {
                     frameCapId = cpp_out_buffer_capture_pool->buffers[i].frameId;
-                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
-                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
-                        isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
+                    // CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
+                    //     List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
+                    //     isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
 					ret = (*gst_get_cam_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_capture_pool->buffers[i], i);
 					if (ret)
 						return -EINVAL;
@@ -1060,11 +1059,11 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
 int slice_pipeline_stop(struct gstParam *para)
 {
     CLOG_INFO("sensor stream off");
-	usleep(10000);
     streamOnFlag = 0;
+	usleep(1000);
+
     viisp_vi_offline_streamOff(para->pipeline1Id);
     cpp_stop(para->pipeline1Id);
-
     viisp_vi_online_streamOff(para->pipeline0Id);
     testSensorStop(para->sensorHandle);
     viisp_isp_streamOff(para->firmwareId);
