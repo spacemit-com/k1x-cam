@@ -60,7 +60,12 @@ typedef struct {
     int m_pSubROIPermil[6][4];
     int m_nSubROIScaleFactor;
     int m_nFaceLumaOption;
-    int m_nFaceDetFrameID;
+    int m_bMotionDetectEnable;
+    int m_bMotionDetectExt;
+    int m_nMotionStrengthExt;
+    int m_nSADIntervalFrame;
+    int m_nMotionThreshold;
+    int m_nMotionDetectFrame;
 } _isp_fw_ae_t;
 
 typedef struct {
@@ -275,6 +280,8 @@ typedef struct {
     int m_bAutoScale;
     int m_bEnhanceEnable;
     int m_bLSCCSCEnable;
+    int m_bLSCCSCENorEnable;
+    int m_nLSCCSCMode;
     int m_bAdjustCSCTblMinEnable;
     int m_nProfileSelectOption;
     int m_nLSCStrengthManual;
@@ -391,6 +398,7 @@ typedef struct {
     int m_nPirisGain;          // Q8
     int m_pWBGainInternal[4];  // Q12
     int m_pWBGainApply[4];     // Q12
+    int m_pCSCApplyWBGain[2];  // Q14,[0]:RGain,[1]:BGain
     int m_nCT;
     int m_nHDRRatio;
     int m_pEISOffset[2];
@@ -434,6 +442,8 @@ typedef struct {
     int m_nSceneLux;
     int m_nGlobalSaturation;
     int m_pHist[256];
+    int m_nHistNum;
+    int m_pRGBNumberForWB[3];
 } _isp_fw_frameinfo_t;
 
 typedef struct {
@@ -474,6 +484,7 @@ typedef struct {
 typedef struct {
     int m_bEnable;
     int m_bHistEnable;
+    int m_nLTMMode;
     int m_nOffsetX;
     int m_nOffsetY;
     int m_nLtmStrength;
@@ -673,6 +684,7 @@ typedef struct {
     int m_pTargetRange[2];
     int m_pTargetDeclineRatio[16];
     int m_pMeteringMatrix[12][16];
+    int m_nFaceTarget;
     int m_nDualTargetBlendWeight;
     int m_pAjustSplitFrameNum[2];
     int m_pSingleStepAdjustLumaThr[2];
@@ -697,6 +709,8 @@ typedef struct {
     int m_nMaxDRCGain;      // Q4
     int m_nMaxDRCGainDark;  // Q4
     int m_bQuickResponseEnable;
+    int m_pExpDecLutWithBanding[7];
+    float m_pExpDecLutWithoutBanding[7];
     int m_nCalibExposureIndex;
     int m_nCalibSceneLuma;
     int m_nCalibSceneLux;
@@ -764,24 +778,20 @@ typedef struct {
     int m_nRoiXMin;
     int m_pRoiCtHighAuto[LUM_LEVEL_NUM];
     int m_pRoiCtLowAuto[LUM_LEVEL_NUM];
+    int m_pRoiCtLow2Auto[LUM_LEVEL_NUM];
     int m_pRoiXMaxAuto[LUM_LEVEL_NUM];
     int m_pRoiXMinAuto[LUM_LEVEL_NUM];
     int m_pAWBGainLimit[4];
     int m_nAWBCTShift;
     int m_pAWBCTShiftThr[2];
-    int m_pLowCtThr[8];
-    int m_pLowCtNumThr[2];
-    int m_pLowCtProtectRatio[7];  // 0~256, 256 means no protection
-    awb_roi_ct_bound m_sRoiBoundDayLight;
-    int m_pDayLightNumThr[2];
     int m_bGreenShiftEn;
     int m_pGreenShiftWeight[LUM_LEVEL_NUM];  // Q5, 0~32
     int m_nGreenShiftMax;                    // Q5, 0~32
     int m_pGreenNumThre[2];                  // 0~BLK_NUM_W*BLK_NUM_H
     _isp_awb_result_t m_sOutdoorGain;
     int m_nValidNum;
-    int m_bWeightOnSum;  // weight on sum or gain
-    int m_nLog2CwtOverA;
+    int m_nCombineMode;  // 0-combine gain, 1-combine (r,g,b), 2-combine (x,y)
+    int m_pRoiTruncateEn[MAX_ROI_NUM];
 } _isp_awb_attr_t;
 #endif
 /* end define AWB parameter structures */
@@ -885,6 +895,8 @@ typedef struct {
     int m_nFlatSceneVarThr;
     int m_nFlatSceneLumaThr;
     int m_bReFocusEnable;
+    int m_nReFocusPDShiftThr;
+    int m_nReFocusPDConfThr;
     int m_pRefocusLumaSADThr[12];
     int m_bStableJudgeOpt;
     int m_nRefStableFrameNum;

@@ -17,6 +17,10 @@ extern "C" {
 #define NULL 0L
 #endif
 
+#ifndef CAN_API
+#define CAM_API __attribute__((visibility("default")))
+#endif
+
 #ifndef ARRAY1_COUNT
 #define ARRAY1_COUNT(array) (sizeof(array) / sizeof((array)[0]))
 #endif /* ARRAY1_COUNT */
@@ -164,6 +168,9 @@ typedef struct spmFRAME_INFO {
     int32_t sensorSensitivity;
     int64_t sensorRollingShutterSkew;
     int32_t colorFilterMode; //defined by @ISP_COLOR_FILTER_MODE_E
+    int32_t colorSpace;
+    int32_t swingOption;
+    int32_t expIndex;
 
     //init ae and awb param
     int32_t curSceneLuma;
