@@ -904,8 +904,8 @@ static int32_t vi_rawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_r
     CLOG_INFO("VI chn %d rawdump buffer frameId %d, buffer %p, closeDown: %d",
               nChn, frameId, buffer->planes[0].virAddr, vi_rawdump_buffer->bCloseDown);
 
-    tmpdump = 0;
-    if (buffer->planes[0].virAddr == vi_rawdump_buffer_pool[pipelineId]->buffers[0].planes[0].virAddr && tmpdump) {
+    // tmpdump = 0;
+    if (buffer->planes[0].virAddr == vi_rawdump_buffer_pool[pipelineId]->buffers[0].planes[0].virAddr) {
         snprintf(fileName, sizeof(fileName), "%sraw_output%d_%dx%d.raw", path, pipelineId, buffer->size.width,
                  buffer->size.height);
         raw_buffer_save(buffer, fileName);

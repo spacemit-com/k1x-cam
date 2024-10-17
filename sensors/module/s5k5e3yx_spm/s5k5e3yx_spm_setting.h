@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
-#define S5K5E3_HVFLIP_EN
+// #define S5K5E3_HVFLIP_EN
 
 struct regval_tab s5k5e3yx_spm_2560x1920_10bit_30fps_tab[] = {
 #if defined(S5K5E3_HVFLIP_EN)
