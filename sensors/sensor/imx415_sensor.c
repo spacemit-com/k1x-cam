@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include<math.h>
 
 #include "spm_comm_cam.h"
 #include "cam_sensor.h"
@@ -44,7 +45,9 @@ static struct regval_tab color_bar_regs[] = {
 #define IMX415_EXPO_H16     (0x3052)
 #define IMX415_EXPO_H       (0x3051)
 #define IMX415_EXPO_L       (0x3050)
-#define IMX415_AGAIN_GLOBAL (0x3090)
+#define IMX415_AGAIN_L      (0x3090)
+#define IMX415_AGAIN_H      (0x3091)
+
 // #define IMX415_DGAIN_GR_H   (0x020E)
 // #define IMX415_DGAIN_GR_L   (0x020F)
 // #define IMX415_DGAIN_R_H    (0x0210)
@@ -271,7 +274,7 @@ static int imx415_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
     pthread_mutex_lock(&sensor_context->apiLock);
     if (false == sensor_context->syncInit) {
         sensor_context->sensorRegs[0].u8CfgDelayMax = 1;
-        sensor_context->sensorRegs[0].u32RegNum = 7;
+        sensor_context->sensorRegs[0].u32RegNum = 8;
         sensor_context->sensorRegs[0].stSensorComBus.s8I2cDev = sensor_context->twsi_no;
 
         for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
@@ -280,20 +283,22 @@ static int imx415_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
             sensor_context->sensorRegs[0].astI2cData[i].u32AddrWidth = imx415_reg_addr_byte;
             sensor_context->sensorRegs[0].astI2cData[i].u32DataWidth = imx415_reg_data_byte;
         }
-        sensor_context->sensorRegs[0].astI2cData[0].u8DelayFrmNum = 1;
+        sensor_context->sensorRegs[0].astI2cData[0].u8DelayFrmNum = 0;
         sensor_context->sensorRegs[0].astI2cData[0].u32RegAddr = IMX415_EXPO_L;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 1;
+        sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 0;
         sensor_context->sensorRegs[0].astI2cData[1].u32RegAddr = IMX415_EXPO_H;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 1;
+        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 0;
         sensor_context->sensorRegs[0].astI2cData[2].u32RegAddr = IMX415_EXPO_H16;  // exposure time
         sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 1;
-        sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = IMX415_AGAIN_GLOBAL;  // analog gain
+        sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = IMX415_AGAIN_L;  // analog gain
         sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 1;
-        sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = IMX415_VTS_ADDR_L;  // VTS
-        sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 1;
-        sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX415_VTS_ADDR_H;  // VTS
-        sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 1;
-        sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_VTS_ADDR_H16;  // VTS
+        sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = IMX415_AGAIN_H;  // analog gain
+        sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 0;
+        sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX415_VTS_ADDR_L;  // VTS
+        sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 0;
+        sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_VTS_ADDR_H;  // VTS
+        sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 0;
+        sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX415_VTS_ADDR_H16;  // VTS
         // sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
         // sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX415_DGAIN_GR_L;  // digital gain
         // sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
@@ -349,7 +354,7 @@ static int imx415_sensor_dump_info(void* snsHandle)
     imx415_read_register(snsHandle, IMX415_EXPO_H, &reg_val_h);
     imx415_read_register(snsHandle, IMX415_EXPO_L, &reg_val_l);
     exp_time = (reg_val_h << 8) | reg_val_l;
-    imx415_read_register(snsHandle, IMX415_AGAIN_GLOBAL, &reg_val_h);
+    imx415_read_register(snsHandle, IMX415_AGAIN_L, &reg_val_h);
     again = reg_val_h;
     // imx415_read_register(snsHandle, IMX415_DGAIN_GR_H, &reg_val_h);
     // imx415_read_register(snsHandle, IMX415_DGAIN_GR_L, &reg_val_l);
@@ -394,7 +399,7 @@ static int imx415_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     pstSensorAeDft->initTGain = pstSensorAeDft->initAnaGain * pstSensorAeDft->initDGain / 0x1000;
 
     pstSensorAeDft->maxDelayCfg = 1;
-    pstSensorAeDft->minDelayCfg = 1;
+    pstSensorAeDft->minDelayCfg = 0;
 
     /* uint : us */
     // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - IMX415_VTS_ADJUST) * sensor_context->lineTime / 1000;
@@ -455,9 +460,9 @@ static int imx415_sensor_fps_set(void* snsHandle, float f32Fps)
     sensor_context->initVTS = lines;
     sensor_context->initFps = f32Fps;
     sensor_context->vts[0] = sensor_context->initVTS;
-    sensor_context->sensorRegs[0].astI2cData[4].u32Data = LOW_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[5].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(HIGH_8BITS(sensor_context->vts[0]));
+    sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[7].u32Data = HIGH_8BITS(HIGH_8BITS(sensor_context->vts[0]));
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
@@ -478,7 +483,8 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     integration_time = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
 
-    shr = (integration_time * 1000 - 2680)  / sensor_context->lineTime; //bit 12: Toffset=2.68us
+    // shr = sensor_context->initVTS - (integration_time * 1000 - 2680) * sensor_context->lineTime; //bit 12: Toffset=2.68us
+    shr = (integration_time * 1000 - 2680) / sensor_context->lineTime; //bit 12: Toffset=2.68us
     shr_tmp = shr;
 
     if (shr < 8)
@@ -505,7 +511,7 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-	// printf("exp time: %d us, L:%d, shr_tmp:%d, shr:%d\n", u32ExpoTime, integration_time, shr_tmp, shr);
+	printf("exp time: %d us, L:%d, shr_tmp:%d, shr:%d\n", u32ExpoTime, integration_time, shr_tmp, shr);
 
     return 0;
 }
@@ -524,31 +530,23 @@ static int imx415_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
 
 	uint32_t tval = *pAgainVal;
 
+    //从isp发下来的gain转成db = 20 log(*pAgainVal/256)
+
     pthread_mutex_lock(&sensor_context->apiLock);
     if (*pAgainVal > 0x1E00) //30x (256x16 is 16x)
         AGain_Reg = 0x0064;
-    else //AGain_Reg = *pAgainVal / 256 * 10 / 3 , reg: 0~240
-        AGain_Reg = *pAgainVal * 10 / 768;
-    // DGain_Reg = (*pDgainVal >> 4);  // Q12 -> Q8
-    // if (DGain_Reg < 0x100)
-    //     DGain_Reg = 0x100;
-    // if (DGain_Reg > 0x0FE0)
-    //     DGain_Reg = 0x0FE0;
+    else //AGain_Reg = 20log(*pAgainVal/256) * 10 / 3 , reg: 0~240
+        AGain_Reg = *pAgainVal * 10 / 768;// AGain_Reg = 200 * log(*pAgainVal/256) / 3;
 
-    sensor_context->sensorRegs[0].astI2cData[3].u32Data = AGain_Reg;     // bit[7:0] = Again[7:0]
-    // sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    // sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    // sensor_context->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    // sensor_context->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    // sensor_context->sensorRegs[0].astI2cData[9].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    // sensor_context->sensorRegs[0].astI2cData[10].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    // sensor_context->sensorRegs[0].astI2cData[11].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    // sensor_context->sensorRegs[0].astI2cData[12].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
+    sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(AGain_Reg);     // bit[7:0] = Again[7:0]
+    sensor_context->sensorRegs[0].astI2cData[4].u32Data = 0;             // bit[15:8] = Again[8]
 
-    *pAgainVal = AGain_Reg * 768 / 10;  // Q8
-    // *pDgainVal = DGain_Reg << 4;  // Q8 -> Q12
+    *pAgainVal = LOW_8BITS(AGain_Reg) * 768 / 10;  // Q8
+
+    // *pAgainVal = pow(10, (LOW_8BITS(AGain_Reg) * 3 / 200)) * 256;  // Q8
+    *pDgainVal = 4096;  // Q8 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
-// printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, tval, AGain_Reg);
+printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, tval, AGain_Reg);
     return ret;
 }
 
