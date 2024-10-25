@@ -8,18 +8,21 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include<math.h>
+#include <math.h>
 
 #include "spm_comm_cam.h"
 #include "cam_sensor.h"
 
 #define SENSOR_MAGIC 0x415
 #define IMX415_NAME "imx415"
+#define USE_12BIT 0
+
 static const unsigned int imx415_reg_addr_byte = I2C_16BIT; /*byte width of the sensor register address*/
 static const unsigned int imx415_reg_data_byte = I2C_8BIT;  /*byte width of sensor register data*/
 
 static struct regval_tab stream_on_regs[] = {
     {0x3000, 0x00},
+    {0x3002, 0x00},
 };
 
 static struct regval_tab stream_off_regs[] = {
@@ -484,7 +487,12 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     integration_time = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
 
     // shr = sensor_context->initVTS - (integration_time * 1000 - 2680) * sensor_context->lineTime; //bit 12: Toffset=2.68us
+
+#if USE_12BIT
     shr = (integration_time * 1000 - 2680) / sensor_context->lineTime; //bit 12: Toffset=2.68us
+#else
+    shr = (integration_time * 1000 - 1790) / sensor_context->lineTime; //bit 10: Toffset=2.68us
+#endif
     shr_tmp = shr;
 
     if (shr < 8)
@@ -503,6 +511,7 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     // sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     // sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+shr=90;
     sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(shr);
     sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(shr);
     sensor_context->sensorRegs[0].astI2cData[2].u32Data = HIGH_8BITS(HIGH_8BITS(shr));
@@ -515,11 +524,81 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     return 0;
 }
+// static int imx415_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
+// {
+//     SENSOR_CONTEXT_S* sensor_context = NULL;
+//     int ret = 0;
+//     uint32_t AGain_Reg, DGain_Reg = 0;
 
+//     SENSORS_CHECK_PARA_POINTER(snsHandle);
+//     SENSORS_CHECK_PARA_POINTER(pAgainVal);
+//     SENSORS_CHECK_PARA_POINTER(pDgainVal);
+//     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
+//     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
+
+// 	uint32_t tval = *pAgainVal;
+//     // float gain_db;
+//     //从isp发下来的gain转成db = 20 log(*pAgainVal/256)
+
+//     pthread_mutex_lock(&sensor_context->apiLock);
+//     // gain_db = 20 * log(*pAgainVal/256);
+
+//     // if (gain_db > 30.0) //30x (256x16 is 16x)
+//     //     gain_db = 30.0;
+
+//     // AGain_Reg = (uint32_t)(gain_db * 10 / 3);
+//     if (*pAgainVal > 0x1E00) //30x (256x16 is 16x)
+//         AGain_Reg = 0x0064;
+//     else //AGain_Reg = 20log(*pAgainVal/256) * 10 / 3 , reg: 0~240
+//         AGain_Reg = *pAgainVal * 10 / 768;// AGain_Reg = 200 * log(*pAgainVal/256) / 3;
+
+//     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(AGain_Reg);     // bit[7:0] = Again[7:0]
+//     sensor_context->sensorRegs[0].astI2cData[4].u32Data = 0;             // bit[15:8] = Again[8]
+
+//     *pAgainVal = LOW_8BITS(AGain_Reg) * 768 / 10;  // Q8
+
+//     // *pAgainVal = pow(10, ((AGain_Reg) * 3 / 200)) * 256;  // Q8
+//     *pDgainVal = 4096;  // Q8 -> Q12
+//     pthread_mutex_unlock(&sensor_context->apiLock);
+// printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, tval, AGain_Reg);
+//     return ret;
+//     pthread_mutex_lock(&sensor_context->apiLock);
+//     gain_db = 20 * log10(*pAgainVal/256);
+
+//     if (gain_db > 30.0) //30x (256x16 is 16x)
+//         gain_db = 30.0;
+
+//     AGain_Reg = (uint32_t)(gain_db * 10 / 3);
+
+//     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(AGain_Reg);     // bit[7:0] = Again[7:0]
+//     sensor_context->sensorRegs[0].astI2cData[4].u32Data = 0;             // bit[15:8] = Again[8]
+
+//     *pAgainVal = pow(10, ((AGain_Reg + 160) * 3 / 200));  // Q8
+//     *pDgainVal = 4096;  // Q8 -> Q12
+//     pthread_mutex_unlock(&sensor_context->apiLock);
+// printf("again: %x (%x), AGain_Reg: %x, db:%f\n", *pAgainVal, tval, AGain_Reg, gain_db);
+// }
+
+//only 30.0db
+static int gain_table[101] = {
+     256,     264,     274,     283,     293,     304,     314,     326,
+     337,     349,     361,     374,     387,     401,     415,     429,
+     444,     460,     476,     493,     510,     528,     547,     566,
+     586,     607,     628,     650,     673,     697,     721,     746,
+     773,     800,     828,     857,     887,     918,     951,     984,
+    1019,    1054,    1092,    1130,    1170,    1211,    1253,    1297,
+    1343,    1390,    1439,    1490,    1542,    1596,    1652,    1710,
+    1771,    1833,    1897,    1964,    2033,    2104,    2178,    2255,
+    2334,    2416,    2501,    2589,    2680,    2774,    2872,    2973,
+    3077,    3185,    3297,    3413,    3533,    3657,    3786,    3919,
+    4057,    4199,    4347,    4500,    4658,    4822,    4991,    5167,
+    5348,    5536,    5731,    5932,    6141,    6356,    6580,    6811,
+    7050,    7298,    7555,    7820,    8095
+};
 static int imx415_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
-    int ret = 0;
+    int i, ret = 0;
     uint32_t AGain_Reg, DGain_Reg = 0;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
@@ -529,24 +608,35 @@ static int imx415_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
 	uint32_t tval = *pAgainVal;
-
+    double gain_db;
+    uint32_t gain_val;
     //从isp发下来的gain转成db = 20 log(*pAgainVal/256)
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    if (*pAgainVal > 0x1E00) //30x (256x16 is 16x)
-        AGain_Reg = 0x0064;
-    else //AGain_Reg = 20log(*pAgainVal/256) * 10 / 3 , reg: 0~240
-        AGain_Reg = *pAgainVal * 10 / 768;// AGain_Reg = 200 * log(*pAgainVal/256) / 3;
+
+    for (i = 0; i < ARRAY_SIZE(gain_table); i++) {
+        if (tval < gain_table[i])
+            break;
+    }
+
+    if (i >= ARRAY_SIZE(gain_table)) {
+        gain_val = gain_table[ARRAY_SIZE(gain_table) - 1];
+    } else if (i == 0) {
+        gain_val = gain_table[i];
+    } else {
+        gain_val = gain_table[i - 1];
+    }
+
+    gain_db = 20 * log10(gain_val/256.0);
+    AGain_Reg = (uint32_t)(gain_db * 10 / 3);
 
     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(AGain_Reg);     // bit[7:0] = Again[7:0]
     sensor_context->sensorRegs[0].astI2cData[4].u32Data = 0;             // bit[15:8] = Again[8]
 
-    *pAgainVal = LOW_8BITS(AGain_Reg) * 768 / 10;  // Q8
-
-    // *pAgainVal = pow(10, (LOW_8BITS(AGain_Reg) * 3 / 200)) * 256;  // Q8
+    *pAgainVal = gain_val;  // Q8
     *pDgainVal = 4096;  // Q8 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
-printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, tval, AGain_Reg);
+printf("again: %x (%x), AGain_Reg: %x, db:%f, i:%d\n", *pAgainVal, tval, AGain_Reg, gain_db, i);
     return ret;
 }
 
@@ -656,7 +746,11 @@ static int imx415_power_on(SENSOR_CONTEXT_S* sensor_context)
     usleep(100);
 
     sensor_set_mclk_enable(sensor_context->devId, 1);
-    sensor_set_mclk_rate(sensor_context->devId, 37125000);
+#if USE_12BIT
+    // sensor_set_mclk_rate(sensor_context->devId, 37125000);
+#else
+    sensor_set_mclk_rate(sensor_context->devId, 27000000);
+#endif
 
     usleep(100);
 

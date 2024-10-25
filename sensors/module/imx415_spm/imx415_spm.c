@@ -82,7 +82,20 @@ static int imx415_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
     sensor_capability->snr_config_num = IMX415_SPM_WORK_MODE_SIZE;
     for (i = 0; i < IMX415_SPM_WORK_MODE_SIZE; i++) {
         switch (i) {
-            case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {
+            case IMX415_SPM_3864x2192_10bit_LINEAR_30_4LANE: {
+                sensor_capability->snr_config[i].width = 3864;
+                sensor_capability->snr_config[i].height = 2192;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 30;
+                sensor_capability->snr_config[i].minFps = 15;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = IMX415_SPM_3864x2192_10bit_LINEAR_30_4LANE;
+                sensor_capability->snr_config[i].setting = &imx415_spm_setting;
+            } break;
+            case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {  //rawdump error!!
                 sensor_capability->snr_config[i].width = 3864;
                 sensor_capability->snr_config[i].height = 2192;
                 sensor_capability->snr_config[i].bitDepth = 12;
@@ -114,7 +127,19 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
     // snr_info->id_table_size = ARRAY_SIZE(imx415_spm_vendor_id);
 
     switch (work_mode) {
-        case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {
+        case IMX415_SPM_3864x2192_10bit_LINEAR_30_4LANE: {
+            snr_info->linetime = IMX415_LINETIME_8M30F_10bit_LINEAR;  // ns
+            snr_info->vts = IMX415_VMAX_8M30F_10bit_LINEAR;
+            snr_info->f32maxFps = 30;
+            snr_info->exp_time[0] = 0x0A8C * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = imx415_spm_3864x2192_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_3864x2192_10bit_30fps_tab);
+            snr_info->mipi_clock = 891;  // Mhz
+        } break;
+        case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {  //rawdump error!!
             snr_info->linetime = IMX415_LINETIME_8M30F_12bit_LINEAR;  // ns
             snr_info->vts = IMX415_VMAX_8M30F_12bit_LINEAR;
             snr_info->f32maxFps = 30;
