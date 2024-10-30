@@ -460,6 +460,13 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
     }
 
+    item = cjson_get_object(root, "use_v4l");
+    if (!item) {
+        config->useV4l = 0;
+    } else {
+        config->useV4l = 1;
+    }
+
     ret = getCppNodeConfig (config, root);
     if (ret) {
         CLOG_ERROR("cpp_node parse error");

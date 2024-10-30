@@ -39,7 +39,5 @@
     9,
     /* @m_nFalseMatchThreshold  Size: 1x9  BitWidth: 16_u  Range~[0, 65535]  Type: firmware */
     /* avg_ydiff * FalseMatchThr / 64, Bigger than Threshold is false match */
-    {512, 512, 512, 256, 128, 128, 64, 64, 64},
-    /* @MatrixCheckPercentageThresholdQ4  Size: 1x1  BitWidth: 9_u  Range~[0, 400]  Type: firmware */
-    /* MatrixCheckPercentageThreshold, Bigger than Percentage, don't merge this frame */
+    {512, 512, 512, 256, 128, 128, 64, 64, 64}
 },

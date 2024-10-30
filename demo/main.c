@@ -9,6 +9,7 @@
 #include "dual_pipeline_capture_test.h"
 #include "online_pipeline_test.h"
 #include "slice_capture_test.h"
+#include "v4l2_single_online.h"
 #include "config.h"
 
 void showTestConfig(struct testConfig config)
@@ -20,6 +21,7 @@ void showTestConfig(struct testConfig config)
     printf("auto_run: %d\n", config.autoRun);
     printf("test_frame: %d\n", config.testFrame);
     printf("dump_one_frame: %d\n", config.dumpFrame);
+    printf("use_v4l: %d\n", config.useV4l);
 
     for (i = 0; i < 2; i++) {
         printf("cpp%d enable: %d\n", i, config.cppConfig[i].enable);
@@ -147,6 +149,10 @@ int main(int argc, char* argv[])
         }
     }
 
+    if (config.useV4l) {
+        caseId |= 0xf0;
+    }
+
     switch (caseId) {
     case 0:
         single_pipeline_online_test(&config);
@@ -172,7 +178,11 @@ int main(int argc, char* argv[])
     case 7:
         slice_capture_test(&config);
         break;
+    case 0xf0:
+        v4l2_single_online_test(&config);
+        break;
     default:
+        printf("error!! invaild caseid %d\n", caseId);
         break;
     }
 

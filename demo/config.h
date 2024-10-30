@@ -78,6 +78,7 @@ struct testConfig {
     int testFrame;
     int dumpFrame;
     int useSnrNode;
+    int useV4l;
 
     int vcmEnable;
     int vcmI2cAddr;
