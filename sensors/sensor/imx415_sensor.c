@@ -500,8 +500,11 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     else if (shr >= sensor_context->minVTS - 4)
         shr = sensor_context->minVTS - 4;
 
+#if USE_12BIT
     integration_time = (uint32_t)((sensor_context->initVTS - shr) * sensor_context->lineTime / 1000 + 2.68);
-
+#else
+    integration_time = (uint32_t)((sensor_context->initVTS - shr) * sensor_context->lineTime / 1000 + 1.79);
+#endif
     sensor_context->hdrIntTime[u32ChanelId] = integration_time * sensor_context->lineTime / 1000;
 
     // if (shr_tmp < 8)
@@ -511,7 +514,7 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     // sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     // sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-shr=90;
+// shr=90;
     sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(shr);
     sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(shr);
     sensor_context->sensorRegs[0].astI2cData[2].u32Data = HIGH_8BITS(HIGH_8BITS(shr));
@@ -746,11 +749,8 @@ static int imx415_power_on(SENSOR_CONTEXT_S* sensor_context)
     usleep(100);
 
     sensor_set_mclk_enable(sensor_context->devId, 1);
-#if USE_12BIT
-    // sensor_set_mclk_rate(sensor_context->devId, 37125000);
-#else
-    sensor_set_mclk_rate(sensor_context->devId, 27000000);
-#endif
+
+    sensor_set_mclk_rate(sensor_context->devId, 37125000);
 
     usleep(100);
 
@@ -758,7 +758,7 @@ static int imx415_power_on(SENSOR_CONTEXT_S* sensor_context)
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 1);
     usleep(1000);
 
-    CLOG_INFO("finish power on");
+    CLOG_INFO("finish power on 22222222");
 
     return 0;
 }

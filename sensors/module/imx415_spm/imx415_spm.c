@@ -131,7 +131,7 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->linetime = IMX415_LINETIME_8M30F_10bit_LINEAR;  // ns
             snr_info->vts = IMX415_VMAX_8M30F_10bit_LINEAR;
             snr_info->f32maxFps = 30;
-            snr_info->exp_time[0] = 0x0A8C * snr_info->linetime / 1000;
+            snr_info->exp_time[0] = 0x08CA * snr_info->linetime / 1000;
             snr_info->again[0] = 1 * 0x100;   // Q8 format
             snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
             snr_info->image_mode = SENSOR_LINEAR_MODE;
