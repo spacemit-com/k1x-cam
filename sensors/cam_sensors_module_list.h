@@ -15,6 +15,8 @@ extern "C" {
 /*sensor*/
 extern SENSOR_OBJ_S os05a10Obj;
 extern SENSOR_OBJ_S ov13b10Obj;
+extern SENSOR_OBJ_S ov13855Obj;
+extern SENSOR_OBJ_S ov13850Obj;
 extern SENSOR_OBJ_S ov08d10Obj;
 extern SENSOR_OBJ_S gc5035Obj;
 extern SENSOR_OBJ_S imx135Obj;
@@ -32,6 +34,8 @@ extern SENSOR_OBJ_S og02b10Obj;
 /*module*/
 extern MODULE_OBJ_S os05a10_spm_Obj;
 extern MODULE_OBJ_S ov13b10_spm_Obj;
+extern MODULE_OBJ_S ov13855_spm_Obj;
+extern MODULE_OBJ_S ov13850_spm_Obj;
 extern MODULE_OBJ_S ov08d10_spm_Obj;
 extern MODULE_OBJ_S gc5035_spm_Obj;
 extern MODULE_OBJ_S imx135_spm_Obj;
@@ -66,6 +70,8 @@ typedef struct SENSORS_MODULE_OBJ {
 SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&os05a10_spm_Obj, &os05a10Obj, NULL, NULL},
     {&ov13b10_spm_Obj, &ov13b10Obj, &gt9772VcmObj, &aw36515FlashObj},
+    {&ov13855_spm_Obj, &ov13855Obj, NULL, NULL},
+    {&ov13850_spm_Obj, &ov13850Obj, NULL, NULL},
     {&ov08d10_spm_Obj, &ov08d10Obj, NULL, NULL},
     {&gc5035_spm_Obj, &gc5035Obj, NULL, NULL},
     {&imx135_spm_Obj, &imx135Obj, &dw9714VcmObj, &aw36515FlashObj},
