@@ -38,6 +38,7 @@ typedef enum {
     ISP_WORKMODE_RAWDUMP,
     ISP_WORKMODE_OFFLINE_PREVIEW,
     ISP_WORKMODE_OFFLINE_CAPTURE,
+    ISP_WORKMODE_CCIC,
     ISP_WORKMODE_SLICE_CAPTURE,
     ISP_WORKMODE_NUM,
 } ISP_WORKMODE;
@@ -57,6 +58,7 @@ struct isFeTestConfig {
     int inHeight;
     int outWidth;
     int outHeight;
+    int vcMode;
 };
 struct SensorTestConfig {
     char sensorName[32];

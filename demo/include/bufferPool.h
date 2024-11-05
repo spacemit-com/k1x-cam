@@ -31,6 +31,7 @@ typedef struct spmBUFFER_POOL_S {
 BUFFER_POOL *create_buffer_pool(int width, int height, PIXEL_FORMAT_E format, const char *name);
 void destroy_buffer_pool(BUFFER_POOL *pool);
 int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count);
+int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, uint32_t continous);
 void buffer_pool_free(BUFFER_POOL *pool);
 ssize_t get_buffer_residue_num(BUFFER_POOL *pool);
 IMAGE_BUFFER_S *buffer_pool_get_buffer(BUFFER_POOL *pool);

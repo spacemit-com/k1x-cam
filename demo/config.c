@@ -183,16 +183,19 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_CAPTURE;
         } else if (!strcmp(cjson_get_str(grandc), "offline_preview")) {
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_PREVIEW;
+        } else if (!strcmp(cjson_get_str(grandc), "ccic")) {
+            config->ispFeConfig[idx].workMode = ISP_WORKMODE_CCIC;
         } else if (!strcmp(cjson_get_str(grandc), "slice_capture")) {
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_SLICE_CAPTURE;
-        }  else {
-            CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture, slice_capture");
+        } else {
+            CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture, ccic, slice_capture");
             ret -1;
             goto out;
         }
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_ONLINE ||
-            config->ispFeConfig[idx].workMode == ISP_WORKMODE_RAWDUMP) {
+            config->ispFeConfig[idx].workMode == ISP_WORKMODE_RAWDUMP ||
+			config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
             // need sensor info
             grandc = cjson_get_object(child, "sensor_name");
             if (!grandc) {
@@ -227,6 +230,16 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             }
             config->ispFeConfig[idx].fps = cjson_get_int(grandc);
         }
+
+        if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
+            grandc = cjson_get_object(child, "vc_mode");
+            if (!grandc) {
+                CLOG_ERROR("get %s vc_mode failed", name);
+                ret = -1;
+                goto out;
+            }
+            config->ispFeConfig[idx].vcMode = cjson_get_int(grandc);
+		}
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_OFFLINE_PREVIEW) {
             grandc = cjson_get_object(child, "src_file");

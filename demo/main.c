@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
                 caseId = 2;
             if (config.ispFeConfig[0].workMode == ISP_WORKMODE_ONLINE &&
                 config.ispFeConfig[1].workMode == ISP_WORKMODE_SLICE_CAPTURE) {
-                caseId = 7;
+                caseId = 8;
             }
         }
     } else if (config.cppConfig[0].enable && !config.cppConfig[1].enable) {
@@ -146,6 +146,8 @@ int main(int argc, char* argv[])
                 caseId = 3;
             else if (config.ispFeConfig[0].workMode == ISP_WORKMODE_OFFLINE_PREVIEW)
                 caseId = 5;
+            else if (config.ispFeConfig[0].workMode == ISP_WORKMODE_CCIC)
+                caseId = 7;
         }
     }
 
@@ -176,6 +178,9 @@ int main(int argc, char* argv[])
         only_cpp_test(&config);
         break;
     case 7:
+        only_ccic_test(&config);
+        break;
+    case 8:
         slice_capture_test(&config);
         break;
     case 0xf0:

@@ -229,7 +229,7 @@ int buffer_pool_invlide_cache(BUFFER_POOL *pool, IMAGE_BUFFER_S *imageBuffer)
     return 0;
 }
 
-int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
+int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, uint32_t continous)
 {
     uint32_t block_size = 0, buffer_size = 0, i = 0, j = 0;
     uint32_t offset = 0;
@@ -251,10 +251,9 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     buffer_size = get_buffer_size(&(pool->bufInfo), 0);
     CLOG_INFO("pool(%s) buffer_size=%u buffer_count=%u block_size=%u\n", pool->name, buffer_size, buffer_count,
               block_size);
-    CLOG_INFO("alloc buffer continues = 1\n");
     for (i = 0; i < buffer_count; i++) {
         offset = 0;
-        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, 1);
+        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, continous);
         if (ret < 0) {
             CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
             return ret;
@@ -305,6 +304,13 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     pool->size = buffer_count;
     pool->buffer_size = buffer_size;
     return 0;
+}
+
+int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
+{
+    int32_t ret = 0;
+    ret = buffer_pool_continous_alloc(pool, buffer_count, 0);
+    return ret;
 }
 
 void buffer_pool_free(BUFFER_POOL *pool)
