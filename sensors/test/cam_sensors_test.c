@@ -35,13 +35,13 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId);
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, -1);
     if (ret) {
         CLOG_ERROR("detect sensor fail");
         return ret;
     }
 
-    ret = SPM_SENSORS_MODULE_Init(&sensors_handle, sensors_name, devId, &sensors_module_info);
+    ret = SPM_SENSORS_MODULE_Init(&sensors_handle, sensors_name, devId, &sensors_module_info, -1);
     if (ret) {
         CLOG_ERROR("sensors module init fail");
         return ret;
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
             CLOG_INFO("sensor_config_info[%d].width %d", i, sensors_cap.sensor_capability.snr_config[i].width);
             CLOG_INFO("sensor_config_info[%d].height %d", i, sensors_cap.sensor_capability.snr_config[i].height);
             CLOG_INFO("sensor_config_info[%d].bitDepth %d", i, sensors_cap.sensor_capability.snr_config[i].bitDepth);
-            CLOG_INFO("sensor_config_info[%d].fps %d", i, sensors_cap.sensor_capability.snr_config[i].maxFps);
+            CLOG_INFO("sensor_config_info[%d].fps %f", i, sensors_cap.sensor_capability.snr_config[i].maxFps);
             CLOG_INFO("sensor_config_info[%d].image_mode %d", i,
                       sensors_cap.sensor_capability.snr_config[i].image_mode);
             CLOG_INFO("sensor_config_info[%d].lane_num %d", i, sensors_cap.sensor_capability.snr_config[i].lane_num);

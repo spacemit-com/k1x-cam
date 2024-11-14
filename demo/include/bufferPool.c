@@ -12,7 +12,7 @@
 
 #define ALIGN_N(x, n) (((x) + (n)-1) & (~((n)-1)))
 
-static uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
+uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
 {
     bool has_dwt = false;
     uint32_t buffer_size = 0;
@@ -229,7 +229,7 @@ int buffer_pool_invlide_cache(BUFFER_POOL *pool, IMAGE_BUFFER_S *imageBuffer)
     return 0;
 }
 
-int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
+int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, uint32_t continous)
 {
     uint32_t block_size = 0, buffer_size = 0, i = 0, j = 0;
     uint32_t offset = 0;
@@ -239,8 +239,8 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     IMAGE_BUFFER_S *buffer = NULL;
     IMAGE_BUFFER_PLANE_S *planes = NULL;
 
-    if (buffer_count > 5) {
-        CLOG_ERROR("pool(%s) buffer count(%u) could not be larger than %u\n", pool->name, buffer_count, 5);
+    if (buffer_count > BUFFER_POOL_MAX_SIZE) {
+        CLOG_ERROR("pool(%s) buffer count(%u) could not be larger than %u\n", pool->name, buffer_count, BUFFER_POOL_MAX_SIZE);
         return -1;
     }
 
@@ -251,10 +251,9 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     buffer_size = get_buffer_size(&(pool->bufInfo), 0);
     CLOG_INFO("pool(%s) buffer_size=%u buffer_count=%u block_size=%u\n", pool->name, buffer_size, buffer_count,
               block_size);
-    CLOG_INFO("alloc buffer continues = 1\n");
     for (i = 0; i < buffer_count; i++) {
         offset = 0;
-        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, 1);
+        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, continous);
         if (ret < 0) {
             CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
             return ret;
@@ -307,6 +306,13 @@ int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
     return 0;
 }
 
+int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count)
+{
+    int32_t ret = 0;
+    ret = buffer_pool_continous_alloc(pool, buffer_count, 0);
+    return ret;
+}
+
 void buffer_pool_free(BUFFER_POOL *pool)
 {
     uint32_t i;
@@ -314,7 +320,15 @@ void buffer_pool_free(BUFFER_POOL *pool)
     List_Clear(pool->buf_list);
     for (i = 0; i < pool->size; i++) dmabufheapFree(&pool->mem_block[i]);
 }
+ssize_t get_buffer_residue_num(BUFFER_POOL *pool)
+{
+    IMAGE_BUFFER_S *buffer = NULL;
 
+    if (!pool->buf_list)
+        return -1;
+
+    return List_GetSize(pool->buf_list);
+}
 IMAGE_BUFFER_S *buffer_pool_get_buffer(BUFFER_POOL *pool)
 {
     IMAGE_BUFFER_S *buffer = NULL;
@@ -353,7 +367,7 @@ int frameinfo_buffer_alloc(IMAGE_BUFFER_S *frameInfoBuf)
         return -1;
     } else {
         memset(frameInfoBuf->planes[0].virAddr, 0, frameInfoBuf->planes[0].length);
-        CLOG_INFO("malloc (%zu+%zu) for frameinfo buffer!\n", sizeof(FRAME_INFO_S), sizeof(_isp_fw_frameinfo_t));
+        CLOG_DEBUG("malloc (%zu+%zu) for frameinfo buffer!\n", sizeof(FRAME_INFO_S), sizeof(_isp_fw_frameinfo_t));
     }
 
     return ret;

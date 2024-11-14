@@ -622,7 +622,35 @@ static int imx135_get_awblib_default_settings(void* snsHandle, uint32_t u32Chane
 
     return 0;
 }
+static int imx135_power_on(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
 
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1050000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 1);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 1);
+    usleep(2100);
+
+    sensor_set_mclk_enable(sensor_context->devId, 1);
+    sensor_set_mclk_rate(sensor_context->devId, 24000000);
+
+    usleep(100);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 1);
+    usleep(100);
+
+    CLOG_INFO("finish power on 1.05");
+    return 0;
+}
 /*******************************************************************/
 static int imx135_init(void** pHandle, int sns_id, uint8_t sns_addr)
 {
@@ -643,6 +671,7 @@ static int imx135_init(void** pHandle, int sns_id, uint8_t sns_addr)
     pthread_mutex_init(&sensor_context->apiLock, NULL);
 
     sensor_hw_init(sensor_context->devId);
+    // imx135_power_on(sensor_context);
     sensor_hw_unreset(sensor_context->devId);
     sensor_get_hw_info(sensor_context->devId, &sensor_hw_info);
     sensor_context->twsi_no = sensor_hw_info.twsi_no;

@@ -26,6 +26,8 @@ typedef struct SENSORS_MODULE_CONTEXT {
     void* vcm_handle;
     void* flash_handle;
     CCSensorTestPatternMode test_pattern_mode;
+    FLASH_OBJ_S* flashObj;
+    VCM_OBJ_S* vcmObj;
 } SENSORS_MODULE_CONTEXT_S;
 
 
@@ -143,7 +145,7 @@ static int sensors_module_find_obj(const char* name)
     return -1;
 }
 
-static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj_p, int devId)
+static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj_p, int devId, int addr)
 {
     void* snr_handle = NULL;
     int ret = 0;
@@ -161,14 +163,19 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     moduleObj->pfnGetSnrVendorId(&vendor_id_table);
     moduleObj->pfnGetSnrI2cAddr(&sensor_i2c_addr);
 
-    sensorObj->pfnInit(&snr_handle, devId, sensor_i2c_addr);
+    if (addr != -1) {
+        sensorObj->pfnInit(&snr_handle, devId, (uint8_t)addr);
+    } else {
+        sensorObj->pfnInit(&snr_handle, devId, sensor_i2c_addr);
+    }
+
     ret = sensorObj->pfnDetectSns(snr_handle, &vendor_id_table);
     sensorObj->pfnDeinit(snr_handle);
 
     return ret;
 }
 /**********************************************************************************************/
-CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId)
+CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr)
 {
     int ret = 0;
     int module_id;
@@ -185,7 +192,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId)
 
     /*sensor*/
     if (sensors_module_obj_p->sensor_obj_p) {
-        ret = sensors_module_detect_sensor(sensors_module_obj_p, devId);
+        ret = sensors_module_detect_sensor(sensors_module_obj_p, devId, addr);
         if (ret) {
             goto out;
         }
@@ -198,7 +205,7 @@ out:
     return ret;
 }
 
-CAM_API int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info)
+CAM_API int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info, int addr)
 {
     int module_id;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
@@ -241,7 +248,10 @@ CAM_API int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId,
         }
         moduleObj->pfnGetsnrCapbility(sensor_config_num, &sensors_module_context->sensor_capability);
     }
-    moduleObj->pfnGetSnrI2cAddr(&sensors_module_context->sensor_i2c_addr);
+    if (addr != -1)
+        sensors_module_context->sensor_i2c_addr = addr;
+    else
+        moduleObj->pfnGetSnrI2cAddr(&sensors_module_context->sensor_i2c_addr);
 
     module_info->snr_config_num = sensors_module_context->sensor_capability.snr_config_num;
     *pHandle = sensors_module_context;
@@ -515,9 +525,9 @@ CAM_API int SPM_SENSOR_ReadReg(void* handle, uint16_t regAddr, uint16_t* value)
     return ret;
 }
 
-CAM_API int SPM_VCM_Open(void* handle)
+CAM_API int SPM_VCM_Open(void* handle, int cust_en, char *cust_name, int cust_i2c_bus, int cust_i2c_addr)
 {
-    int ret = 0;
+    int i, ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     VCM_OBJ_S* vcmObj = NULL;
 
@@ -528,12 +538,31 @@ CAM_API int SPM_VCM_Open(void* handle)
         CLOG_WARNING("vcm has been opened, don't need to open again");
         return -EBUSY;
     }
-    vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
-    if (vcmObj == NULL) {
-        return -ENOTTY;
-    }
+    int module_num = ARRAY_SIZE(sensors_module_list);
 
-    ret = vcmObj->pfnInit(&sensors_module_context->vcm_handle);
+    if (cust_en) {
+        for (i = 0; i < ARRAY_SIZE(sensors_vcms_list); i++) {
+            if (!strcmp(cust_name, sensors_vcms_list[i]->name)) {
+                sensors_module_context->vcmObj = sensors_vcms_list[i];
+                vcmObj = sensors_vcms_list[i];
+                break;
+            }
+        }
+        if (i >= ARRAY_SIZE(sensors_vcms_list)) {
+            CLOG_ERROR("vcm name %s no match(%d) ", cust_name, i);
+            CLOG_ERROR("vcm name %s no match(%d) ", cust_name, i);
+
+            return -ENOTTY;
+        }
+        ret = vcmObj->pfnInit(&sensors_module_context->vcm_handle, cust_i2c_bus, cust_i2c_addr);
+    } else {
+        vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
+        if (vcmObj == NULL) {
+            return -ENOTTY;
+        }
+        sensors_module_context->vcmObj = NULL;
+        ret = vcmObj->pfnInit(&sensors_module_context->vcm_handle, -1, -1);
+    }
 
     return ret;
 }
@@ -551,8 +580,12 @@ CAM_API int SPM_VCM_Close(void* handle)
         CLOG_WARNING("vcm has been closed, don't need to close again");
         return -EBUSY;
     }
-    SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->vcm_obj_p);
-    vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
+    if (sensors_module_context->vcmObj == NULL) {
+        SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->vcm_obj_p);
+        vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
+    } else {
+        vcmObj = sensors_module_context->vcmObj;
+    }
 
     ret = vcmObj->pfnDeinit(sensors_module_context->vcm_handle);
     sensors_module_context->vcm_handle = NULL;
@@ -570,16 +603,21 @@ CAM_API int SPM_VCM_GetOps(void* handle, ISP_AF_MOTOR_REGISTER_S* ops)
     sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)handle;
     SENSORS_MODULE_CHECK_HANDLE_IS_ERR(sensors_module_context);
     SENSORS_CHECK_POINTER(sensors_module_context->vcm_handle);
-    SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->vcm_obj_p);
-    vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
+
+    if (sensors_module_context->vcmObj == NULL) {
+        SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->vcm_obj_p);
+        vcmObj = sensors_module_context->sensors_module_obj_p->vcm_obj_p;
+    } else {
+        vcmObj = sensors_module_context->vcmObj;
+    }
 
     ret = vcmObj->pfnGetVcmOps(sensors_module_context->vcm_handle, ops);
 
     return ret;
 }
-CAM_API int SPM_FLASH_Open(void* handle)
+CAM_API int SPM_FLASH_Open(void* handle, int cust_en, char *cust_name)
 {
-    int ret = 0;
+    int i, ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     FLASH_OBJ_S* flashObj = NULL;
 
@@ -590,12 +628,27 @@ CAM_API int SPM_FLASH_Open(void* handle)
         CLOG_WARNING("flash has been opened, don't need to open again");
         return -EBUSY;
     }
-    flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
-    if (flashObj == NULL) {
-        return -ENOTTY;
+    if (cust_en) {
+        for (i = 0; i < ARRAY_SIZE(sensors_flashs_list); i++) {
+            if (!strcmp(cust_name, sensors_flashs_list[i]->name)) {
+                sensors_module_context->flashObj = sensors_flashs_list[i];
+                flashObj = sensors_flashs_list[i];
+                break;
+            }
+        }
+        if (i >= ARRAY_SIZE(sensors_flashs_list)) {
+            CLOG_ERROR("flash name %s no match(%d) ", cust_name, i);
+            return -ENOTTY;
+        }
+        ret = flashObj->pfnInit(&sensors_module_context->flash_handle);
+    } else {
+        flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
+        if (flashObj == NULL) {
+            return -ENOTTY;
+        }
+        sensors_module_context->flashObj = NULL;
+        ret = flashObj->pfnInit(&sensors_module_context->flash_handle);
     }
-
-    ret = flashObj->pfnInit(&sensors_module_context->flash_handle);
 
     return ret;
 }
@@ -613,8 +666,13 @@ CAM_API int SPM_FLASH_Close(void* handle)
         CLOG_WARNING("flash has been closed, don't need to close again");
         return -EBUSY;
     }
-    SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->flash_obj_p);
-    flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
+
+    if (sensors_module_context->flashObj == NULL) {
+        SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->flash_obj_p);
+        flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
+    } else {
+        flashObj = sensors_module_context->flashObj;
+    }
 
     ret = flashObj->pfnDeinit(sensors_module_context->flash_handle);
     sensors_module_context->flash_handle = NULL;
@@ -631,9 +689,13 @@ CAM_API int SPM_FLASH_SetMode(void* handle, int mode)
     sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)handle;
     SENSORS_MODULE_CHECK_HANDLE_IS_ERR(sensors_module_context);
     SENSORS_CHECK_POINTER(sensors_module_context->flash_handle);
-    SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->flash_obj_p);
-    flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
 
+    if (sensors_module_context->flashObj == NULL) {
+        SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->flash_obj_p);
+        flashObj = sensors_module_context->sensors_module_obj_p->flash_obj_p;
+    } else {
+        flashObj = sensors_module_context->flashObj;
+    }
     ret = flashObj->pfnSetMode(sensors_module_context->flash_handle, mode);
 
     return ret;

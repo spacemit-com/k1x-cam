@@ -91,7 +91,7 @@ static int s5k5e3yx_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABI
                 sensor_capability->snr_config[i].minFps = 15;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 2;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = S5K5E3YX_SPM_2560x1920_10bit_LINEAR_30_2LANE;
                 sensor_capability->snr_config[i].setting = &s5k5e3yx_spm_setting;

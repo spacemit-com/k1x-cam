@@ -604,6 +604,14 @@ int viisp_isp_init(int firmwareId, IMAGE_INFO_S out_info, SENSOR_MODULE_INFO* se
         return ret;
     }
 
+    if (sensor_info->vcm_en) {
+        ret = ASR_ISP_RegAfMotorCallBack(firmwareId, sensor_info->pAfOps);
+        if (ret) {
+            CLOG_ERROR("%s: ASR_ISP_RegAfMotorCallBack failed, ret = %d", __func__, ret);
+            return ret;
+        }
+    }
+
     stIspPubAttr.stInputSize.width = sensor_info->sensor_cfg->width;
     stIspPubAttr.stInputSize.height = sensor_info->sensor_cfg->height;
     stIspPubAttr.stOutSize.width = out_info.width;

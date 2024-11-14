@@ -11,72 +11,12 @@
 #include "cjson.h"
 #include "sstr.h"
 
-int getTestConfig(struct testConfig *config, char *jsonfile)
+static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
 {
-    int ret = 0;
-    int num = 0, i, idx = 0;
-    struct cjson *root = NULL, *item = NULL, *child = NULL, *grandc = NULL;
-    char dftFile[64] = "/tmp/sdktest.json";
-    char name[16] = "\0";
-
-    if (!jsonfile) {
-        CLOG_INFO("using default jsonfile %s", dftFile);
-        jsonfile = dftFile;
-    }
-    if (access(jsonfile, F_OK | R_OK)) {
-        CLOG_ERROR("can not access jsonfile %s", jsonfile);
-        return -1;
-    }
-
-    root = cjson_new_file(jsonfile);
-    if (!root) {
-        CLOG_ERROR("can not get json object from %s", jsonfile);
-        return -1;
-    }
-
-    item = cjson_get_object(root, "tuning_server_enable");
-    if (!item) {
-        CLOG_ERROR("get tuning_server_enable failed");
-        ret = -1;
-        goto out;
-    }
-    config->tuningServerEnalbe = cjson_get_int(item);
-
-    item = cjson_get_object(root, "show_fps");
-    if (!item) {
-        CLOG_ERROR("get show_fps failed");
-        ret = -1;
-        goto out;
-    }
-    config->showFps = cjson_get_int(item);
-
-    item = cjson_get_object(root, "auto_run");
-    if (!item) {
-        CLOG_ERROR("get auto_run failed");
-        ret = -1;
-        goto out;
-    }
-    config->autoRun = cjson_get_int(item);
-
-    item = cjson_get_object(root, "test_frame");
-    if (!item) {
-        CLOG_INFO("get test_frame failed, set test_frame: 500, dump_one_frame:250 as default");
-        config->testFrame = 500;
-        config->dumpFrame = 250;
-    } else {
-        config->testFrame = cjson_get_int(item);
-        config->testFrame = (config->testFrame < 6) ? 6 : config->testFrame;
-
-        item = cjson_get_object(root, "dump_one_frame");
-        if (!item) {
-            CLOG_INFO("get dump_one_frame failed, set to %d", config->testFrame / 2);
-            config->dumpFrame = config->testFrame / 2;
-        } else {
-            config->dumpFrame = cjson_get_int(item);
-            config->dumpFrame = (config->dumpFrame > config->testFrame - 1) ? config->testFrame - 1 : config->dumpFrame;
-        }
-    }
-    CLOG_INFO("set test_frame: %d, dump_one_frame: %d", config->testFrame, config->dumpFrame);
+    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    int num = 0, i, idx = 0, ret = 0;
+    // char name[16] = "\0";
+    char name[16];
 
     item = cjson_get_object(root, "cpp_node");
     if (!item) {
@@ -84,6 +24,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         ret = -1;
         goto out;
     }
+
     num = cjson_get_len(item);
     CLOG_INFO("cpp node num: %d", num);
     for (i = 0; i < num; i++) {
@@ -174,6 +115,17 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
     }
 
+out:
+    return ret;
+}
+
+static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
+{
+    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    int num = 0, i, idx = 0, ret = 0;
+    // char name[16] = "\0";
+    char name[16];
+
     item = cjson_get_object(root, "isp_node");
     if (!item) {
         CLOG_ERROR("get isp_node failed");
@@ -231,14 +183,19 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_CAPTURE;
         } else if (!strcmp(cjson_get_str(grandc), "offline_preview")) {
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_OFFLINE_PREVIEW;
+        } else if (!strcmp(cjson_get_str(grandc), "ccic")) {
+            config->ispFeConfig[idx].workMode = ISP_WORKMODE_CCIC;
+        } else if (!strcmp(cjson_get_str(grandc), "slice_capture")) {
+            config->ispFeConfig[idx].workMode = ISP_WORKMODE_SLICE_CAPTURE;
         } else {
-            CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture");
+            CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture, ccic, slice_capture");
             ret -1;
             goto out;
         }
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_ONLINE ||
-            config->ispFeConfig[idx].workMode == ISP_WORKMODE_RAWDUMP) {
+            config->ispFeConfig[idx].workMode == ISP_WORKMODE_RAWDUMP ||
+			config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
             // need sensor info
             grandc = cjson_get_object(child, "sensor_name");
             if (!grandc) {
@@ -273,6 +230,16 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
             }
             config->ispFeConfig[idx].fps = cjson_get_int(grandc);
         }
+
+        if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
+            grandc = cjson_get_object(child, "vc_mode");
+            if (!grandc) {
+                CLOG_ERROR("get %s vc_mode failed", name);
+                ret = -1;
+                goto out;
+            }
+            config->ispFeConfig[idx].vcMode = cjson_get_int(grandc);
+		}
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_OFFLINE_PREVIEW) {
             grandc = cjson_get_object(child, "src_file");
@@ -338,6 +305,201 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
         config->ispFeConfig[idx].outHeight = cjson_get_int(grandc);
     }
+
+out:
+    return ret;
+}
+
+static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
+{
+    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    int num = 0, i, idx = 0, ret = 0;
+    char name[16] = "\0";
+
+    item = cjson_get_object(root, "sensor_node");
+    if (!item) {
+        CLOG_INFO("no sensor_node, use default config");
+        config->snrConfig[0].flashEnable = 0;
+        config->snrConfig[0].vcmEnable = 0;
+        config->snrConfig[1].flashEnable = 0;
+        config->snrConfig[1].vcmEnable = 0;
+        config->snrConfig[0].snrI2cAddr = -1;
+        config->snrConfig[1].snrI2cAddr = -1;
+        config->useSnrNode = 0;
+    } else {
+        num = cjson_get_len(item);
+        CLOG_INFO("sensor node num: %d", num);
+
+        for (i = 0; i < num; i++) {
+            child = cjson_get_array(item, i);
+            if (!child) {
+                CLOG_ERROR("get sensor_node array %d failed", i);
+                ret = -1;
+                goto out;
+            }
+            // sensor config
+            grandc = cjson_get_object(child, "sensor_name");
+            if (!grandc) {
+                CLOG_ERROR("get sensor%d name failed", i);
+                ret = -1;
+                goto out;
+            }
+            snprintf(config->snrConfig[i].sensorName,
+                    sizeof(config->snrConfig[i].sensorName),
+                    "%s",
+                    cjson_get_str(grandc));
+
+            grandc = cjson_get_object(child, "sensor_i2c_addr");
+            if (!grandc) {
+                config->snrConfig[i].snrI2cAddr = -1;
+            } else {
+                config->snrConfig[i].snrI2cAddr = cjson_get_int(grandc);
+            }
+
+            //vcm config
+            grandc = cjson_get_object(child, "vcm_name");
+            if (!grandc) {
+                config->snrConfig[i].vcmEnable = 0;
+            } else {
+                config->snrConfig[i].vcmEnable = 1;
+                snprintf(config->snrConfig[i].vcmName,
+                        sizeof(config->snrConfig[i].vcmName),
+                        "%s",
+                        cjson_get_str(grandc));
+
+                grandc = cjson_get_object(child, "vcm_i2c_bus");
+                if (!grandc) {
+                    config->snrConfig[i].vcmI2cBus = -1;
+                } else {
+                    config->snrConfig[i].vcmI2cBus = cjson_get_int(grandc);
+                }
+                grandc = cjson_get_object(child, "vcm_i2c_addr");
+                if (!grandc) {
+                    config->snrConfig[i].vcmI2cAddr = -1;
+                } else {
+                    config->snrConfig[i].vcmI2cAddr = cjson_get_int(grandc);
+                }
+            }
+
+            //flash config
+            grandc = cjson_get_object(child, "flash_name");
+            if (!grandc) {
+                config->snrConfig[i].flashEnable = 0;
+            } else {
+                config->snrConfig[i].flashEnable = 1;
+
+                snprintf(config->snrConfig[i].flashName,
+                        sizeof(config->snrConfig[i].flashName),
+                        "%s",
+                        cjson_get_str(grandc));
+            }
+        }
+        config->useSnrNode++;
+    }
+    if (config->useSnrNode == 1) {
+        config->snrConfig[1].flashEnable = 0;
+        config->snrConfig[1].vcmEnable = 0;
+
+        config->snrConfig[1].snrI2cAddr = -1;
+    }
+
+out:
+    return ret;
+}
+
+int getTestConfig(struct testConfig *config, char *jsonfile)
+{
+    int ret = 0;
+    int num = 0, i, idx = 0;
+    struct cjson *root = NULL, *item = NULL, *child = NULL, *grandc = NULL;
+    char dftFile[64] = "/tmp/sdktest.json";
+    char name[16] = "\0";
+
+    if (!jsonfile) {
+        CLOG_INFO("using default jsonfile %s", dftFile);
+        jsonfile = dftFile;
+    }
+    if (access(jsonfile, F_OK | R_OK)) {
+        CLOG_ERROR("can not access jsonfile %s", jsonfile);
+        return -1;
+    }
+
+    root = cjson_new_file(jsonfile);
+    if (!root) {
+        CLOG_ERROR("can not get json object from %s", jsonfile);
+        return -1;
+    }
+
+    item = cjson_get_object(root, "tuning_server_enable");
+    if (!item) {
+        CLOG_ERROR("get tuning_server_enable failed");
+        ret = -1;
+        goto out;
+    }
+    config->tuningServerEnalbe = cjson_get_int(item);
+
+    item = cjson_get_object(root, "show_fps");
+    if (!item) {
+        CLOG_ERROR("get show_fps failed");
+        ret = -1;
+        goto out;
+    }
+    config->showFps = cjson_get_int(item);
+
+    item = cjson_get_object(root, "auto_run");
+    if (!item) {
+        CLOG_ERROR("get auto_run failed");
+        ret = -1;
+        goto out;
+    }
+    config->autoRun = cjson_get_int(item);
+
+    item = cjson_get_object(root, "test_frame");
+    if (!item) {
+        CLOG_DEBUG("no test_frame. set test_frame: 500, dump_one_frame:250 as default");
+        config->testFrame = 500;
+        config->dumpFrame = 250;
+    } else {
+        config->testFrame = cjson_get_int(item);
+        config->testFrame = (config->testFrame < 6) ? 6 : config->testFrame;
+
+        item = cjson_get_object(root, "dump_one_frame");
+        if (!item) {
+            CLOG_DEBUG("get dump_one_frame failed, set to %d", config->testFrame / 2);
+            config->dumpFrame = config->testFrame / 2;
+        } else {
+            config->dumpFrame = cjson_get_int(item);
+            config->dumpFrame = (config->dumpFrame > config->testFrame - 1) ? config->testFrame - 1 : config->dumpFrame;
+        }
+    }
+
+    item = cjson_get_object(root, "use_v4l");
+    if (!item) {
+        config->useV4l = 0;
+    } else {
+        config->useV4l = 1;
+    }
+
+    ret = getCppNodeConfig (config, root);
+    if (ret) {
+        CLOG_ERROR("cpp_node parse error");
+        goto out;
+    }
+
+    ret = getIspNodeConfig (config, root);
+    if (ret) {
+        CLOG_ERROR("isp_node parse error");
+        goto out;
+    }
+
+    ret = getSensorNodeConfig (config, root);
+    if (ret) {
+        CLOG_ERROR("sensor_node parse error");
+        goto out;
+    }
+
+    // CLOG_INFO("show test_frame: %d, dump_one_frame: %d, aux_device: %d, vcmI2cBus: %d",
+    //     config->testFrame, config->dumpFrame, config->auxDevice, config->vcmI2cBus);
 
 out:
     cjson_delete(root);

@@ -105,8 +105,20 @@ bool List_Destroy(LIST_HANDLE handle)
 inline ssize_t List_GetSize(LIST_HANDLE handle)
 {
     LIST_S *list = List_HandleToList(handle);
+    ssize_t ret;
 
-    return (list ? list->size : -1);
+    if (list) {
+        pthread_mutex_lock(&list->mutex);
+        //pthread_spin_lock(&list->spinlock);
+        ret = list->size;
+        //pthread_spin_unlock(&list->spinlock);
+        pthread_mutex_unlock(&list->mutex);
+    } else {
+        ret = -1;
+    }
+
+    return ret;
+    // return (list ? list->size : -1);
 }
 
 inline bool List_IsEmpty(LIST_HANDLE handle)
@@ -130,18 +142,24 @@ LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item)
     LIST_S *list = List_HandleToList(handle);
     LIST_NODE_S *result = NULL;
 
-    if (!list || (!list->allowRepeatItem && List_Find(handle, item))) {
+    if (!list) {
+        return NULL;
+    }
+
+    pthread_mutex_lock(&list->mutex);
+    if (!list->allowRepeatItem && List_Find(handle, item)) {
+        pthread_mutex_unlock(&list->mutex);
         return NULL;
     }
 
     result = MEMORY_MALLOC_OBJECT(LIST_NODE_S);
 
     if (!result) {
+        pthread_mutex_unlock(&list->mutex);
         return NULL;
     }
 
     MEMORY_ZERO_OBJECT(result);
-    pthread_mutex_lock(&list->mutex);
     result->item = (void *)item;
     result->list = list;
     result->previous = list->tail;
@@ -260,13 +278,22 @@ LIST_ITERATOR_S *List_EraseByIterator(LIST_ITERATOR_S *iterator)
 
 bool List_EraseByItem(LIST_HANDLE handle, const void *item)
 {
+    LIST_S *list = List_HandleToList(handle);
+
+    if (!list) {
+        return NULL;
+    }
+    pthread_mutex_lock(&list->mutex);
+
     LIST_ITERATOR_S *iterator = List_Find(handle, item);
 
     if (!iterator) {
+        pthread_mutex_unlock(&list->mutex);
         return false;
     }
 
     List_EraseByIterator(iterator);
+    pthread_mutex_unlock(&list->mutex);
 
     return true;
 }
@@ -294,7 +321,22 @@ bool List_Clear(LIST_HANDLE handle)
 
     return true;
 }
-
+inline void List_Lock(LIST_HANDLE handle)
+{
+    LIST_S *list = List_HandleToList(handle);
+    if (!list) {
+        return;
+    }
+    pthread_mutex_lock(&list->mutex);
+}
+inline void List_Unlock(LIST_HANDLE handle)
+{
+    LIST_S *list = List_HandleToList(handle);
+    if (!list) {
+        return;
+    }
+    pthread_mutex_unlock(&list->mutex);
+}
 inline LIST_ITERATOR_S *List_GetBeginIterator(LIST_HANDLE handle)
 {
     LIST_S *list = List_HandleToList(handle);
@@ -432,7 +474,14 @@ inline LIST_ITERATOR_S *List_FindIteratorIf(LIST_HANDLE handle, List_OnExternalF
 
 inline void *List_FindItemIf(LIST_HANDLE handle, List_OnExternalFind onExternalFind, const void *condition)
 {
+    LIST_S *list = List_HandleToList(handle);
+    if (!list) {
+        return NULL;
+    }
+    pthread_mutex_lock(&list->mutex);
+
     LIST_ITERATOR_S *result = List_FindIteratorIf(handle, onExternalFind, condition);
+    pthread_mutex_unlock(&list->mutex);
 
     return (result ? result->item : NULL);
 }

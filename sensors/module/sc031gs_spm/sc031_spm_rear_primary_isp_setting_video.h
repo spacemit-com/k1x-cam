@@ -3,7 +3,7 @@
 {
     /* @m_nRevisionNumber  Size: 1x1  BitWidth: 32_u  Range~[0, 262144]  Type: fw_info */
     /* Firmware revision number */
-    9105
+    9927
 },
 
 //CTopFirmwareFilter
@@ -91,9 +91,24 @@
     /* @m_nFaceLumaOption  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: hardware, 1: software */
     0,
-    /* @m_nFaceDetFrameID  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
-    /* face detect frame id, only read parameter  */
-    0
+    /* @m_bMotionDetectEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* 0 - disable, 1 - enable */
+    0,
+    /* @m_bMotionDetectExt  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* 0 - detect motion by internal aem stat, 1 - detect motion by external gyro information. */
+    0,
+    /* @m_nMotionStrengthExt  Size: 1x1  BitWidth: 32_u  Range~[0, 7]  Type: firmware */
+    /* indicate the strength of gyro motion, 0 means no motion, 7 means max motion, only use in m_bMotionDetectExt equals 1 */
+    0,
+    /* @m_nSADIntervalFrame  Size: 1x1  BitWidth: 32_u  Range~[1, 9]  Type: firmware */
+    /* the interval frame number when calculating luma SAD, only use in m_bMotionDetectExt equals 0 */
+    4,
+    /* @m_nMotionThreshold  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
+    /* sad threshold of motion detection, only use in m_bMotionDetectExt equals 0 */
+    3000,
+    /* @m_nMotionDetectFrame  Size: 1x1  BitWidth: 32_u  Range~[2, 9]  Type: firmware */
+    /* frame number of motion detection, only use in m_bMotionDetectExt equals 0 */
+    5
 },
 
 //CDigitalGainFirmwareFilter
@@ -424,6 +439,12 @@
     /* @m_bLSCCSCEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable LSC color shading correction, 1-enable LSC color shading correction (for LSC auto mode) */
     1,
+    /* @m_bLSCCSCENorEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* 0-disable energe normalization of color shading correction, 1-enable energe normalization of color shading correction */
+    1,
+    /* @m_nLSCCSCMode  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* CSC work mode, 0-auto mode, 1-lock mode */
+    0,
     /* @m_bAdjustCSCTblMinEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-don't adjust R/G(B/G) minimum, 1-adjust R/G(B/G) minimum */
     0,
@@ -487,7 +508,7 @@
     /* @m_pEffNumRing  Size: 1x3  BitWidth: 32_u  Range~[0, 192]  Type: firmware */
     /* effective point threshold in the ring */
     {4, 8, 12},
-    /* @m_pCSCCTIndex  Size: 1x2  BitWidth: 32_u  Range~[0, 4096]  Type: firmware */
+    /* @m_pCSCCTIndex  Size: 1x2  BitWidth: 32_u  Range~[0, 8192]  Type: firmware */
     /* CT index of CSC on or off. close CSC if CT is bigger than CSCCTIndex[1], CSCCTIndex[0] <= CSCCTIndex[1] */
     {1000, 2000},
     /* @m_pCSCLuxIndex  Size: 1x2  BitWidth: 32_u  Range~[0, 65536]  Type: firmware */
@@ -1314,7 +1335,7 @@
     /* conf limit */
     192,
     /* @m_nSearchRange  Size: 1x1  BitWidth: 32_u  Range~[0, 3]  Type: firmware */
-    /* search range of pd shift(invalid in NEON mode) */
+    /* search range of pd shift */
     0
 },
 
@@ -1387,16 +1408,16 @@
     /* @m_pCTMatrixLow  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix low */
     {
-        { 1.616474, -0.880436,  0.028892},
-        {-0.277722,  1.268335,  0.369871},
-        { 0.016239,  0.141650,  0.853639}
+        {1.616474, -0.880436, 0.028892},
+        {-0.277722, 1.268335, 0.369871},
+        {0.016239, 0.141650, 0.853639}
     },
     /* @m_pCTMatrixHigh  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix high */
     {
-        { 0.879780, -0.240055, -0.071219},
-        {-0.256057,  1.105865,  0.197109},
-        { 0.023062,  0.159999,  0.541509}
+        {0.879780, -0.240055, -0.071219},
+        {-0.256057, 1.105865, 0.197109},
+        {0.023062, 0.159999, 0.541509}
     }
 },
 
@@ -1750,6 +1771,9 @@
     /* @m_bHistEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: disable ltm hist, 1: enable ltm hist */
     1,
+    /* @m_nLTMMode  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* LTM work mode, 0-auto mode, 1-lock mode */
+    0,
     /* @m_nOffsetX  Size: 1x1  BitWidth: 32_u  Range~[0, 8191]  Type: firmware */
     /* image offset in horizontal direction, 2X */
     0,
@@ -2358,6 +2382,9 @@
         {1, 1, 2, 2, 3, 3, 3, 4, 4, 3, 3, 3, 2, 2, 1, 1},
         {1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1}
     },
+    /* @m_nFaceTarget  Size: 1x1  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
+    /* target luma in face mode */
+    30,
     /* @m_nDualTargetBlendWeight  Size: 1x1  BitWidth: 32_u  Range~[0, 16]  Type: firmware */
     /* previous target luma and current target luma blend weight */
     8,
@@ -2430,6 +2457,12 @@
     /* @m_bQuickResponseEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: normal speed ae , 1: quick response ae */
     0,
+    /* @m_pExpDecLutWithBanding  Size: 1x7  BitWidth: 32_u  Range~[0, 20]  Type: firmware */
+    /* indicate the number of banding that need to be subtracted from current exposure time for 1-7 motion strength. It is used after banding and anti-flicker enable */
+    {1, 2, 3, 4, 5, 6, 7},
+    /* @m_pExpDecLutWithoutBanding  Size: 1x7  BitWidth: 32_fp  Range~[0.007813, 1.000000]  Type: firmware */
+    /* indicate the decline ratio of exposure time for 1-7 motion strength. It is used before banding or anti-flicker disable */
+    {1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000},
     /* @m_nCalibExposureIndex  Size: 1x1  BitWidth: 32_u  Range~[0, 4294967295]  Type: firmware */
     /* exposure index of calibrated scene */
     68515,
@@ -2918,6 +2951,12 @@
     /* @m_bReFocusEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - disable, 1 - enable.  */
     1,
+    /* @m_nReFocusPDShiftThr  Size: 1x1  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
+    /* the pd shift threshold to determine whether to force trigger af at the end of saf which triggered by CAF, only valid in face mode */
+    60,
+    /* @m_nReFocusPDConfThr  Size: 1x1  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
+    /* the pd confidence threshold to determine whether to force trigger af at the end of saf which triggered by CAF, only valid in face mode */
+    80,
     /* @m_pRefocusLumaSADThr  Size: 1x12  BitWidth: 32_u  Range~[0, 19125]  Type: firmware */
     /* the luma sad threshold to decide whether to force trigger af in the saf process triggered by CAF */
     {400, 500, 600, 700, 800, 900, 1000, 1000, 1000, 1000, 1000, 1000},
@@ -3133,6 +3172,9 @@
     /* @m_pRoiCtLowAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary in different lum */
     {944, 604, 340, 340, 340, 340, 340, 340, 340, 340, 340},
+    /* @m_pRoiCtLow2Auto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
+    /* 2nd color temperature low boundary in different lum */
+    {944, 604, 340, 340, 340, 340, 340, 340, 340, 340, 340},
     /* @m_pRoiXMaxAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary in different lum */
     {383, 400, 415, 415, 415, 415, 415, 415, 415, 415, 415},
@@ -3148,21 +3190,6 @@
     /* @m_pAWBCTShiftThr  Size: 1x2  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit for ct shift */
     {1000, 1200},
-    /* @m_pLowCtThr  Size: 1x8  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
-    /* color temperature threshold for low ct protection */
-    {669, 1007, 1050, 1100, 1150, 1200, 1400, 1600},
-    /* @m_pLowCtNumThr  Size: 1x2  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
-    /* ratio threshold of low ct blocks to enable low ct protection, in permillage */
-    {100, 500},
-    /* @m_pLowCtProtectRatio  Size: 1x7  BitWidth: 32_u  Range~[0, 256]  Type: firmware */
-    /* 0~256, 256 means no protection */
-    {64, 64, 32, 16, 8, 8, 8},
-    /* @m_sRoiBoundDayLight  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
-    /* ROI boundary of Day Light: x_high x_low y_high y_low */
-    {4095, 0, 2700, 1200},
-    /* @m_pDayLightNumThr  Size: 1x2  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
-    /* ratio threshold of day light blocks to enable low ct protection, in permillage */
-    {100, 1000},
     /* @m_bGreenShiftEn  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* green shift enable */
     0,
@@ -3181,10 +3208,10 @@
     /* @m_nValidNum  Size: 1x1  BitWidth: 32_u  Range~[0, 768]  Type: firmware */
     /* valid threshold for ROI Sum */
     4,
-    /* @m_bWeightOnSum  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
-    /* weight on sum or gain */
+    /* @m_nCombineMode  Size: 1x1  BitWidth: 32_u  Range~[0, 2]  Type: firmware */
+    /* 0-combine gain, 1-combine (r,g,b), 2-combine (x,y) */
     1,
-    /* @m_nLog2CwtOverA  Size: 1x1  BitWidth: 32_u  Range~[0, 8]  Type: firmware */
-    /* log2(CWT_weight/A_weight) */
-    3
+    /* @m_pRoiTruncateEn  Size: 1x16  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+    /* enable of each ROI truncate */
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 },

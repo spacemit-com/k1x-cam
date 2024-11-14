@@ -49,6 +49,8 @@ LIST_ITERATOR_S *List_EraseByIterator(LIST_ITERATOR_S *iterator);
 bool List_EraseByItem(LIST_HANDLE handle, const void *item);
 
 bool List_Clear(LIST_HANDLE handle);
+void List_Lock(LIST_HANDLE handle);
+void List_Unlock(LIST_HANDLE handle);
 
 LIST_ITERATOR_S *List_GetBeginIterator(LIST_HANDLE handle);
 

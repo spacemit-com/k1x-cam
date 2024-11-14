@@ -3,14 +3,8 @@
  * All Rights Reserved.
  */
 
-#ifndef _GST_CAM_API_H_
-#define _GST_CAM_API_H_
-
-#include "config.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
+#ifndef _V4L2_COMMON_H_
+#define _V4L2_COMMON_H_
 
 #include <errno.h>
 #include <pthread.h>
@@ -32,16 +26,11 @@ extern "C" {
 #include "sensor_common.h"
 #include "viisp_common.h"
 #include "tuning_server.h"
+#include "config.h"
 
-#define MAX_BUFFER_RAWDUMP_NUM 5
-#define MAX_BUFFER_NUM   4
-#define MAX_PIPELINE_NUM 2
-#define MAX_FIRMWARE_NUM 2
-#define RAW8_DUMP_SIZE(w, h) ((w / 16 + (w % 16 ? 1 : 0)) * 16 * h)
-#define RAW10_DUMP_SIZE(w, h) ((w / 12 + (w % 12 ? 1 : 0)) * 16 * h)
-#define RAW12_DUMP_SIZE(w, h) ((w / 10 + (w % 10 ? 1 : 0)) * 16 * h)
-#define RAW14_DUMP_SIZE(w, h) ((w / 8 + (w % 8 ? 1 : 0)) * 16 * h)
-#define VRF_INFO_LEN (128)
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
 
 typedef void* (*threadFunc)(void* param);
 typedef struct {
@@ -121,21 +110,21 @@ typedef struct VRF_INFO {
     uint8_t r;           /* [126] 'R'. In ASCII code, can be used for file format identification */
     uint8_t f;           /* [127] 'F'. In ASCII code, can be used for file format identification */
 } VRF_INFO_S;            // V2.6
-
 struct gstParam {
     char *jsonfile;
 
-    int (*gst_get_cpp_buffer)(IMAGE_BUFFER_S*, int);
-    int (*gst_cpp_buf_prepare)(void *, IMAGE_BUFFER_S*);
-    void *gst_cpp_buf_prepare_data;
+    int (*gst_get_cam_buffer)(IMAGE_BUFFER_S*, int);
+    int (*gst_cam_buf_prepare)(void *, IMAGE_BUFFER_S*);
+    void *gst_cam_buf_prepare_data;
     int sensorInfoId;
-    int pipelineId;
+    int pipeline0Id;
+    int pipeline1Id;
     int firmwareId;
     void* sensorHandle;
     int out_height;
     int out_width;
 };
-void gst_release_cpp_buffer(IMAGE_BUFFER_S* outputBuf, int index);
+void gst_release_cam_buffer(IMAGE_BUFFER_S* outputBuf, int index);
 
 int gst_setup_camera_start(struct gstParam *para);
 int gst_setup_camera_stop(struct gstParam *para);
@@ -144,4 +133,4 @@ int gst_setup_camera_stop(struct gstParam *para);
 }
 #endif /* extern "C" */
 
-#endif /* _ONLINE_PIPELINE_TEST_H_ */
+#endif /* _V4L2_COMMON_H_ */

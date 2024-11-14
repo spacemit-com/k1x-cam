@@ -23,8 +23,8 @@ typedef struct _CapDeviceCapInfo {
     int32_t deviceConfigCnt;
 } CapDeviceCapInfo;
 
-int SPM_SENSORS_MODULE_Detect(const char* name, int devId);
-int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info);
+int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr);
+int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info, int addr);
 int SPM_SENSORS_MODULE_Deinit(void* handle);
 int SPM_SENSORS_MODULE_EnumCapability(void* handle, SENSORS_MODULE_CAPABILITY_S* cap);
 int SPM_GetDeviceInfo(void* handle, void* devInfo);
@@ -45,12 +45,12 @@ int SPM_SENSOR_ReadReg(void* handle, uint16_t regAddr, uint16_t* value);
 int SPM_SENSORS_MODULE_ProcessOTPData(void* handle, SENSOR_OTP_DATA_S* otp_data);
 
 /*vcm*/
-int SPM_VCM_Open(void* handle);
+int SPM_VCM_Open(void* handle, int cust_en, char *cust_name, int cust_i2c_bus, int cust_i2c_addr);
 int SPM_VCM_Close(void* handle);
 int SPM_VCM_GetOps(void* handle, ISP_AF_MOTOR_REGISTER_S* ops);
 
 /*flash*/
-int SPM_FLASH_Open(void* handle);
+int SPM_FLASH_Open(void* handle, int cust_en, char *cust_name);
 int SPM_FLASH_Close(void* handle);
 int SPM_FLASH_SetMode(void* handle, int mode);
 
