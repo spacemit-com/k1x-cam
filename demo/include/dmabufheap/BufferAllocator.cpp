@@ -83,7 +83,7 @@ BufferAllocator::BufferAllocator() {
 BufferAllocator::~BufferAllocator() {
     CloseDmabufHeap();
 }
-
+extern long long unsigned int alloc_gflag;
 int BufferAllocator::DmabufAlloc(const std::string& heap_name, size_t len) {
     int fd = OpenDmabufHeap(heap_name);
     if (fd < 0) return fd;
@@ -91,14 +91,19 @@ int BufferAllocator::DmabufAlloc(const std::string& heap_name, size_t len) {
     struct dma_heap_allocation_data heap_data{
         .len = len,  // length of data to be allocated in bytes
         .fd_flags = O_RDWR | O_CLOEXEC,  // permissions for the memory to be allocated
+        .heap_flags = alloc_gflag,
     };
 
     struct timespec timeStart, timeEnd;
     long timeCostms = 0;
     clock_gettime(CLOCK_MONOTONIC, &timeStart);
 
+    printf("allocate from DMA-BUF heap: %llx", alloc_gflag);
+
     auto ret = TEMP_FAILURE_RETRY(ioctl(fd, DMA_HEAP_IOCTL_ALLOC, &heap_data));
     if (ret < 0) {
+        printf("errrrrrrrrrrrrrrrrrrrr: %llx", alloc_gflag);
+
         cout << "Unable to allocate from DMA-BUF heap: " << heap_name << endl;
         return ret;
     }

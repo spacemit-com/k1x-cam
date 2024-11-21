@@ -3,12 +3,13 @@
  * All Rights Reserved.
  */
 #include "bufferPool.h"
-
+#include  <sys/socket.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
 #include "ISPGlobalDefine.h"
 #include "cam_log.h"
+#include "errno.h"
 
 #define ALIGN_N(x, n) (((x) + (n)-1) & (~((n)-1)))
 
@@ -228,6 +229,137 @@ int buffer_pool_invlide_cache(BUFFER_POOL *pool, IMAGE_BUFFER_S *imageBuffer)
 
     return 0;
 }
+ssize_t get_buffer_residue_num(BUFFER_POOL *pool)
+{
+    IMAGE_BUFFER_S *buffer = NULL;
+
+    if (!pool->buf_list)
+        return -1;
+
+    return List_GetSize(pool->buf_list);
+}
+
+long long unsigned int alloc_gflag = 0;
+
+int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd)
+{
+    uint32_t block_size = 0, buffer_size = 0, i = 0, j = 0;
+    uint32_t offset = 0;
+    int32_t ret = 0;
+    bool has_dwt = false;
+    IMAGE_BUFFER_S *bufInfo = &(pool->bufInfo);
+    IMAGE_BUFFER_S *buffer = NULL;
+    IMAGE_BUFFER_PLANE_S *planes = NULL;
+    unsigned long num = get_buffer_residue_num(pool);
+
+    if (num >= BUFFER_POOL_MAX_SIZE) {
+        CLOG_ERROR("pool(%s) buffer count(%lu) could not be larger than %u\n", pool->name, num, BUFFER_POOL_MAX_SIZE);
+        return -1;
+    }
+
+    if (bufInfo->format == PIXEL_FORMAT_NV12_DWT || bufInfo->format == PIXEL_FORMAT_FBC_DWT) {
+        has_dwt = true;
+    }
+
+    buffer_size = get_buffer_size(&(pool->bufInfo), 0);
+    // CLOG_INFO("alloc buffer continues = 1\n");
+    alloc_gflag = 0xff;
+    {
+        offset = 0;
+        ret = dmabufheapAlloc(&pool->mem_block[num], buffer_size, 1);
+        if (ret < 0) {
+            CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
+            return ret;
+        }
+
+        buffer = &(pool->buffers[num]); //get next empty buffer
+        memcpy(buffer, bufInfo, sizeof(*buffer));
+        buffer->m.fd = pool->mem_block[num].m.fd;
+        *fd = buffer->m.fd;
+
+#if 0
+        struct iovec     iov[1];
+        struct msghdr    msg;
+        char             buf[2];    /* send_fd()/recv_fd() 2-byte protocol */
+        struct cmsghdr    *cmptr;
+
+        iov[0].iov_base     = buf;
+        iov[0].iov_len      = 2;
+        msg.msg_iov         = iov;
+        msg.msg_iovlen      = 1;
+        msg.msg_name        = NULL;
+        msg.msg_namelen     = 0;
+
+        cmptr = malloc(CMSG_LEN(sizeof(int)));
+        cmptr->cmsg_level      = SOL_SOCKET;
+        cmptr->cmsg_type       = SCM_RIGHTS;
+        cmptr->cmsg_len        = CMSG_LEN(sizeof(int));
+        msg.msg_control        = cmptr;
+        msg.msg_controllen     = CMSG_LEN(sizeof(int));
+        *(int *)CMSG_DATA(cmptr) = buffer->m.fd;
+        buf[1] = 0;
+        buf[0] = 0;
+
+            CLOG_ERROR("sendmsg buffer->m.fd\n");
+
+    // 发送
+        ret = sendmsg(socket_fd, &msg, 0);
+        if (ret < 0) {
+            CLOG_ERROR("sendmsg error, %d, %d, %s\n", socket_fd, ret, strerror(errno));
+        }
+#endif
+        if (*fd < 0) {
+            CLOG_ERROR("dup buffer%lu fd%d error, ret:%d\n", num, buffer->m.fd, *fd);
+            return ret;
+        }
+        buffer->index = num;
+        planes = &(buffer->planes[0]);
+        for (j = 0; j < bufInfo->numPlanes; j++) {
+            planes[j].offset = offset;
+            planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+            offset += planes[j].length;
+            planes[j].fd = buffer->m.fd;
+        }
+        if (has_dwt) {
+            planes = &(buffer->dwt1[0]);
+            for (j = 0; j < 2; j++) {
+                planes[j].offset = offset;
+                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+                offset += planes[j].length;
+                planes[j].fd = buffer->m.fd;
+            }
+            planes = &(buffer->dwt2[0]);
+            for (j = 0; j < 2; j++) {
+                planes[j].offset = offset;
+                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+                offset += planes[j].length;
+                planes[j].fd = buffer->m.fd;
+            }
+            planes = &(buffer->dwt3[0]);
+            for (j = 0; j < 2; j++) {
+                planes[j].offset = offset;
+                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+                offset += planes[j].length;
+                planes[j].fd = buffer->m.fd;
+            }
+            planes = &(buffer->dwt4[0]);
+            for (j = 0; j < 2; j++) {
+                planes[j].offset = offset;
+                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+                offset += planes[j].length;
+                planes[j].fd = buffer->m.fd;
+            }
+        }
+        List_Push(pool->buf_list, buffer);
+    }
+    pool->size++;
+    pool->buffer_size = buffer_size;
+    CLOG_INFO("pool(%s) buffer_size=%u block_size=%u, size:%d, fd:%d, %d index:%d\n", pool->name, buffer_size, block_size, pool->size, buffer->m.fd, *fd, buffer->index);
+    alloc_gflag = 0;
+
+    return 0;
+}
+
 
 int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, uint32_t continous)
 {
@@ -320,15 +452,7 @@ void buffer_pool_free(BUFFER_POOL *pool)
     List_Clear(pool->buf_list);
     for (i = 0; i < pool->size; i++) dmabufheapFree(&pool->mem_block[i]);
 }
-ssize_t get_buffer_residue_num(BUFFER_POOL *pool)
-{
-    IMAGE_BUFFER_S *buffer = NULL;
 
-    if (!pool->buf_list)
-        return -1;
-
-    return List_GetSize(pool->buf_list);
-}
 IMAGE_BUFFER_S *buffer_pool_get_buffer(BUFFER_POOL *pool)
 {
     IMAGE_BUFFER_S *buffer = NULL;
