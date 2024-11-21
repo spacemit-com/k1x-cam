@@ -239,9 +239,7 @@ ssize_t get_buffer_residue_num(BUFFER_POOL *pool)
     return List_GetSize(pool->buf_list);
 }
 
-long long unsigned int alloc_gflag = 0;
-
-int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd)
+int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd)
 {
     uint32_t block_size = 0, buffer_size = 0, i = 0, j = 0;
     uint32_t offset = 0;
@@ -251,6 +249,7 @@ int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd)
     IMAGE_BUFFER_S *buffer = NULL;
     IMAGE_BUFFER_PLANE_S *planes = NULL;
     unsigned long num = get_buffer_residue_num(pool);
+    unsigned int heap_flags = 0xff;
 
     if (num >= BUFFER_POOL_MAX_SIZE) {
         CLOG_ERROR("pool(%s) buffer count(%lu) could not be larger than %u\n", pool->name, num, BUFFER_POOL_MAX_SIZE);
@@ -262,11 +261,9 @@ int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd)
     }
 
     buffer_size = get_buffer_size(&(pool->bufInfo), 0);
-    // CLOG_INFO("alloc buffer continues = 1\n");
-    alloc_gflag = 0xff;
     {
         offset = 0;
-        ret = dmabufheapAlloc(&pool->mem_block[num], buffer_size, 1);
+        ret = dmabufheapAlloc(&pool->mem_block[num], buffer_size, 1, heap_flags);
         if (ret < 0) {
             CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
             return ret;
@@ -355,7 +352,6 @@ int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd)
     pool->size++;
     pool->buffer_size = buffer_size;
     CLOG_INFO("pool(%s) buffer_size=%u block_size=%u, size:%d, fd:%d, %d index:%d\n", pool->name, buffer_size, block_size, pool->size, buffer->m.fd, *fd, buffer->index);
-    alloc_gflag = 0;
 
     return 0;
 }
@@ -385,7 +381,7 @@ int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, ui
               block_size);
     for (i = 0; i < buffer_count; i++) {
         offset = 0;
-        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, continous);
+        ret = dmabufheapAlloc(&pool->mem_block[i], buffer_size, continous, 0);
         if (ret < 0) {
             CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
             return ret;

@@ -36,7 +36,7 @@ struct v4lBUFFER_INFO {
 
 BUFFER_POOL *create_buffer_pool(int width, int height, PIXEL_FORMAT_E format, const char *name);
 void destroy_buffer_pool(BUFFER_POOL *pool);
-int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd, int socket_fd);
+int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd);
 int32_t buffer_pool_alloc(BUFFER_POOL *pool, uint32_t buffer_count);
 int32_t buffer_pool_continous_alloc(BUFFER_POOL *pool, uint32_t buffer_count, uint32_t continous);
 void buffer_pool_free(BUFFER_POOL *pool);

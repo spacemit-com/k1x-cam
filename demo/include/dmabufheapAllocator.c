@@ -51,14 +51,14 @@ static int initAllocator()
     return ret;
 }
 
-static int allocBuffer(const char *heap_name, int size, int *buffer_fd, void **viraddr)
+static int allocBuffer(const char *heap_name, int size, int *buffer_fd, void **viraddr, unsigned int heap_flags)
 {
     int ret;
     if (initAllocator()) {
         return -1;
     }
 
-    ret = DmabufHeapAlloc(gAllocator, heap_name, size, 0, 0);
+    ret = DmabufHeapAlloc(gAllocator, heap_name, size, heap_flags, 0);
     if (ret < 0) {
         CLOG_ERROR("allco buffer fail");
         return ret;
@@ -86,23 +86,23 @@ static int allocBuffer(const char *heap_name, int size, int *buffer_fd, void **v
     return 0;
 }
 
-static int allocDmabufHeapSystemBuffer(int size, int cached, void **viraddr, int *fd)
+static int allocDmabufHeapSystemBuffer(int size, int cached, void **viraddr, int *fd, unsigned int heap_flags)
 {
     const char *heap_name = cached ? kDmabufCameraSystemHeapName : kDmabufCameraSystemUncachedHeapName;
 
     // ATRACE_BEGIN(__FUNCTION__);
-    int ret = allocBuffer(heap_name, size, fd, viraddr);
+    int ret = allocBuffer(heap_name, size, fd, viraddr, heap_flags);
     // ATRACE_END();
 
     return ret;
 }
 
-static int allocDmabufHeapDmaBuffer(int size, int cached, void **viraddr, int *fd)
+static int allocDmabufHeapDmaBuffer(int size, int cached, void **viraddr, int *fd, unsigned int heap_flags)
 {
     const char *heap_name = cached ? kDmabufDmaHeapName : kDmabufDmaUncachedHeapName;
 
     // ATRACE_BEGIN(__FUNCTION__);
-    int ret = allocBuffer(heap_name, size, fd, viraddr);
+    int ret = allocBuffer(heap_name, size, fd, viraddr, heap_flags);
     // ATRACE_END();
 
     return ret;
@@ -136,7 +136,7 @@ static int freeDmabufHeapBuffer(int buffer_fd)
     return ret;
 }
 
-int32_t dmabufheapAlloc(BUFFER_S *buffer, uint32_t size, int continuous)
+int32_t dmabufheapAlloc(BUFFER_S *buffer, uint32_t size, int continuous, unsigned int heap_flags)
 {
     int ret;
     void *virAddr;
@@ -144,9 +144,9 @@ int32_t dmabufheapAlloc(BUFFER_S *buffer, uint32_t size, int continuous)
 
     memset(buffer, 0, sizeof(*buffer));
     if (continuous) {
-        ret = allocDmabufHeapDmaBuffer(size, 1, &virAddr, &fd);
+        ret = allocDmabufHeapDmaBuffer(size, 1, &virAddr, &fd, heap_flags);
     } else {
-        ret = allocDmabufHeapSystemBuffer(size, 1, &virAddr, &fd);
+        ret = allocDmabufHeapSystemBuffer(size, 1, &virAddr, &fd, heap_flags);
     }
     if (ret != 0) {
         return -1;

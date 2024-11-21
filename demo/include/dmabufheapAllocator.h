@@ -28,7 +28,7 @@ typedef struct BUFFER {
     void *addr;
 } BUFFER_S;
 
-int32_t dmabufheapAlloc(BUFFER_S *buffer, uint32_t size, int continuous);
+int32_t dmabufheapAlloc(BUFFER_S *buffer, uint32_t size, int continuous, unsigned int heap_flags);
 int32_t dmabufheapFree(const BUFFER_S *buffer);
 int32_t dmabufheapCacheOps(const BUFFER_S *buffer, CACHE_OPS_DIR_E dir);
 

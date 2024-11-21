@@ -126,7 +126,7 @@ class BufferAllocator {
     int GetDmabufHeapFd(const std::string& name);
     bool DmabufHeapsSupported() { return !dmabuf_heap_fds_.empty(); }
     void LogInterface(const std::string& interface);
-    int DmabufAlloc(const std::string& heap_name, size_t len);
+    int DmabufAlloc(const std::string& heap_name, size_t len, unsigned int heap_flags);
     int DoSync(unsigned int dmabuf_fd, bool start, SyncType sync_type);
     void CloseDmabufHeap();
 
