@@ -316,7 +316,8 @@ int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd)
 
     pool->size++;
     pool->buffer_size = buffer_size;
-    CLOG_INFO("pool(%s) buffer_size=%u block_size=%u, size:%d, fd:%d, %d index:%d\n", pool->name, buffer_size, block_size, pool->size, buffer->m.fd, *fd, buffer->index);
+    CLOG_INFO("pool(%s) buffer_size=%u block_size=%u, size:%d, fd:%d, index:%d\n",
+        pool->name, buffer_size, block_size, pool->size, buffer->m.fd, buffer->index);
 
     return 0;
 }
