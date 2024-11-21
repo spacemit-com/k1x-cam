@@ -261,94 +261,59 @@ int32_t buffer_pool_alloc_one(BUFFER_POOL *pool, int *fd)
     }
 
     buffer_size = get_buffer_size(&(pool->bufInfo), 0);
-    {
-        offset = 0;
-        ret = dmabufheapAlloc(&pool->mem_block[num], buffer_size, 1, heap_flags);
-        if (ret < 0) {
-            CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
-            return ret;
-        }
 
-        buffer = &(pool->buffers[num]); //get next empty buffer
-        memcpy(buffer, bufInfo, sizeof(*buffer));
-        buffer->m.fd = pool->mem_block[num].m.fd;
-        *fd = buffer->m.fd;
+    offset = 0;
+    ret = dmabufheapAlloc(&pool->mem_block[num], buffer_size, 1, heap_flags);
+    if (ret < 0) {
+        CLOG_ERROR("alloc buffer for pool(%s) failed\n", pool->name);
+        return ret;
+    }
 
-#if 0
-        struct iovec     iov[1];
-        struct msghdr    msg;
-        char             buf[2];    /* send_fd()/recv_fd() 2-byte protocol */
-        struct cmsghdr    *cmptr;
+    buffer = &(pool->buffers[num]); //get next empty buffer
+    memcpy(buffer, bufInfo, sizeof(*buffer));
+    buffer->m.fd = pool->mem_block[num].m.fd;
+    *fd = buffer->m.fd; //not use in kernel now
 
-        iov[0].iov_base     = buf;
-        iov[0].iov_len      = 2;
-        msg.msg_iov         = iov;
-        msg.msg_iovlen      = 1;
-        msg.msg_name        = NULL;
-        msg.msg_namelen     = 0;
-
-        cmptr = malloc(CMSG_LEN(sizeof(int)));
-        cmptr->cmsg_level      = SOL_SOCKET;
-        cmptr->cmsg_type       = SCM_RIGHTS;
-        cmptr->cmsg_len        = CMSG_LEN(sizeof(int));
-        msg.msg_control        = cmptr;
-        msg.msg_controllen     = CMSG_LEN(sizeof(int));
-        *(int *)CMSG_DATA(cmptr) = buffer->m.fd;
-        buf[1] = 0;
-        buf[0] = 0;
-
-            CLOG_ERROR("sendmsg buffer->m.fd\n");
-
-    // 发送
-        ret = sendmsg(socket_fd, &msg, 0);
-        if (ret < 0) {
-            CLOG_ERROR("sendmsg error, %d, %d, %s\n", socket_fd, ret, strerror(errno));
-        }
-#endif
-        if (*fd < 0) {
-            CLOG_ERROR("dup buffer%lu fd%d error, ret:%d\n", num, buffer->m.fd, *fd);
-            return ret;
-        }
-        buffer->index = num;
-        planes = &(buffer->planes[0]);
-        for (j = 0; j < bufInfo->numPlanes; j++) {
+    buffer->index = num;
+    planes = &(buffer->planes[0]);
+    for (j = 0; j < bufInfo->numPlanes; j++) {
+        planes[j].offset = offset;
+        planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+        offset += planes[j].length;
+        planes[j].fd = buffer->m.fd;
+    }
+    if (has_dwt) {
+        planes = &(buffer->dwt1[0]);
+        for (j = 0; j < 2; j++) {
             planes[j].offset = offset;
             planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
             offset += planes[j].length;
             planes[j].fd = buffer->m.fd;
         }
-        if (has_dwt) {
-            planes = &(buffer->dwt1[0]);
-            for (j = 0; j < 2; j++) {
-                planes[j].offset = offset;
-                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
-                offset += planes[j].length;
-                planes[j].fd = buffer->m.fd;
-            }
-            planes = &(buffer->dwt2[0]);
-            for (j = 0; j < 2; j++) {
-                planes[j].offset = offset;
-                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
-                offset += planes[j].length;
-                planes[j].fd = buffer->m.fd;
-            }
-            planes = &(buffer->dwt3[0]);
-            for (j = 0; j < 2; j++) {
-                planes[j].offset = offset;
-                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
-                offset += planes[j].length;
-                planes[j].fd = buffer->m.fd;
-            }
-            planes = &(buffer->dwt4[0]);
-            for (j = 0; j < 2; j++) {
-                planes[j].offset = offset;
-                planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
-                offset += planes[j].length;
-                planes[j].fd = buffer->m.fd;
-            }
+        planes = &(buffer->dwt2[0]);
+        for (j = 0; j < 2; j++) {
+            planes[j].offset = offset;
+            planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+            offset += planes[j].length;
+            planes[j].fd = buffer->m.fd;
         }
-        List_Push(pool->buf_list, buffer);
+        planes = &(buffer->dwt3[0]);
+        for (j = 0; j < 2; j++) {
+            planes[j].offset = offset;
+            planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+            offset += planes[j].length;
+            planes[j].fd = buffer->m.fd;
+        }
+        planes = &(buffer->dwt4[0]);
+        for (j = 0; j < 2; j++) {
+            planes[j].offset = offset;
+            planes[j].virAddr = (void *)((unsigned long)pool->mem_block[num].addr + offset);
+            offset += planes[j].length;
+            planes[j].fd = buffer->m.fd;
+        }
     }
+    List_Push(pool->buf_list, buffer);
+
     pool->size++;
     pool->buffer_size = buffer_size;
     CLOG_INFO("pool(%s) buffer_size=%u block_size=%u, size:%d, fd:%d, %d index:%d\n", pool->name, buffer_size, block_size, pool->size, buffer->m.fd, *fd, buffer->index);

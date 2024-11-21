@@ -1001,7 +1001,7 @@ int v4l2_single_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
-    struct sockaddr_nl src_addr, dest_addr;    //sockaddr_nl 是 netlink 使用的地址数据结构
+    struct sockaddr_nl src_addr, dest_addr;
     int skfd, rxlen = sizeof(struct sockaddr_nl);
     recv_msg *info;
 
@@ -1072,30 +1072,6 @@ int v4l2_single_online_test(struct testConfig *config)
     snd_header.vreq_buf.ret = 0;
     netlink_send(&snd_header.vreq_buf, sizeof(struct v4l2_vrequestbuffers), FINISH_REQBUFS);
 
-    sleep(1);
-
-#if 0
-    sleep(10);
-
-// 创建UNIX套接字
-	int cli_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-	if(cli_fd < 0) {
-		CLOG_ERROR("client: create socket failed!\n");
-	}
-
-
-// 连接接收端
-    struct sockaddr_un server_addr;
-
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sun_family = AF_UNIX;
-	strcpy(server_addr.sun_path, "/root/v4l2_test_spacemit/server_socket");
-    CLOG_INFO("start to connect .........., %d", cli_fd);
-
-	if (connect(cli_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        CLOG_ERROR("connect error");  
-    }
-#endif
     struct {
         struct nlmsghdr hdr;
         struct v4l2_vbuffer data;
@@ -1106,17 +1082,11 @@ int v4l2_single_online_test(struct testConfig *config)
         ret = netlink_recv(&recv_vquery_buf, sizeof(recv_vquery_buf), START_QUERYBUF);
 
         //TODO: fetch buffer info to kernel query
-        // buffer_pool_alloc_one(cpp_out_buffer_pool[pipelineId], &fd, cli_fd);
-        buffer_pool_alloc_one(cpp_out_buffer_pool[pipelineId], &fd, 0);
+        buffer_pool_alloc_one(cpp_out_buffer_pool[pipelineId], &fd);
 
         snd_header.vbuf.ret = 0;
         snd_header.vbuf.m_fd = fd;
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QUERYBUF);
-
-        CLOG_INFO("flush .......... ");
-
-        fflush(stdout);
-        fflush(stderr);
     }
 
     // thread init
@@ -1150,8 +1120,6 @@ int v4l2_single_online_test(struct testConfig *config)
     } recv_vqbuf;
     for (i = 0; i < recv_vreq_buf.data.count; i++) {
         CLOG_INFO("[netlink] wait kernel queue buffer");
-        fflush(stdout);
-        fflush(stderr);
         ret = netlink_recv(&recv_vqbuf, sizeof(recv_vqbuf), START_QBUF);
 
         snd_header.vbuf.ret = 0;
@@ -1177,26 +1145,19 @@ int v4l2_single_online_test(struct testConfig *config)
     snd_header.vstream.ret = 0;
     netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMON);
 
-#if 0
-    for (i=0; i<100; i++) {
-        sleep(1);
-        if (i % 60 == 0)
-            CLOG_INFO("sleep %ds", i);
-    }
-#else
     IMAGE_BUFFER_S* doneBuf = NULL;
-        struct {
-            struct nlmsghdr hdr;
-            struct v4l2_vpoll data;
-        } recv_vpoll;
-        struct {
-            struct nlmsghdr hdr;
-            struct v4l2_vbuffer data;
-        } recv_vdqbuf;
-        struct {
-            struct nlmsghdr hdr;
-            struct v4l2_vbuffer data;
-        } recv_vqbuf2;
+    struct {
+        struct nlmsghdr hdr;
+        struct v4l2_vpoll data;
+    } recv_vpoll;
+    struct {
+        struct nlmsghdr hdr;
+        struct v4l2_vbuffer data;
+    } recv_vdqbuf;
+    struct {
+        struct nlmsghdr hdr;
+        struct v4l2_vbuffer data;
+    } recv_vqbuf2;
     while (1) {
         CLOG_INFO("[netlink] wait kernel poll");
 
@@ -1217,8 +1178,6 @@ try_again:
         }
 
         CLOG_INFO("[netlink] wait kernel dequeue buffer");
-        // fflush(stdout);
-        // fflush(stderr);
 
         ret = netlink_recv(&recv_vdqbuf, sizeof(recv_vdqbuf), START_DQBUF);
         if (ret < 0) {
@@ -1251,13 +1210,12 @@ try_again:
         snd_header.vbuf.ret = 0;
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
     }
-#endif
 
-    CLOG_INFO("[netlink] wait kernel stream off, ret:%d", ret);
-    struct {
-        struct nlmsghdr hdr;
-        struct v4l2_vstream data;
-    } recv_vstreamoff;
+    // CLOG_INFO("[netlink] wait kernel stream off, ret:%d", ret);
+    // struct {
+    //     struct nlmsghdr hdr;
+    //     struct v4l2_vstream data;
+    // } recv_vstreamoff;
     // ret = netlink_recv(&recv_vstreamoff, sizeof(recv_vstreamoff), START_STREAMOFF);
 
     streamOnFlags[pipelineId] = 0;
@@ -1282,6 +1240,8 @@ try_again:
     snd_header.vstream.ret = 0;
     netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMOFF);
 
+    fflush(stdout);
+    fflush(stderr);
     return ret;
 }
 
