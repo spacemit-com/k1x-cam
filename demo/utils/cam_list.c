@@ -45,6 +45,7 @@ typedef struct LIST {
     LIST_NODE_S *tail;
     const LIST_NODE_S *lastFound;
     pthread_mutex_t mutex;
+    pthread_cond_t cond;
 } LIST_S, *LIST_S_PTR;
 
 inline static LIST_S *List_HandleToList(LIST_HANDLE handle)
@@ -83,6 +84,8 @@ LIST_HANDLE List_Create(bool allowRepeatItem)
     result->magicId = LIST_MAGIC_ID;
     result->allowRepeatItem = allowRepeatItem;
     pthread_mutex_init(&result->mutex, NULL);
+    pthread_cond_init(&result->cond, NULL);
+
     return List_ListToHandle(result);
 }
 
@@ -96,6 +99,9 @@ bool List_Destroy(LIST_HANDLE handle)
 
     List_Clear(handle);
     list->magicId = 0;
+
+    pthread_mutex_destroy(&list->mutex);
+    pthread_cond_destroy(&list->cond);
 
     MEMORY_FREE(list);
 
@@ -136,7 +142,71 @@ inline bool List_IsEmpty(LIST_HANDLE handle)
 
     return ret;
 }
+LIST_ITERATOR_S *List_Push_With_Cond(LIST_HANDLE handle, const void *item)
+{
+    LIST_S *list = List_HandleToList(handle);
+    LIST_NODE_S *result = NULL;
 
+    if (!list) {
+        return NULL;
+    }
+
+    pthread_mutex_lock(&list->mutex);
+    if (!list->allowRepeatItem && List_Find(handle, item)) {
+        pthread_mutex_unlock(&list->mutex);
+        return NULL;
+    }
+
+    result = MEMORY_MALLOC_OBJECT(LIST_NODE_S);
+
+    if (!result) {
+        pthread_mutex_unlock(&list->mutex);
+        return NULL;
+    }
+
+    MEMORY_ZERO_OBJECT(result);
+    result->item = (void *)item;
+    result->list = list;
+    result->previous = list->tail;
+
+    if (!list->head) {
+        list->head = result;
+    }
+
+    if (list->tail) {
+        list->tail->next = result;
+    }
+
+    list->tail = result;
+    list->size++;
+    pthread_mutex_unlock(&list->mutex);
+    pthread_cond_signal(&list->cond);
+
+    return List_NodeToIterator(result);
+}
+
+void *List_Pop_With_Cond(LIST_HANDLE handle)
+{
+    LIST_S *list = List_HandleToList(handle);
+    void *result = NULL;
+
+    if (!list) {
+        return NULL;
+    }
+    pthread_mutex_lock(&list->mutex);
+    if (list->size < 1) {
+        pthread_cond_wait(&list->cond, &list->mutex);
+    }
+
+    if (list->head) {
+        result = list->head->item;
+    }
+
+    List_EraseByIterator(List_NodeToIterator(list->head));
+    pthread_mutex_unlock(&list->mutex);
+
+    return result;
+}
 LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item)
 {
     LIST_S *list = List_HandleToList(handle);

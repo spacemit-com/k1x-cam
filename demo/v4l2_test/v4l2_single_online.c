@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <stdatomic.h>
 
 #define MAX_BUFFER_RAWDUMP_NUM 5
 #define MAX_BUFFER_NUM   4
@@ -44,9 +45,8 @@ static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
 static int showFps = 0;
 
+#define NETLINK_TIMEOUT_S 3
 #define SVIVI_NETLINK	17
-#define RX_BUF_SIZE		100		//接收buf size
-#define MAX_PLOAD		100		//发送message内存size
 enum V4L2_PIPE_SEQ_ID {
     START_INIT = 0,
     FINISH_INIT,
@@ -128,7 +128,6 @@ struct vcam_header snd_header;
 static int skfd;
 static struct sockaddr_nl src_addr;
 
-
 /****************************************************************/
 static uint64_t get_timestamp(void)
 {
@@ -156,6 +155,8 @@ static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
             return PIXEL_FORMAT_RAW_14BPP;
         default:
             CLOG_ERROR("donot support pixel bitDepth %d", bitDepth);
+            fflush(stdout);
+            fflush(stderr);
             break;
     }
     return PIXEL_FORMAT_MAX;
@@ -207,6 +208,8 @@ static int dwt_buffer_save(int i, IMAGE_BUFFER_S* imgBuf)
     fp = fopen(fileName, "w+");
     if (!fp) {
         CLOG_ERROR("%s: %s open failed\n", __func__, fileName);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     for (uint32_t i = 0; i < 2; i++) fwrite(plane[i].virAddr, plane[i].length, 1, fp);
@@ -223,6 +226,8 @@ static int raw_buffer_save(const IMAGE_BUFFER_S* imgBuf, char* fileName)
     fp = fopen(fileName, "w+");
     if (!fp) {
         CLOG_ERROR("%s: %s open failed\n", __func__, fileName);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     fwrite(imgBuf->planes[0].virAddr, imgBuf->planes[0].length, 1, fp);
@@ -324,6 +329,8 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
 
     if (nChn >= (VIU_MAX_CHN_NUM + VIU_MAX_RAWCHN_NUM)) {
         CLOG_ERROR("invalid chnId %d", nChn);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     CLOG_DEBUG("VI chn %d out buffer frameId %d, buffer %p", nChn, frameId, buffer);
@@ -436,6 +443,8 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             break;
         default:
             CLOG_ERROR("callback: invalid video frame PIXEL_FORMAT_E %d", callbackBuf->format);
+            fflush(stdout);
+            fflush(stderr);
             return 0;
     }
 
@@ -455,6 +464,8 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             }
             if (i == BUFFER_POOL_MAX_SIZE) {
                 CLOG_ERROR("can't find valid vi out buffer");
+                fflush(stdout);
+                fflush(stderr);
             }
             viisp_vi_queueBuffer(mppCpp.devId, (IMAGE_BUFFER_S*)&vi_out_buffer_pool[mppCpp.devId]->buffers[i]);
             break;
@@ -473,9 +484,11 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             }
             if (i == BUFFER_POOL_MAX_SIZE) {
                 CLOG_ERROR("can't find valid vi out buffer");
+                fflush(stdout);
+                fflush(stderr);
             }
-            //TODO: push buffer to done list
-            List_Push(cpp_done_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
+
+            List_Push_With_Cond(cpp_done_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
             break;
         default:
             return -EINVAL;
@@ -504,6 +517,8 @@ static int init_rawdump_info(int pipelineID, SENSOR_CONFIG_S *sensor_cfg, CAM_VI
                                                                 "tuning tool rawdump buffer");
     if (!g_rawdump_info[pipelineID].rawdumpPool) {
         CLOG_ERROR("failed to create buffer pool for tuning tool rawdump\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     return 0;
@@ -584,6 +599,8 @@ static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint
 
     if (groupId > 1) {
         CLOG_ERROR("unsupported isp group\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     pipelineID = groupId;
@@ -593,6 +610,8 @@ static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint
     ret = buffer_pool_alloc(g_rawdump_info[pipelineID].rawdumpPool, count);
     if (ret < 0) {
         CLOG_ERROR("failed to alloc buffer for tuning tool rawdump\n");
+        fflush(stdout);
+        fflush(stderr);
         return ret;
     }
 
@@ -607,8 +626,11 @@ static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint
         }
 
         ret = ASR_VI_ChnQueueBuffer(rawChn, buffer);
-        if (ret < 0)
+        if (ret < 0) {
             CLOG_ERROR("ASR_VI_ChnQueueBuffer failed func:%s line:%d\n", __func__, __LINE__);
+            fflush(stdout);
+            fflush(stderr);
+        }
     }
 
     g_rawdump_info[pipelineID].ispInfoListLen = MAX_BUFFER_NUM;
@@ -722,6 +744,8 @@ static int getRawDump(int pipelineId, IMAGE_BUFFER_S *inputBuffer, int frameId)
     tunBuffer = malloc(sizeof(*tunBuffer));
     if (!tunBuffer) {
         CLOG_ERROR("malloc tunBuffer failed\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     tunBuffer->tuningInfo.frameId = frameId;
@@ -738,6 +762,8 @@ static int getRawDump(int pipelineId, IMAGE_BUFFER_S *inputBuffer, int frameId)
         CLOG_ERROR("malloc virAddr for tunBuffer failed\n");
         free(tunBuffer);
         tunBuffer = NULL;
+        fflush(stdout);
+        fflush(stderr);
     }
     memcpy(tunBuffer->tuningInfo.virAddr, inputBuffer->planes[0].virAddr, inputBuffer->planes[0].length);
     pthread_mutex_lock(&g_rawdump_info[pipelineId].rawdumpListLock);
@@ -762,6 +788,8 @@ static int32_t vi_rawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_r
 
     if (nChn >= (VIU_MAX_CHN_NUM + VIU_MAX_RAWCHN_NUM)) {
         CLOG_ERROR("invalid chnId %d", nChn);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
     CLOG_INFO("VI chn %d rawdump buffer frameId %d, buffer %p, closeDown: %d",
@@ -901,20 +929,29 @@ static int test_buffer_deInit(int pipelineId, int firmwareId)
 
 static int netlink_init(void)
 {
-    /* 创建NETLINK socket */
     skfd = socket(PF_NETLINK, SOCK_RAW, SVIVI_NETLINK);
     if (skfd < 0) {
         CLOG_ERROR("can not create a netlink socket\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
-
-    //初始化 netlink 源地址
+    struct timeval timeout;
+    timeout.tv_sec = NETLINK_TIMEOUT_S;
+    timeout.tv_usec = 0;
+    if (setsockopt(skfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
+        CLOG_ERROR("setsockopt failed: %s", strerror(errno));
+        fflush(stdout);
+        fflush(stderr);
+    }
     memset(&src_addr, 0, sizeof(src_addr));
     src_addr.nl_family = AF_NETLINK;
     src_addr.nl_pid = getpid();
     src_addr.nl_groups = 0;
     if (bind(skfd, (struct sockaddr *)&src_addr, sizeof(src_addr)) != 0){
         CLOG_ERROR("bind() error\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
 
@@ -928,15 +965,26 @@ static int netlink_recv(void *data, unsigned int len, unsigned int need_seq)
     int cur_pid, i;
     socklen_t rxlen = sizeof(struct sockaddr_nl);
 
+    // struct timeval timeout;
+    // timeout.tv_sec = NETLINK_TIMEOUT_S;
+    // timeout.tv_usec = 0;
+    // if (setsockopt(skfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
+    //     CLOG_ERROR("setsockopt failed: %s", strerror(errno));
+    //     fflush(stdout);
+    //     fflush(stderr);
+    // }
+
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.nl_family = AF_NETLINK;
-    dest_addr.nl_pid = 0;            //0表示发送给kernel
+    dest_addr.nl_pid = 0;
     dest_addr.nl_groups = 0;
 
     memset(data, 0, len);
     ret = recvfrom(skfd, data, len, 0, (struct sockaddr*)&dest_addr, &rxlen);
     if (ret < 0) {
-        CLOG_ERROR("recv form kerner error!");
+        CLOG_ERROR("recv form kerner error(%d), %s", ret, strerror(errno));
+        fflush(stdout);
+        fflush(stderr);
         return ret;
     }
 
@@ -956,31 +1004,29 @@ static int netlink_send(void *data, unsigned int len, unsigned int seq)
 {
     int ret = 0;
     struct nlmsghdr *message;
-    // char *data = "This message is from user's space";
     char *retval;
-    struct sockaddr_nl dest_addr;    //sockaddr_nl 是 netlink 使用的地址数据结构
+    struct sockaddr_nl dest_addr;
 
-    //初始化 netlink 目标地址
     // memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.nl_family = AF_NETLINK;
-    dest_addr.nl_pid = 0;            //0表示发送给kernel
-    dest_addr.nl_groups = 0;         //多播组
+    dest_addr.nl_pid = 0;
+    dest_addr.nl_groups = 0;
 
-    /* 2.设置消息 */
     message = (struct nlmsghdr *)malloc(NLMSG_SPACE(len));
-    message->nlmsg_len = NLMSG_SPACE(len); //包括netlink消息头在内，整个消息长度 
-    message->nlmsg_flags = 0;            //消息标志
-    message->nlmsg_type = 0;             //消息类型
-    message->nlmsg_seq = seq;              //消息报文的序列号
-    message->nlmsg_pid = getpid(); //消息中加入本应用端口pid，内核应答时往此pid写入
-    retval = memcpy(NLMSG_DATA(message), data, len);    //数据
+    message->nlmsg_len = NLMSG_SPACE(len);
+    message->nlmsg_flags = 0;
+    message->nlmsg_type = 0;
+    message->nlmsg_seq = seq;
+    message->nlmsg_pid = getpid();
+    retval = memcpy(NLMSG_DATA(message), data, len);
 
     CLOG_INFO("User Send len:%d, cur pos:%d", message->nlmsg_len, seq);
 
-    /* 3.发送消息 */
-    ret = sendto(skfd, message, message->nlmsg_len, 0,(struct sockaddr *)&dest_addr, sizeof(dest_addr));	//将message消息发送给内核
+    ret = sendto(skfd, message, message->nlmsg_len, 0,(struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if(!ret){
         CLOG_ERROR("send error,  pid: %d", message->nlmsg_pid);
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
 
@@ -1001,11 +1047,9 @@ int v4l2_single_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
-    struct sockaddr_nl src_addr, dest_addr;
-    int skfd, rxlen = sizeof(struct sockaddr_nl);
     recv_msg *info;
 
-    CLOG_INFO("[netlink] init");
+    CLOG_INFO("[netlink] init %d", getpid());
     netlink_init();
 
     snd_header.vinit.ret = 0;
@@ -1014,28 +1058,36 @@ int v4l2_single_online_test(struct testConfig *config)
     info = (recv_msg *) malloc (sizeof(recv_msg));
     if (info == NULL) {
         CLOG_ERROR("malloc failed, please check!\n");
+        fflush(stdout);
+        fflush(stderr);
         return -1;
     }
-    CLOG_INFO("[netlink] wait kernel set fmt");
 
+    CLOG_INFO("[netlink] wait kernel set fmt");
     struct {
         struct nlmsghdr hdr;
         struct v4l2_vformat data;
     } recv_vfmt;
     ret = netlink_recv(&recv_vfmt, sizeof(recv_vfmt), START_S_FMT);
+    if (ret < 0) {
+        goto wait_set_fmt_fail;
+    }
 
-    //TODO: set fmt by kernel vformat, now default 480p@nv12
     CLOG_INFO("recv vformat: (%d, %d)", recv_vfmt.data.width, recv_vfmt.data.height);
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
                          config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
                          config);
     if (ret) {
         CLOG_ERROR("testSensorInit failed\n");
+        fflush(stdout);
+        fflush(stderr);
         return ret;
     }
     ret = testSensorGetDevInfo(sensorHandle, &sensor_info);
     if (ret) {
         CLOG_ERROR("testSensorGetDevInfo failed\n");
+        fflush(stdout);
+        fflush(stderr);
         testSensorDeInit(sensorHandle);
         return ret;
     }
@@ -1064,8 +1116,10 @@ int v4l2_single_online_test(struct testConfig *config)
         struct v4l2_vrequestbuffers data;
     } recv_vreq_buf;
     ret = netlink_recv(&recv_vreq_buf, sizeof(recv_vreq_buf), START_REQBUFS);
+    if (ret < 0) {
+        goto wait_req_buf_fail;
+    }
 
-    //TODO: req cpp buffer nums by struct v4l2_vrequestbuffers. now default 4
     test_buffer_init(pipelineId, firmwareId, img_info, sensor_info);
     CLOG_INFO("[netlink] request buffer count:%d", recv_vreq_buf.data.count);
 
@@ -1080,8 +1134,9 @@ int v4l2_single_online_test(struct testConfig *config)
         CLOG_INFO("[netlink] wait kernel query buffer");
 
         ret = netlink_recv(&recv_vquery_buf, sizeof(recv_vquery_buf), START_QUERYBUF);
-
-        //TODO: fetch buffer info to kernel query
+        if (ret < 0) {
+            goto wait_query_buf_fail;
+        }
         buffer_pool_alloc_one(cpp_out_buffer_pool[pipelineId], &fd);
 
         snd_header.vbuf.ret = 0;
@@ -1089,7 +1144,6 @@ int v4l2_single_online_test(struct testConfig *config)
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QUERYBUF);
     }
 
-    // thread init
     strcpy(pipelineProcThread[pipelineId].threadName, "pipeline0Func");
     pipelineProcThread[pipelineId].threadProcessFunc = testThreadFunc;
     pipelineProcThread[pipelineId].pipelineId = pipelineId;
@@ -1121,6 +1175,9 @@ int v4l2_single_online_test(struct testConfig *config)
     for (i = 0; i < recv_vreq_buf.data.count; i++) {
         CLOG_INFO("[netlink] wait kernel queue buffer");
         ret = netlink_recv(&recv_vqbuf, sizeof(recv_vqbuf), START_QBUF);
+        if (ret < 0) {
+            goto wait_qbuf_fail;
+        }
 
         snd_header.vbuf.ret = 0;
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
@@ -1134,6 +1191,9 @@ int v4l2_single_online_test(struct testConfig *config)
         struct v4l2_vstream data;
     } recv_vstreamon;
     ret = netlink_recv(&recv_vstreamon, sizeof(recv_vstreamon), START_STREAMON);
+    if (ret < 0) {
+        goto wait_streamon_fail;
+    }
 
     cpp_start(pipelineId);
     viisp_vi_online_streamOn(pipelineId);
@@ -1164,33 +1224,46 @@ int v4l2_single_online_test(struct testConfig *config)
         ret = netlink_recv(&recv_vpoll, sizeof(recv_vpoll), START_POLL);
         if (ret < 0) {
             CLOG_WARNING("recv vdqbuf failed, ret=%d", ret);
-            break;
+            goto loop_fail;
         } else if (ret == START_STREAMOFF)
-            break;
-try_again:
-        if (List_IsEmpty(cpp_done_list[pipelineId]) == false) {
-            snd_header.vpoll.ret = 0;
-            netlink_send(&snd_header.vpoll, sizeof(struct v4l2_vpoll), FINISH_POLL);
-        } else {
-            // CLOG_WARNING("no buffer in cpp_done_list");
-            usleep(100);
-            goto try_again;
+            goto loop_exit;
+
+        doneBuf = List_Pop_With_Cond(cpp_done_list[pipelineId]);  //must success
+        if (doneBuf == NULL) {
+            CLOG_ERROR("error! no buffer");
+            fflush(stdout);
+            fflush(stderr);
+            goto loop_fail;
         }
+
+        snd_header.vpoll.ret = 0;
+        netlink_send(&snd_header.vpoll, sizeof(struct v4l2_vpoll), FINISH_POLL);
+// try_again:
+//         if (List_IsEmpty(cpp_done_list[pipelineId]) == false) {
+//             snd_header.vpoll.ret = 0;
+//             netlink_send(&snd_header.vpoll, sizeof(struct v4l2_vpoll), FINISH_POLL);
+//         } else {
+//             // CLOG_WARNING("no buffer in cpp_done_list");
+//             usleep(100);
+//             goto try_again;
+//         }
 
         CLOG_INFO("[netlink] wait kernel dequeue buffer");
 
         ret = netlink_recv(&recv_vdqbuf, sizeof(recv_vdqbuf), START_DQBUF);
         if (ret < 0) {
             CLOG_WARNING("recv vdqbuf failed, ret=%d", ret);
-            break;
+            goto loop_fail;
         } else if  (ret == START_STREAMOFF)
-            break;
-        //TODO: get buffer from cpp_done_list
-        doneBuf = List_Pop(cpp_done_list[pipelineId]);  //must success
-        if (doneBuf == NULL) {
-            CLOG_ERROR("error! no buffer");
-            break;
-        }
+            goto loop_exit;
+
+        // doneBuf = List_Pop(cpp_done_list[pipelineId]);  //must success
+        // if (doneBuf == NULL) {
+        //     CLOG_ERROR("error! no buffer");
+        //     fflush(stdout);
+        //     fflush(stderr);
+        //     goto loop_fail;
+        // }
         snd_header.vbuf.index = doneBuf->index;
         snd_header.vbuf.m_fd = doneBuf->m.fd;
         snd_header.vbuf.ret = 0;
@@ -1201,11 +1274,10 @@ try_again:
         ret = netlink_recv(&recv_vqbuf2, sizeof(recv_vqbuf2), START_QBUF);
         if (ret < 0) {
             CLOG_WARNING("recv vqbuf failed, ret=%d", ret);
-            break;
+            goto loop_fail;
         } else if (ret == START_STREAMOFF)
-            break;
-        //TODO: List_FindItemIf by v4l2_vbuffer m_fd
-        //TODO: push buffer to cpp_origin_list
+            goto loop_exit;
+
         List_Push(cpp_origin_list[pipelineId], (void *)doneBuf);
         snd_header.vbuf.ret = 0;
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
@@ -1218,30 +1290,56 @@ try_again:
     // } recv_vstreamoff;
     // ret = netlink_recv(&recv_vstreamoff, sizeof(recv_vstreamoff), START_STREAMOFF);
 
+    // streamOnFlags[pipelineId] = 0;
+    // viisp_vi_online_streamOff(pipelineId);
+    // testSensorStop(sensorHandle);
+    // viisp_isp_streamOff(firmwareId);
+    // cpp_stop(pipelineId);
+    // test_buffer_reset(pipelineId);
+    // CLOG_INFO("sensor stream off");
+
+    // ProcThreadDeinit(&pipelineProcThread[pipelineId]);
+
+    // viisp_isp_deinit(firmwareId, sensor_info.sensorId);
+    // viisp_vi_deInit();
+
+    // test_buffer_deInit(pipelineId, firmwareId);
+
+    // cpp_deInit(pipelineId);
+
+    // testSensorDeInit(sensorHandle);
+
+    // snd_header.vstream.ret = 0;
+    // netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMOFF);
+
+    // fflush(stdout);
+    // fflush(stderr);
+    // return 0;
+
+loop_exit:
+loop_fail:
     streamOnFlags[pipelineId] = 0;
     viisp_vi_online_streamOff(pipelineId);
     testSensorStop(sensorHandle);
     viisp_isp_streamOff(firmwareId);
     cpp_stop(pipelineId);
-    test_buffer_reset(pipelineId);
-    CLOG_INFO("sensor stream off");
-
-    ProcThreadDeinit(&pipelineProcThread[pipelineId]);
-
-    viisp_isp_deinit(firmwareId, sensor_info.sensorId);
-    viisp_vi_deInit();
-
-    test_buffer_deInit(pipelineId, firmwareId);
-
-    cpp_deInit(pipelineId);
-
-    testSensorDeInit(sensorHandle);
-
     snd_header.vstream.ret = 0;
     netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMOFF);
 
-    fflush(stdout);
-    fflush(stderr);
+wait_streamon_fail:
+    test_buffer_reset(pipelineId);
+wait_qbuf_fail:
+    ProcThreadDeinit(&pipelineProcThread[pipelineId]);
+wait_query_buf_fail:
+    test_buffer_deInit(pipelineId, firmwareId);
+wait_req_buf_fail:
+    viisp_isp_deinit(firmwareId, sensor_info.sensorId);
+    viisp_vi_deInit();
+    cpp_deInit(pipelineId);
+    testSensorDeInit(sensorHandle);
+wait_set_fmt_fail:
+    close(skfd);
+
     return ret;
 }
 
