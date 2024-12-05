@@ -471,12 +471,15 @@ out:
     return ret;
 }
 
+#define VMAX 2250
 static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, uint32_t u32ExpoTime,
                                           ISP_SENSOR_VTS_INFO_S* pstSensorVtsInfo)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
+    uint32_t shutter = 0;
     uint32_t integration_time = 0;
-    uint32_t shr = 0, shr_tmp;
+    uint32_t SHR0 = 0, SHR0_tmp;
+    float Toffset = 1.79;  // us
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
@@ -484,46 +487,40 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     pthread_mutex_lock(&sensor_context->apiLock);
 
-    integration_time = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
+    shutter = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
 
-    // shr = sensor_context->initVTS - (integration_time * 1000 - 2680) * sensor_context->lineTime; //bit 12: Toffset=2.68us
+    // SHR0 = sensor_context->initVTS - (integration_time * 1000 - 2680) * sensor_context->lineTime; //bit 12: Toffset=2.68us
 
-#if USE_12BIT
-    shr = (integration_time * 1000 - 2680) / sensor_context->lineTime; //bit 12: Toffset=2.68us
-#else
-    shr = (integration_time * 1000 - 1790) / sensor_context->lineTime; //bit 10: Toffset=2.68us
-#endif
-    shr_tmp = shr;
+// u32ExpoTime = sensor_context->vts[0]*sensor_context->lineTime / 1000  - SHR0 * sensor_context->lineTime / 1000 + Toffset;
 
-    if (shr < 8)
-        shr = 8;
-    else if (shr >= sensor_context->minVTS - 4)
-        shr = sensor_context->minVTS - 4;
+    SHR0 = (sensor_context->vts[0]*sensor_context->lineTime / 1000 + Toffset - u32ExpoTime ) * 1000 / sensor_context->lineTime;
 
-#if USE_12BIT
-    integration_time = (uint32_t)((sensor_context->initVTS - shr) * sensor_context->lineTime / 1000 + 2.68);
-#else
-    integration_time = (uint32_t)((sensor_context->initVTS - shr) * sensor_context->lineTime / 1000 + 1.79);
-#endif
+    SHR0_tmp = SHR0;
+
+    if (SHR0 < 8)
+        SHR0 = 8;
+    else if (SHR0 >= VMAX - 4)
+        SHR0 = VMAX - 4;
+
     sensor_context->hdrIntTime[u32ChanelId] = integration_time * sensor_context->lineTime / 1000;
 
-    // if (shr_tmp < 8)
+    // if (SHR0_tmp < 8)
     //     sensor_context->vts[0] = expLine + IMX415_VTS_ADJUST;
     // else
     //     sensor_context->vts[0] = sensor_context->initVTS;
 
     // sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     // sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-// shr=90;
-    sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(shr);
-    sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(shr);
-    sensor_context->sensorRegs[0].astI2cData[2].u32Data = HIGH_8BITS(HIGH_8BITS(shr));
+// SHR0=90;
+    sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(SHR0);
+    sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(SHR0);
+    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (SHR0>>16 & 0xf);
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-	printf("exp time: %d us, L:%d, shr_tmp:%d, shr:%d\n", u32ExpoTime, integration_time, shr_tmp, shr);
+	printf("exp ttime: %d us, L:%d, SHR0_tmp:%d, SHR0:%d\n", u32ExpoTime, integration_time, SHR0_tmp, SHR0);
 
     return 0;
 }
