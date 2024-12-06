@@ -30,37 +30,24 @@ static struct regval_tab color_bar_regs[] = {
 
 #define GC08A0_VTS_ADJUST     (16)
 #define GC08A0_VB_MAX         (0x1fff)
-#define GC08A0_VTS_OFFSET     (2508)
+#define GC08A0_VTS_OFFSET     (2448)    //Frame blank line = frame length - out window height [register(Ox034e,0x034f)].
 #define GC08A0_VTS_LINES_MAX  (0xffff)
-#define GC08A0_EXPO_LINES_MIN (0x000f)
-
-//#define GC08A0_FRAME_LENGTH_H (0x41)
-//#define GC08A0_FRAME_LENGTH_L (0x42)
+#define GC08A0_EXPO_LINES_MIN (0x0004)
 #define GC08A0_EXPO_H    (0x0202)
 #define GC08A0_EXPO_L    (0x0203)
-#define GC08A0_AGAIN_0   (0x0204)
-#define GC08A0_AGAIN_1   (0x0205)
-// #define GC08A0_AGAIN_2   (0x0205)
-// #define GC08A0_PREGAIN_H (0xB1)
-// #define GC08A0_PREGAIN_L (0xB2)
+#define GC08A0_AGAIN_H   (0x0204)
+#define GC08A0_AGAIN_L   (0x0205)
 #define GC08A0_VB_H      (0x0226)
 #define GC08A0_VB_L      (0x0227)
-#define GC08A0_PAGE_ADDR (0xFE)
 
 typedef enum {
     GC08A0_INFO_PAGE,
-    GC08A0_INFO_AGAIN_0,
-    GC08A0_INFO_AGAIN_1,
-    GC08A0_INFO_AGAIN_2,
-    GC08A0_INFO_AGAIN_3,
-    GC08A0_INFO_AGAIN_PREGAIN_H,
-    GC08A0_INFO_AGAIN_PREGAIN_L,
-    // GC08A0_INFO_GROUP_HOLD,
+    GC08A0_INFO_AGAIN_H,
+    GC08A0_INFO_AGAIN_L,
     GC08A0_INFO_VB_H,
     GC08A0_INFO_VB_L,
     GC08A0_INFO_EXP_H,
     GC08A0_INFO_EXP_L,
-    // GC08A0_INFO_GROUP_ACCESS,
     GC08A0_INFO_MAX
 } GC08A0_SENSOR_INFO_E;
 
@@ -260,30 +247,16 @@ static int gc08a0_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
             sensor_context->sensorRegs[0].astI2cData[i].u32DataWidth = gc08a0_reg_data_byte;
         }
 
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_PAGE].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_PAGE].u32RegAddr = GC08A0_PAGE_ADDR;  // reg page
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_PAGE].u32Data = 0x00;                  // page 0
-
         sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_L].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_L].u32RegAddr =
-            GC08A0_EXPO_L;  // exposure time[7:0]   page 0
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_L].u32RegAddr = GC08A0_EXPO_L;  // exposure time[7:0]
         sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_H].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_H].u32RegAddr =
-            GC08A0_EXPO_H;  // exposure time[13:8]
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_H].u32RegAddr = GC08A0_EXPO_H;  // exposure time[13:8]
 
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_0].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_0].u32RegAddr = GC08A0_AGAIN_0;  // Again
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_H].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_H].u32RegAddr = GC08A0_AGAIN_H;  // Again
 
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_1].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_1].u32RegAddr = GC08A0_AGAIN_1;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_2].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_2].u32RegAddr = GC08A0_AGAIN_2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_3].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_3].u32RegAddr = GC08A0_AGAIN_3;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_PREGAIN_H].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_PREGAIN_H].u32RegAddr = GC08A0_PREGAIN_H;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_PREGAIN_L].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_PREGAIN_L].u32RegAddr = GC08A0_PREGAIN_L;
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_L].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_AGAIN_L].u32RegAddr = GC08A0_AGAIN_L;
 
         sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_VB_H].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_VB_H].u32RegAddr = GC08A0_VB_H;
@@ -333,11 +306,6 @@ static int gc08a0_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     again = sensor_context->work_info.again[u32ChanelId];
     dgain = sensor_context->work_info.dgain[u32ChanelId];
 
-    // pstSensorAeDft->maxAnaGain = 0xf80;  // 15.5x Q8 format
-    // pstSensorAeDft->minAnaGain = 0x100;  // 1x Q8 format
-    // pstSensorAeDft->maxTGain = 0x3f8 * pstSensorAeDft->maxAnaGain / 0x100;      // max dgain = 1016/256 = 3.96875x
-    // pstSensorAeDft->minTGain = 1 * 0x100 * pstSensorAeDft->minAnaGain / 0x100;  // min dgain = 1x
-
     pstSensorAeDft->initSceneLuma = sensor_context->init_3a_attr.initSceneLuma[u32ChanelId];
     pstSensorAeDft->initSceneLux = sensor_context->init_3a_attr.initSceneLux[u32ChanelId];
 
@@ -348,9 +316,6 @@ static int gc08a0_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
 
     pstSensorAeDft->maxDelayCfg = 2;
     pstSensorAeDft->minDelayCfg = 2;
-
-    // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - GC08A0_VTS_ADJUST) * sensor_context->lineTime / 1000;
-    // pstSensorAeDft->minExpTime = GC08A0_EXPO_LINES_MIN * sensor_context->lineTime / 1000;         //us
 
     pthread_mutex_unlock(&sensor_context->apiLock);
     return 0;
@@ -429,8 +394,6 @@ static int gc08a0_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     pthread_mutex_lock(&sensor_context->apiLock);
     expLine = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
-    expLine = expLine >> 2;
-    expLine = expLine << 2;
     expLine = (expLine < GC08A0_EXPO_LINES_MIN) ? GC08A0_EXPO_LINES_MIN : expLine;
     expLine = (expLine > (GC08A0_VTS_LINES_MAX - GC08A0_VTS_ADJUST)) ? (GC08A0_VTS_LINES_MAX - GC08A0_VTS_ADJUST)
                                                                        : expLine;
@@ -442,28 +405,19 @@ static int gc08a0_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
         sensor_context->vts[0] = sensor_context->initVTS;
 
     vb = sensor_context->vts[0] - GC08A0_VTS_OFFSET;
+	vb = vb > 16 ? vb : 16;
     sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_VB_H].u32Data = HIGH_8BITS(vb);
     sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_VB_L].u32Data = LOW_8BITS(vb);
     sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_L].u32Data = LOW_8BITS(expLine);    //bit[7:0]
-    sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_H].u32Data = (expLine >> 8) & 0x3f; //bit[13:8]
+    sensor_context->sensorRegs[0].astI2cData[GC08A0_INFO_EXP_H].u32Data = HIGH_8BITS(expLine);
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-
+	// printf("exp time: %d us, L:%d, vb:%d\n", u32ExpoTime, expLine, vb);
     return 0;
 }
-
-#define ANALOG_GAIN_1 64    // 1.00x
-#define ANALOG_GAIN_2 92    // 1.43x
-#define ANALOG_GAIN_3 128   // 2.00x
-#define ANALOG_GAIN_4 182   // 2.84x
-#define ANALOG_GAIN_5 254   // 3.97x
-#define ANALOG_GAIN_6 363   // 5.68x
-#define ANALOG_GAIN_7 521   // 8.14x
-#define ANALOG_GAIN_8 725   // 11.34x
-#define ANALOG_GAIN_9 1038  // 16.23x
 
 static int gc08a0_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
 {
@@ -480,69 +434,21 @@ static int gc08a0_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     sensorRegs = &sensor_context->sensorRegs[0];
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    AGain_Reg = *pAgainVal >> 2;  // Q8->Q6
-    if ((ANALOG_GAIN_1 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_2)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0b;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x00;
-        temp = AGain_Reg;
-    } else if ((ANALOG_GAIN_2 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_3)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x01;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_2;
-    } else if ((ANALOG_GAIN_3 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_4)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x02;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_3;
-    } else if ((ANALOG_GAIN_4 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_5)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x03;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_4;
-    } else if ((ANALOG_GAIN_5 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_6)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x04;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_5;
-    } else if ((ANALOG_GAIN_6 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_7)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x05;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_6;
-    } else if ((ANALOG_GAIN_7 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_8)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x06;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_7;
-    } else if ((ANALOG_GAIN_8 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_9)) {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x07;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_8;
-    } else {
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC08A0_INFO_AGAIN_3].u32Data = 0x08;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_9;
-    }
-    sensorRegs->astI2cData[GC08A0_INFO_AGAIN_PREGAIN_H].u32Data = (temp >> 6) & 0xff;
-    sensorRegs->astI2cData[GC08A0_INFO_AGAIN_PREGAIN_L].u32Data = (temp << 2) & 0xfc;
+    if (*pAgainVal < 0x0100) //Q8 1x (265 is 1x)
+        AGain_Reg = 0x400;
+    else if (*pAgainVal > 0x1000) //16x (256x16 is 16x)
+        AGain_Reg = 0x400*16;
+    else
+        AGain_Reg = 4 * (*pAgainVal);
 
-    *pAgainVal = AGain_Reg << 2;  // Q8
+    sensorRegs->astI2cData[GC08A0_INFO_AGAIN_L].u32Data = LOW_8BITS(AGain_Reg);
+    sensorRegs->astI2cData[GC08A0_INFO_AGAIN_H].u32Data = HIGH_8BITS(AGain_Reg);
+
+    // *pAgainVal = AGain_Reg << 2;  // Q8
+    *pDgainVal = 4096;  // Q8 -> Q12
 
     pthread_mutex_unlock(&sensor_context->apiLock);
-
+// printf("again: %x, AGain_Reg: %x\n", *pAgainVal, AGain_Reg);
     return ret;
 }
 

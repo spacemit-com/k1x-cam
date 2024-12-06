@@ -92,7 +92,7 @@ static int gc13a0_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].minFps = 15;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 4;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_RGGB;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = GC13A0_SPM_4208x3120_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &gc13a0_spm_setting;
@@ -117,7 +117,7 @@ static int gc13a0_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
 
     switch (work_mode) {
         case GC13A0_SPM_4208x3120_10bit_LINEAR_30_4LANE: {
-            snr_info->linetime = GC13A0_SPM_4208x3120_10bit_LINEAR_30_4LANE;  // ns
+            snr_info->linetime = GC13A0_LINETIME_13M30_10bit_LINEAR;  // ns
             snr_info->vts = GC13A0_VMAX_13M30_10bit_LINEAR;
             snr_info->f32maxFps = 30;
             snr_info->exp_time[0] = 3232 * snr_info->linetime / 1000;

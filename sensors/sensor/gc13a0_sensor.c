@@ -30,38 +30,24 @@ static struct regval_tab color_bar_regs[] = {
 
 #define GC13A0_VTS_ADJUST     (16)
 #define GC13A0_VB_MAX         (0x1fff)
-#define GC13A0_VTS_OFFSET     (3136)
-// #define GC13A0_VTS_OFFSET     (3184)
+#define GC13A0_VTS_OFFSET     (3120)    //Frame blank line = frame length - out window height [register(Ox034e,0x034f)].
 #define GC13A0_VTS_LINES_MAX  (0xffff)
-// #define GC13A0_VTS_LINES_MAX  (GC13A0_VB_MAX + GC13A0_VTS_OFFSET)
-#define GC13A0_EXPO_LINES_MIN (0x000f)
-
-//#define GC13A0_FRAME_LENGTH_H (0x41)
-//#define GC13A0_FRAME_LENGTH_L (0x42)
+#define GC13A0_EXPO_LINES_MIN (0x0004)
 #define GC13A0_EXPO_H    (0x0202)
 #define GC13A0_EXPO_L    (0x0203)
-#define GC13A0_AGAIN_0   (0x0204)
-#define GC13A0_AGAIN_1   (0x0205)
-// #define GC08A0_AGAIN_2   (0x0205)
-// #define GC08A0_PREGAIN_H (0xB1)
-// #define GC08A0_PREGAIN_L (0xB2)
-#define GC13A0_VB_H      (0x0226)
-#define GC13A0_VB_L      (0x0227)
+#define GC13A0_AGAIN_H   (0x0204)
+#define GC13A0_AGAIN_L   (0x0205)
+#define GC13A0_VTS_H      (0x0340)   //0340:0341
+#define GC13A0_VTS_L      (0x0341)
 
 typedef enum {
     GC13A0_INFO_PAGE,
-    GC13A0_INFO_AGAIN_0,
-    GC13A0_INFO_AGAIN_1,
-    GC13A0_INFO_AGAIN_2,
-    GC13A0_INFO_AGAIN_3,
-    GC13A0_INFO_AGAIN_PREGAIN_H,
-    GC13A0_INFO_AGAIN_PREGAIN_L,
-    // GC13A0_INFO_GROUP_HOLD,
-    GC13A0_INFO_VB_H,
-    GC13A0_INFO_VB_L,
+    GC13A0_INFO_AGAIN_L,
+    GC13A0_INFO_AGAIN_H,
+    GC13A0_INFO_VTS_H,
+    GC13A0_INFO_VTS_L,
     GC13A0_INFO_EXP_H,
     GC13A0_INFO_EXP_L,
-    // GC13A0_INFO_GROUP_ACCESS,
     GC13A0_INFO_MAX
 } GC13A0_SENSOR_INFO_E;
 
@@ -261,35 +247,20 @@ static int gc13a0_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
             sensor_context->sensorRegs[0].astI2cData[i].u32DataWidth = gc13a0_reg_data_byte;
         }
 
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_PAGE].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_PAGE].u32RegAddr = GC13A0_PAGE_ADDR;  // reg page
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_PAGE].u32Data = 0x00;                  // page 0
-
         sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_L].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_L].u32RegAddr =
-            GC13A0_EXPO_L;  // exposure time[7:0]   page 0
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_L].u32RegAddr = GC13A0_EXPO_L;  // exposure time[7:0]   page 0
         sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_H].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_H].u32RegAddr =
-            GC13A0_EXPO_H;  // exposure time[13:8]
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_H].u32RegAddr = GC13A0_EXPO_H;  // exposure time[13:8]
 
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_0].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_0].u32RegAddr = GC13A0_AGAIN_0;  // Again
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_L].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_L].u32RegAddr = GC13A0_AGAIN_L;  // Again
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_H].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_H].u32RegAddr = GC13A0_AGAIN_H;
 
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_1].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_1].u32RegAddr = GC13A0_AGAIN_1;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_2].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_2].u32RegAddr = GC13A0_AGAIN_2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_3].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_3].u32RegAddr = GC13A0_AGAIN_3;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_PREGAIN_H].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_PREGAIN_H].u32RegAddr = GC13A0_PREGAIN_H;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_PREGAIN_L].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_AGAIN_PREGAIN_L].u32RegAddr = GC13A0_PREGAIN_L;
-
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_H].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_H].u32RegAddr = GC13A0_VB_H;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_L].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_L].u32RegAddr = GC13A0_VB_L;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_H].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_H].u32RegAddr = GC13A0_VTS_H;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_L].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_L].u32RegAddr = GC13A0_VTS_L;
 
         sensor_context->syncInit = true;
     } else {
@@ -407,9 +378,11 @@ static int gc13a0_sensor_fps_set(void* snsHandle, float f32Fps)
     sensor_context->initVTS = lines;
     sensor_context->initFps = f32Fps;
     sensor_context->vts[0] = sensor_context->initVTS;
-    vb = sensor_context->vts[0] - GC13A0_VTS_OFFSET;
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_H].u32Data = HIGH_8BITS(vb);
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_L].u32Data = LOW_8BITS(vb);
+    // vb = sensor_context->vts[0] - GC13A0_VTS_OFFSET;
+	// vb = vb > 16 ? vb : 16;
+
+    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_H].u32Data = HIGH_8BITS(lines);
+    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_L].u32Data = LOW_8BITS(lines);
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
@@ -419,7 +392,7 @@ static int gc13a0_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
                                           ISP_SENSOR_VTS_INFO_S* pstSensorVtsInfo)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
-    uint32_t expLine = 0, vb = 0;
+    uint32_t expLine = 0, vb = 0, expLine1,expLine2;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
@@ -427,41 +400,33 @@ static int gc13a0_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 
     pthread_mutex_lock(&sensor_context->apiLock);
     expLine = u32ExpoTime * 1000 / sensor_context->lineTime;  // u32ExpoTime unit: us
-    expLine = expLine >> 2;
-    expLine = expLine << 2;
     expLine = (expLine < GC13A0_EXPO_LINES_MIN) ? GC13A0_EXPO_LINES_MIN : expLine;
-    expLine = (expLine > (GC13A0_VTS_LINES_MAX - GC13A0_VTS_ADJUST)) ? (GC13A0_VTS_LINES_MAX - GC13A0_VTS_ADJUST)
-                                                                       : expLine;
+
+    expLine = (expLine > (GC13A0_VTS_LINES_MAX - GC13A0_VTS_ADJUST)) ? (GC13A0_VTS_LINES_MAX - GC13A0_VTS_ADJUST) : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
-    if (expLine > (sensor_context->initVTS - GC13A0_VTS_ADJUST))
-        sensor_context->vts[0] = expLine + GC13A0_VTS_ADJUST;
-    else
-        sensor_context->vts[0] = sensor_context->initVTS;
+    // if (expLine > (sensor_context->initVTS - GC13A0_VTS_ADJUST))
+    //     sensor_context->vts[0] = expLine + GC13A0_VTS_ADJUST;
+    // else
+    //     sensor_context->vts[0] = sensor_context->initVTS;
 
-    vb = sensor_context->vts[0] - GC13A0_VTS_OFFSET;
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_H].u32Data = HIGH_8BITS(vb);
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VB_L].u32Data = LOW_8BITS(vb);
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_L].u32Data = LOW_8BITS(expLine);    //bit[7:0]
-    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_H].u32Data = (expLine >> 8) & 0x3f; //bit[13:8]
+    // vb = sensor_context->vts[0] - GC13A0_VTS_OFFSET;
+	// vb = vb > 16 ? vb : 16;
+
+    // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_H].u32Data = HIGH_8BITS(vb);
+    // sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_VTS_L].u32Data = LOW_8BITS(vb);
+    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_L].u32Data = LOW_8BITS(expLine);
+    sensor_context->sensorRegs[0].astI2cData[GC13A0_INFO_EXP_H].u32Data = HIGH_8BITS(expLine);
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
 
+	// printf("exp time: %d us, L:%d, vb:%d\n", u32ExpoTime, expLine, vb);
+
     return 0;
 }
-
-#define ANALOG_GAIN_1 64    // 1.00x
-#define ANALOG_GAIN_2 92    // 1.43x
-#define ANALOG_GAIN_3 128   // 2.00x
-#define ANALOG_GAIN_4 182   // 2.84x
-#define ANALOG_GAIN_5 254   // 3.97x
-#define ANALOG_GAIN_6 363   // 5.68x
-#define ANALOG_GAIN_7 521   // 8.14x
-#define ANALOG_GAIN_8 725   // 11.34x
-#define ANALOG_GAIN_9 1038  // 16.23x
 
 static int gc13a0_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
 {
@@ -478,68 +443,19 @@ static int gc13a0_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     sensorRegs = &sensor_context->sensorRegs[0];
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    AGain_Reg = *pAgainVal >> 2;  // Q8->Q6
-    if ((ANALOG_GAIN_1 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_2)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0b;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x00;
-        temp = AGain_Reg;
-    } else if ((ANALOG_GAIN_2 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_3)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x01;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_2;
-    } else if ((ANALOG_GAIN_3 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_4)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x02;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_3;
-    } else if ((ANALOG_GAIN_4 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_5)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x03;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_4;
-    } else if ((ANALOG_GAIN_5 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_6)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x04;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_5;
-    } else if ((ANALOG_GAIN_6 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_7)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x05;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_6;
-    } else if ((ANALOG_GAIN_7 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_8)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x06;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_7;
-    } else if ((ANALOG_GAIN_8 <= AGain_Reg) && (AGain_Reg < ANALOG_GAIN_9)) {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x07;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_8;
-    } else {
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_0].u32Data = 0x0c;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_1].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_2].u32Data = 0x0e;
-        sensorRegs->astI2cData[GC13A0_INFO_AGAIN_3].u32Data = 0x08;
-        temp = 64 * AGain_Reg / ANALOG_GAIN_9;
-    }
-    sensorRegs->astI2cData[GC13A0_INFO_AGAIN_PREGAIN_H].u32Data = (temp >> 6) & 0xff;
-    sensorRegs->astI2cData[GC13A0_INFO_AGAIN_PREGAIN_L].u32Data = (temp << 2) & 0xfc;
+    AGain_Reg = *pAgainVal << 2; // Q8->Q10
+    if (AGain_Reg < 0x400)
+        AGain_Reg = 0x400;
+    else if (AGain_Reg > 0x1000) //16x (256x16 is 16x)
+        AGain_Reg = 0x4000;
 
-    *pAgainVal = AGain_Reg << 2;  // Q8
+    sensorRegs->astI2cData[GC13A0_INFO_AGAIN_L].u32Data = LOW_8BITS(AGain_Reg);
+    sensorRegs->astI2cData[GC13A0_INFO_AGAIN_H].u32Data = HIGH_8BITS(AGain_Reg);
 
+    *pDgainVal = 4096;
+    *pAgainVal = AGain_Reg >> 2;
     pthread_mutex_unlock(&sensor_context->apiLock);
+// printf("NULL again: %x, AGain_Reg: %x\n", *pAgainVal, AGain_Reg);
 
     return ret;
 }
