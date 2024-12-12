@@ -1412,6 +1412,7 @@ int single_pipeline_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
 
     CLOG_INFO("test start");
 
@@ -1490,6 +1491,7 @@ int single_pipeline_online_test(struct testConfig *config)
         condition_init(&testAutoRunCond[pipelineId]);
 
         test_buffer_prepare(pipelineId, firmwareId);
+        cpp_load_fw_settingfile(pipelineId, SettingFile);
         cpp_start(pipelineId);
         viisp_vi_online_streamOn(pipelineId);
 
@@ -1519,6 +1521,7 @@ int single_pipeline_online_test(struct testConfig *config)
             }
             if (ch == 's' || ch == 'S') {
                 test_buffer_prepare(pipelineId, firmwareId);
+                cpp_load_fw_settingfile(pipelineId, SettingFile);
                 cpp_start(pipelineId);
                 viisp_vi_online_streamOn(pipelineId);
                 viisp_isp_streamOn(firmwareId);

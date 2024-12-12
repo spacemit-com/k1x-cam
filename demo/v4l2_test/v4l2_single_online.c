@@ -1048,6 +1048,7 @@ int v4l2_single_online_test(struct testConfig *config)
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
     recv_msg *info;
+    char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
 
     CLOG_INFO("[netlink] init %d", getpid());
     netlink_init();
@@ -1195,6 +1196,7 @@ int v4l2_single_online_test(struct testConfig *config)
         goto wait_streamon_fail;
     }
 
+    cpp_load_fw_settingfile(pipelineId, SettingFile);
     cpp_start(pipelineId);
     viisp_vi_online_streamOn(pipelineId);
     viisp_isp_streamOn(firmwareId);
