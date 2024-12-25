@@ -12,9 +12,8 @@
 
                         "src_path":"/tmp/cpp_case_in_data/1920x1080/",
                         "size_width":1920,
-                        "size_height":1080,
-
-                },
+                        "size_height":1080
+		},
                 {
                         "name": "cpp1",
                         "enable": 0,
@@ -23,8 +22,8 @@
 
                         "src_path":"/vendor/etc/camera/",
                         "size_width":1920,
-                        "size_height":1080,
-                },
+                        "size_height":1080
+                }
         ],
 
         "isp_node":[
@@ -46,7 +45,7 @@
                         "in_width":1920,
                         "in_height":1080,
 
-                        "vc_mode":1,
+                        "vc_mode":1
 
                 },
                 {
@@ -65,7 +64,7 @@
                         "sensor_name":"gc2375h_asr",
                         "sensor_id" : 1,
                         "sensor_work_mode":0,
-                        "fps":30,
-                },
+                        "fps":30
+                }
         ]
 }

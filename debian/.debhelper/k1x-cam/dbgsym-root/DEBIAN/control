@@ -1,0 +1,12 @@
+Package: k1x-cam-dbgsym
+Source: k1x-cam
+Version: 0.0.1
+Auto-Built-Package: debug-symbols
+Architecture: riscv64
+Maintainer: 黎志荣 <>
+Installed-Size: 915
+Depends: k1x-cam (= 0.0.1)
+Section: debug
+Priority: optional
+Description: debug symbols for k1x-cam
+Build-Ids: 058b09570804caf2f04d5954ccbcbd86c05c441e 6f452fbd39059decf559800739dda6e4a74de608 b504570f96763eebb652b760e0ccdd30fd10a643 c7814438dab179b1e19be73290bda1b69ddd1a4d

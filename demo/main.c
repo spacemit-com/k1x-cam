@@ -22,6 +22,7 @@ void showTestConfig(struct testConfig config)
     printf("test_frame: %d\n", config.testFrame);
     printf("dump_one_frame: %d\n", config.dumpFrame);
     printf("use_v4l: %d\n", config.useV4l);
+    printf("auto_detect: %d\n", config.autoDetect);
 
     for (i = 0; i < 2; i++) {
         printf("cpp%d enable: %d\n", i, config.cppConfig[i].enable);
@@ -93,13 +94,15 @@ int checkTestConfig(struct testConfig *cfg)
 
 int main(int argc, char* argv[])
 {
+    char sensors_name[64] = {0};
+    int width = 0, height = 0;
     int caseId = 7;
     struct testConfig config = {0};
     int ret = 0;
 
-    if (argc == 3) {
-        return detect_camera(argv[1], atoi(argv[2]));
-    }
+    // if (argc == 3) {
+    //     return detect_camera(argv[1], atoi(argv[2]));
+    // }
 
     if (argc == 2) {
         ret = getTestConfig(&config, argv[1]);
@@ -155,6 +158,10 @@ int main(int argc, char* argv[])
         caseId |= 0xf0;
     }
 
+    if (config.autoDetect) {
+        caseId = 0xe0;
+    }
+
     switch (caseId) {
     case 0:
         single_pipeline_online_test(&config);
@@ -182,6 +189,12 @@ int main(int argc, char* argv[])
         break;
     case 8:
         slice_capture_test(&config);
+        break;
+    case 0xe0:
+        ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId);
+        if (ret == 0) {
+            update_json_file(&config, argv[1], sensors_name, width, height);
+        }
         break;
     case 0xf0:
         v4l2_single_online_test(&config);

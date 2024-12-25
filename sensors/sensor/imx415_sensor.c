@@ -520,7 +520,7 @@ static int imx415_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-	printf("exp ttime: %d us, L:%d, SHR0_tmp:%d, SHR0:%d\n", u32ExpoTime, integration_time, SHR0_tmp, SHR0);
+//	printf("exp ttime: %d us, L:%d, SHR0_tmp:%d, SHR0:%d\n", u32ExpoTime, integration_time, SHR0_tmp, SHR0);
 
     return 0;
 }
@@ -636,7 +636,7 @@ static int imx415_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     *pAgainVal = gain_val;  // Q8
     *pDgainVal = 4096;  // Q8 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
-printf("again: %x (%x), AGain_Reg: %x, db:%f, i:%d\n", *pAgainVal, tval, AGain_Reg, gain_db, i);
+//printf("again: %x (%x), AGain_Reg: %x, db:%f, i:%d\n", *pAgainVal, tval, AGain_Reg, gain_db, i);
     return ret;
 }
 

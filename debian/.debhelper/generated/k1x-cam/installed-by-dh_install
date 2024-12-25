@@ -1,0 +1,7 @@
+./etc/init.d/camera.sh
+./demo/cfgs/files/sensor_rear_primary_cpp_preview_setting.data
+./demo/cfgs/files/csi1_camera_detect.json
+./demo/cfgs/files/csi2_camera_detect.json
+./demo/cfgs/files/csi3_camera_detect.json
+./usr/lib/systemd/system/camera.service
+./usr/lib/udev/rules.d/99-video-permissions.rules

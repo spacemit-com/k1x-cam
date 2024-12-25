@@ -1,0 +1,23 @@
+###
+ # Copyright 2022-2023 SPACEMIT. All rights reserved.
+ # Use of this source code is governed by a BSD-style license
+ # that can be found in the LICENSE file.
+ # 
+ # @Author: ZRong(zhirong.li@spacemit.com)
+ # @Date: 2023-09-20 13:41:02
+ # @LastEditTime: 2023-09-20 14:05:04
+ # @Description: 
+###
+
+[Unit]
+Description=camera service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/init.d/camera.sh
+ExecStart=/etc/init.d/camera.sh
+ExecStartPost=/bin/udevadm control --reload-rules
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

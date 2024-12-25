@@ -4,37 +4,39 @@
  */
 #include <unistd.h>
 #include <string.h>
-
+#include <sys/stat.h>
 #include "config.h"
 #include "cam_log.h"
 
 #include "cjson.h"
-#include "sstr.h"
+#define SAVE_FILE_PATH0 "/usr/share/camera_json/"
+#define SAVE_FILE_PATH1 "/usr/share/"
+#define SAVE_FILE_PATH2 "/tmp/"
 
-static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
+static int getCppNodeConfig (struct testConfig *config, struct cJSON *root)
 {
-    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    struct cJSON *item = NULL, *child = NULL, *grandc = NULL;
     int num = 0, i, idx = 0, ret = 0;
     // char name[16] = "\0";
     char name[16];
 
-    item = cjson_get_object(root, "cpp_node");
+    item = cJSON_GetObjectItem(root, "cpp_node");
     if (!item) {
         CLOG_ERROR("get cpp_node failed");
         ret = -1;
         goto out;
     }
 
-    num = cjson_get_len(item);
+    num = cJSON_GetArraySize(item);
     CLOG_INFO("cpp node num: %d", num);
     for (i = 0; i < num; i++) {
-        child = cjson_get_array(item, i);
+        child = cJSON_GetArrayItem(item, i);
         if (!child) {
             CLOG_ERROR("get cpp_node array %d failed", i);
             ret = -1;
             goto out;
         }
-        grandc = cjson_get_object(child, "name");
+        grandc = cJSON_GetObjectItem(child, "name");
         if (!grandc) {
             CLOG_ERROR("get cpp%d name failed", i);
             ret = -1;
@@ -51,7 +53,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
             goto out;
         }
 
-        grandc = cjson_get_object(child, "enable");
+        grandc = cJSON_GetObjectItem(child, "enable");
         if (!grandc) {
             CLOG_ERROR("get cpp%d enable failed", i);
             ret = -1;
@@ -62,7 +64,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
         if (!config->cppConfig[idx].enable)
             continue;
 
-        grandc = cjson_get_object(child, "format");
+        grandc = cJSON_GetObjectItem(child, "format");
         if (!grandc) {
             CLOG_ERROR("get cpp%d format failed", i);
             ret = -1;
@@ -73,7 +75,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
                 "%s",
                 cjson_get_str(grandc));
 
-        grandc = cjson_get_object(child, "src_from_file");
+        grandc = cJSON_GetObjectItem(child, "src_from_file");
         if (!grandc) {
             CLOG_ERROR("get cpp%d src_from_file failed", i);
             ret = -1;
@@ -84,7 +86,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
         if (!config->cppConfig[idx].srcFromFile)
             continue;
 
-        grandc = cjson_get_object(child, "src_path");
+        grandc = cJSON_GetObjectItem(child, "src_path");
         if (!grandc) {
             CLOG_WARNING("get cpp%d src_path failed", i);
             ret = -1;
@@ -96,7 +98,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
                     cjson_get_str(grandc));
         }
 
-        grandc = cjson_get_object(child, "size_width");
+        grandc = cJSON_GetObjectItem(child, "size_width");
         if (!grandc) {
             CLOG_WARNING("get cpp%d size_width failed", i);
             ret = -1;
@@ -105,7 +107,7 @@ static int getCppNodeConfig (struct testConfig *config, struct cjson *root)
             config->cppConfig[idx].width = cjson_get_int(grandc);
         }
 
-        grandc = cjson_get_object(child, "size_height");
+        grandc = cJSON_GetObjectItem(child, "size_height");
         if (!grandc) {
             CLOG_WARNING("get cpp%d size_height failed", i);
             ret = -1;
@@ -119,29 +121,29 @@ out:
     return ret;
 }
 
-static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
+static int getIspNodeConfig (struct testConfig *config, struct cJSON *root)
 {
-    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    struct cJSON *item = NULL, *child = NULL, *grandc = NULL;
     int num = 0, i, idx = 0, ret = 0;
     // char name[16] = "\0";
     char name[16];
 
-    item = cjson_get_object(root, "isp_node");
+    item = cJSON_GetObjectItem(root, "isp_node");
     if (!item) {
         CLOG_ERROR("get isp_node failed");
         ret = -1;
         goto out;
     }
-    num = cjson_get_len(item);
+    num = cJSON_GetArraySize(item);
     CLOG_INFO("isp node num: %d", num);
     for (i = 0; i < num; i++) {
-        child = cjson_get_array(item, i);
+        child = cJSON_GetArrayItem(item, i);
         if (!child) {
             CLOG_ERROR("get isp_node array %d failed", i);
             ret = -1;
             goto out;
         }
-        grandc = cjson_get_object(child, "name");
+        grandc = cJSON_GetObjectItem(child, "name");
         if (!grandc) {
             CLOG_ERROR("get isp%d name failed", i);
             ret = -1;
@@ -158,7 +160,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             goto out;
         }
 
-        grandc = cjson_get_object(child, "enable");
+        grandc = cJSON_GetObjectItem(child, "enable");
         if (!grandc) {
             CLOG_ERROR("get %s enable failed", name);
             ret = -1;
@@ -169,7 +171,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
         if (!config->ispFeConfig[idx].enable)
             continue;
 
-        grandc = cjson_get_object(child, "work_mode");
+        grandc = cJSON_GetObjectItem(child, "work_mode");
         if (!grandc) {
             CLOG_WARNING("get isp%d work_mode failed", idx);
             ret = -1;
@@ -197,7 +199,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             config->ispFeConfig[idx].workMode == ISP_WORKMODE_RAWDUMP ||
 			config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
             // need sensor info
-            grandc = cjson_get_object(child, "sensor_name");
+            grandc = cJSON_GetObjectItem(child, "sensor_name");
             if (!grandc) {
                 CLOG_WARNING("get isp%d sensor_name failed", idx);
                 ret = -1;
@@ -208,7 +210,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
                     "%s",
                     cjson_get_str(grandc));
 
-            grandc = cjson_get_object(child, "sensor_id");
+            grandc = cJSON_GetObjectItem(child, "sensor_id");
             if (!grandc) {
                 CLOG_ERROR("get %s sensor_id failed", name);
                 ret = -1;
@@ -216,7 +218,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             }
             config->ispFeConfig[idx].sensorId = cjson_get_int(grandc);
 
-            grandc = cjson_get_object(child, "sensor_work_mode");
+            grandc = cJSON_GetObjectItem(child, "sensor_work_mode");
             if (!grandc) {
                 CLOG_ERROR("get %s sensor_work_mode failed", name);
                 ret = -1;
@@ -224,7 +226,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             }
             config->ispFeConfig[idx].sensorWorkMode = cjson_get_int(grandc);
 
-            grandc = cjson_get_object(child, "fps");
+            grandc = cJSON_GetObjectItem(child, "fps");
             if (!grandc) {
                 CLOG_WARNING("get %s fps failed", name);
             }
@@ -232,7 +234,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
         }
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_CCIC) {
-            grandc = cjson_get_object(child, "vc_mode");
+            grandc = cJSON_GetObjectItem(child, "vc_mode");
             if (!grandc) {
                 CLOG_ERROR("get %s vc_mode failed", name);
                 ret = -1;
@@ -242,7 +244,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
 		}
 
         if (config->ispFeConfig[idx].workMode == ISP_WORKMODE_OFFLINE_PREVIEW) {
-            grandc = cjson_get_object(child, "src_file");
+            grandc = cJSON_GetObjectItem(child, "src_file");
             if (!grandc) {
                 CLOG_WARNING("get isp%d src_file failed", idx);
                 ret = -1;
@@ -253,7 +255,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
                     "%s",
                     cjson_get_str(grandc));
 
-            grandc = cjson_get_object(child, "in_width");
+            grandc = cJSON_GetObjectItem(child, "in_width");
             if (!grandc) {
                 CLOG_ERROR("get isp%d in_width failed", idx);
                 ret = -1;
@@ -261,7 +263,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             }
             config->ispFeConfig[idx].inWidth = cjson_get_int(grandc);
 
-            grandc = cjson_get_object(child, "in_height");
+            grandc = cJSON_GetObjectItem(child, "in_height");
             if (!grandc) {
                 CLOG_ERROR("get isp%d in_height failed", idx);
                 ret = -1;
@@ -269,7 +271,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             }
             config->ispFeConfig[idx].inHeight = cjson_get_int(grandc);
 
-            grandc = cjson_get_object(child, "bit_depth");
+            grandc = cJSON_GetObjectItem(child, "bit_depth");
             if (!grandc) {
                 CLOG_ERROR("get isp%d bit_depth failed", idx);
                 ret = -1;
@@ -278,7 +280,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
             config->ispFeConfig[idx].bitDepth = cjson_get_int(grandc);
         }
 
-        grandc = cjson_get_object(child, "format");
+        grandc = cJSON_GetObjectItem(child, "format");
         if (!grandc) {
             CLOG_ERROR("get isp%d format failed", idx);
             ret = -1;
@@ -289,7 +291,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
                 "%s",
                 cjson_get_str(grandc));
 
-        grandc = cjson_get_object(child, "out_width");
+        grandc = cJSON_GetObjectItem(child, "out_width");
         if (!grandc) {
             CLOG_ERROR("get isp%d out_width failed", idx);
             ret = -1;
@@ -297,7 +299,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cjson *root)
         }
         config->ispFeConfig[idx].outWidth = cjson_get_int(grandc);
 
-        grandc = cjson_get_object(child, "out_height");
+        grandc = cJSON_GetObjectItem(child, "out_height");
         if (!grandc) {
             CLOG_ERROR("get isp%d out_height failed", idx);
             ret = -1;
@@ -310,13 +312,13 @@ out:
     return ret;
 }
 
-static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
+static int getSensorNodeConfig (struct testConfig *config, struct cJSON *root)
 {
-    struct cjson *item = NULL, *child = NULL, *grandc = NULL;
+    struct cJSON *item = NULL, *child = NULL, *grandc = NULL;
     int num = 0, i, idx = 0, ret = 0;
     char name[16] = "\0";
 
-    item = cjson_get_object(root, "sensor_node");
+    item = cJSON_GetObjectItem(root, "sensor_node");
     if (!item) {
         CLOG_INFO("no sensor_node, use default config");
         config->snrConfig[0].flashEnable = 0;
@@ -327,18 +329,18 @@ static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
         config->snrConfig[1].snrI2cAddr = -1;
         config->useSnrNode = 0;
     } else {
-        num = cjson_get_len(item);
+        num = cJSON_GetArraySize(item);
         CLOG_INFO("sensor node num: %d", num);
 
         for (i = 0; i < num; i++) {
-            child = cjson_get_array(item, i);
+            child = cJSON_GetArrayItem(item, i);
             if (!child) {
                 CLOG_ERROR("get sensor_node array %d failed", i);
                 ret = -1;
                 goto out;
             }
             // sensor config
-            grandc = cjson_get_object(child, "sensor_name");
+            grandc = cJSON_GetObjectItem(child, "sensor_name");
             if (!grandc) {
                 CLOG_ERROR("get sensor%d name failed", i);
                 ret = -1;
@@ -349,7 +351,7 @@ static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
                     "%s",
                     cjson_get_str(grandc));
 
-            grandc = cjson_get_object(child, "sensor_i2c_addr");
+            grandc = cJSON_GetObjectItem(child, "sensor_i2c_addr");
             if (!grandc) {
                 config->snrConfig[i].snrI2cAddr = -1;
             } else {
@@ -357,7 +359,7 @@ static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
             }
 
             //vcm config
-            grandc = cjson_get_object(child, "vcm_name");
+            grandc = cJSON_GetObjectItem(child, "vcm_name");
             if (!grandc) {
                 config->snrConfig[i].vcmEnable = 0;
             } else {
@@ -367,13 +369,13 @@ static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
                         "%s",
                         cjson_get_str(grandc));
 
-                grandc = cjson_get_object(child, "vcm_i2c_bus");
+                grandc = cJSON_GetObjectItem(child, "vcm_i2c_bus");
                 if (!grandc) {
                     config->snrConfig[i].vcmI2cBus = -1;
                 } else {
                     config->snrConfig[i].vcmI2cBus = cjson_get_int(grandc);
                 }
-                grandc = cjson_get_object(child, "vcm_i2c_addr");
+                grandc = cJSON_GetObjectItem(child, "vcm_i2c_addr");
                 if (!grandc) {
                     config->snrConfig[i].vcmI2cAddr = -1;
                 } else {
@@ -382,7 +384,7 @@ static int getSensorNodeConfig (struct testConfig *config, struct cjson *root)
             }
 
             //flash config
-            grandc = cjson_get_object(child, "flash_name");
+            grandc = cJSON_GetObjectItem(child, "flash_name");
             if (!grandc) {
                 config->snrConfig[i].flashEnable = 0;
             } else {
@@ -411,9 +413,8 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
 {
     int ret = 0;
     int num = 0, i, idx = 0;
-    struct cjson *root = NULL, *item = NULL, *child = NULL, *grandc = NULL;
+    struct cJSON *root = NULL, *item = NULL, *child = NULL, *grandc = NULL;
     char dftFile[64] = "/tmp/sdktest.json";
-    char name[16] = "\0";
 
     if (!jsonfile) {
         CLOG_INFO("using default jsonfile %s", dftFile);
@@ -424,13 +425,44 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         return -1;
     }
 
-    root = cjson_new_file(jsonfile);
-    if (!root) {
-        CLOG_ERROR("can not get json object from %s", jsonfile);
+    FILE *file = NULL;
+    file = fopen(jsonfile, "r");
+    if (file == NULL) {
+        CLOG_ERROR("can not open jsonfile %s", jsonfile);
         return -1;
     }
 
-    item = cjson_get_object(root, "tuning_server_enable");
+    struct stat statbuf;
+    stat(jsonfile, &statbuf);
+    int fileSize = statbuf.st_size;
+    CLOG_INFO("json size:%ld", sizeof(char) * fileSize + 1);
+
+    char *jsonStr = (char *)malloc(sizeof(char) * fileSize + 1);
+    if (jsonStr == NULL) {
+        CLOG_ERROR("can not malloc %d for jsonfile %s", fileSize, jsonfile);
+        fclose(file);
+        return -1;
+    }
+    memset(jsonStr, 0, fileSize + 1);
+
+    int size = fread(jsonStr, sizeof(char), fileSize, file);
+    if (size == 0) {
+        CLOG_ERROR("can not read jsonfile %s", jsonfile);
+        fclose(file);
+        return -1;
+    }
+    // CLOG_INFO("read json output: %s", jsonStr);
+    fclose(file);
+
+    root = cJSON_Parse(jsonStr);
+    if (!root) {
+        CLOG_ERROR("Error before: %s", cJSON_GetErrorPtr());
+        free(jsonStr);
+        return -1;
+    }
+    free(jsonStr);
+
+    item = cJSON_GetObjectItem(root, "tuning_server_enable");
     if (!item) {
         CLOG_ERROR("get tuning_server_enable failed");
         ret = -1;
@@ -438,7 +470,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
     }
     config->tuningServerEnalbe = cjson_get_int(item);
 
-    item = cjson_get_object(root, "show_fps");
+    item = cJSON_GetObjectItem(root, "show_fps");
     if (!item) {
         CLOG_ERROR("get show_fps failed");
         ret = -1;
@@ -446,7 +478,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
     }
     config->showFps = cjson_get_int(item);
 
-    item = cjson_get_object(root, "auto_run");
+    item = cJSON_GetObjectItem(root, "auto_run");
     if (!item) {
         CLOG_ERROR("get auto_run failed");
         ret = -1;
@@ -454,7 +486,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
     }
     config->autoRun = cjson_get_int(item);
 
-    item = cjson_get_object(root, "test_frame");
+    item = cJSON_GetObjectItem(root, "test_frame");
     if (!item) {
         CLOG_DEBUG("no test_frame. set test_frame: 500, dump_one_frame:250 as default");
         config->testFrame = 500;
@@ -463,7 +495,7 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         config->testFrame = cjson_get_int(item);
         config->testFrame = (config->testFrame < 6) ? 6 : config->testFrame;
 
-        item = cjson_get_object(root, "dump_one_frame");
+        item = cJSON_GetObjectItem(root, "dump_one_frame");
         if (!item) {
             CLOG_DEBUG("get dump_one_frame failed, set to %d", config->testFrame / 2);
             config->dumpFrame = config->testFrame / 2;
@@ -473,11 +505,18 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         }
     }
 
-    item = cjson_get_object(root, "use_v4l");
+    item = cJSON_GetObjectItem(root, "use_v4l");
     if (!item) {
         config->useV4l = 0;
     } else {
-        config->useV4l = 1;
+        config->useV4l = cjson_get_int(item) ? 1 : 0;
+    }
+
+    item = cJSON_GetObjectItem(root, "auto_detect");
+    if (!item) {
+        config->autoDetect = 0;
+    } else {
+        config->autoDetect = cjson_get_int(item) ? 1 : 0;
     }
 
     ret = getCppNodeConfig (config, root);
@@ -485,24 +524,155 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         CLOG_ERROR("cpp_node parse error");
         goto out;
     }
-
     ret = getIspNodeConfig (config, root);
     if (ret) {
         CLOG_ERROR("isp_node parse error");
         goto out;
     }
-
     ret = getSensorNodeConfig (config, root);
     if (ret) {
         CLOG_ERROR("sensor_node parse error");
         goto out;
     }
 
-    // CLOG_INFO("show test_frame: %d, dump_one_frame: %d, aux_device: %d, vcmI2cBus: %d",
-    //     config->testFrame, config->dumpFrame, config->auxDevice, config->vcmI2cBus);
-
 out:
-    cjson_delete(root);
+    cJSON_Delete(root);
     root = NULL;
+
+    return ret;
+}
+
+int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_name, int width, int height)
+{
+    int ret = 0;
+    int num = 0, i, idx = 0;
+    struct cJSON *root = NULL, *item = NULL, *child = NULL, *grandc = NULL;
+    char combined_path[256];
+    char filename[64];
+    char tstr[24];
+
+    FILE *file = NULL;
+
+    if (!jsonfile || access(jsonfile, F_OK | R_OK)) {
+        CLOG_ERROR("can not access jsonfile %s", jsonfile);
+        return -1;
+    }
+
+    file = fopen(jsonfile, "r");
+    if (file == NULL) {
+        CLOG_ERROR("can not open jsonfile %s", jsonfile);
+        return -1;
+    }
+
+    struct stat statbuf;
+    stat(jsonfile, &statbuf);
+    int fileSize = statbuf.st_size;
+
+    char *jsonStr = (char *)malloc(sizeof(char) * fileSize + 1);
+
+    if (jsonStr == NULL) {
+        CLOG_ERROR("can not malloc %d for jsonfile %s", fileSize, jsonfile);
+        fclose(file);
+        return -1;
+    }
+
+    memset(jsonStr, 0, sizeof(char) * fileSize + 1);
+
+    int size = fread(jsonStr, sizeof(char), fileSize, file);
+    if (size == 0) {
+        CLOG_ERROR("can not read jsonfile %s", jsonfile);
+        fclose(file);
+        return -1;
+    }
+    fclose(file);
+
+    root = cJSON_Parse(jsonStr);
+    if (!root) {
+        CLOG_ERROR("Error before: %s", cJSON_GetErrorPtr());
+        free(jsonStr);
+        return -1;
+    }
+    free(jsonStr);
+
+    item = cJSON_GetObjectItem(root, "isp_node");
+    if (!item) {
+        CLOG_ERROR("get isp_node failed");
+        ret = -1;
+        goto out;
+    }
+    num = cJSON_GetArraySize(item);
+    if (!num) {
+        CLOG_ERROR("get isp node num: %d !", num);
+        ret = -1;
+        goto out;
+    }
+
+    child = cJSON_GetArrayItem(item, 0);
+    if (!child) {
+        CLOG_ERROR("get isp_node array 0 failed");
+        ret = -1;
+        goto out;
+    }
+    // grandc = cJSON_GetObjectItem(child, "sensor_name");
+    // if (!grandc) {
+    //     CLOG_WARNING("get isp%d sensor_name failed", idx);
+    //     ret = -1;
+    //     goto out;
+    // }
+    cJSON_ReplaceItemInObject(child, "sensor_name", cJSON_CreateString(sensors_name));
+    // CLOG_WARNING("set isp sensor_name %s", sensors_name);
+
+    // grandc = cJSON_GetObjectItem(child, "out_width");
+    // if (!grandc) {
+    //     CLOG_ERROR("get isp%d out_width failed", idx);
+    //     ret = -1;
+    //     goto out;
+    // }
+    cJSON_ReplaceItemInObject(child, "out_width", cJSON_CreateNumber(width));
+
+    // grandc = cJSON_GetObjectItem(child, "out_height");
+    // if (!grandc) {
+    //     CLOG_ERROR("get isp%d out_height failed", idx);
+    //     ret = -1;
+    //     goto out;
+    // }
+    cJSON_ReplaceItemInObject(child, "out_height", cJSON_CreateNumber(height));
+
+    cJSON_DeleteItemFromObject(root, "auto_detect");
+
+    tstr[0] = config->ispFeConfig[0].sensorId + 1 + '0';
+    tstr[1] = '\0';
+    snprintf(filename, sizeof(filename), "%s%s%s", "csi", tstr, "_camera_auto.json");
+
+    for (i = 0; i < 3; i++) {
+        ret = 0;
+        if (i == 0)
+            snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH0, filename);
+        else if (i == 1)
+            snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH1, filename);
+        else
+            snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH2, filename);
+
+        file = fopen(combined_path, "w");
+        if (file == NULL) {
+            CLOG_ERROR("Open %s file fail", combined_path);
+            ret = -1;
+        } else
+            break;
+    }
+    if (ret)
+        goto out;
+
+    char *cjValue = cJSON_Print(root);
+
+    ret = fwrite(cjValue, sizeof(char), strlen(cjValue), file);
+    if (ret == 0) {
+        CLOG_ERROR("write %s file fail", combined_path);
+    }
+    fclose(file);
+out:
+    cJSON_Delete(root);
+    root = NULL;
+
     return ret;
 }
