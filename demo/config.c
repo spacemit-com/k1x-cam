@@ -646,13 +646,13 @@ int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_na
 
     for (i = 0; i < 3; i++) {
         ret = 0;
-        if (i == 0)
+        if (i == 0) {
             snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH0, filename);
-        else if (i == 1)
+        } else if (i == 1) {
             snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH1, filename);
-        else
+        } else {
             snprintf(combined_path, sizeof(combined_path), "%s%s", SAVE_FILE_PATH2, filename);
-
+        }
         file = fopen(combined_path, "w");
         if (file == NULL) {
             CLOG_ERROR("Open %s file fail", combined_path);
@@ -668,6 +668,8 @@ int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_na
     ret = fwrite(cjValue, sizeof(char), strlen(cjValue), file);
     if (ret == 0) {
         CLOG_ERROR("write %s file fail", combined_path);
+    } else {
+        CLOG_INFO("save json to %s success", combined_path);
     }
     fclose(file);
 out:

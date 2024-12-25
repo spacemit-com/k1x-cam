@@ -1,1 +1,0 @@
-KERNEL=="video*", ACTION=="add", MODE="0666"
