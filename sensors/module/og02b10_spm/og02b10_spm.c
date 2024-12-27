@@ -120,7 +120,7 @@ static int og02b10_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->image_mode = SENSOR_LINEAR_MODE;
             snr_info->setting_table = og02b10_spm_1600x1300_10bit_60fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(og02b10_spm_1600x1300_10bit_60fps_tab);
-            snr_info->mipi_clock = 800;  // Mhz
+            snr_info->mipi_clock = 400;  // Mhz
         } break;
         default: {
             CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,

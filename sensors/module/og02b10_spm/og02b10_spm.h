@@ -19,7 +19,8 @@ typedef enum OG02B10_SPM_WORK_MODE {
 #define OG02B10_VTS_ADJUST (12) /* vts - max_exposure*/
 // MCLK = 24M
 #define OG02B10_VMAX_1300P60_10bit_LINEAR       (1416 + OG02B10_VTS_ADJUST)
-#define OG02B10_LINETIME_1300P60_10bit_LINEAR 11700 // ns, 1600 / 24M = 6.6666e-5
+// #define OG02B10_LINETIME_1300P60_10bit_LINEAR 11700 // ns, 1600 / 24M = 6.6666e-5
+ #define OG02B10_LINETIME_1300P60_10bit_LINEAR 11700 // ns, 1600 / 24M = 6.6666e-5
 
 #ifdef __cplusplus
 }
