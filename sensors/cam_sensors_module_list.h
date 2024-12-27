@@ -31,6 +31,7 @@ extern SENSOR_OBJ_S sc031Obj;
 extern SENSOR_OBJ_S ov8856Obj;
 extern SENSOR_OBJ_S og02b10Obj;
 extern SENSOR_OBJ_S mlx75027Obj;
+extern SENSOR_OBJ_S bf2257csObj;
 
 /*module*/
 extern MODULE_OBJ_S os05a10_spm_Obj;
@@ -46,6 +47,7 @@ extern MODULE_OBJ_S s5k5e3yx_spm_Obj;
 extern MODULE_OBJ_S gc2375h_spm_Obj;
 extern MODULE_OBJ_S gc13a0_spm_Obj;
 extern MODULE_OBJ_S gc08a8_spm_Obj;
+extern MODULE_OBJ_S bf2257cs_spm_Obj;
 
 extern MODULE_OBJ_S ov16a10_spm_Obj;
 extern MODULE_OBJ_S sc031_spm_Obj;
@@ -89,6 +91,7 @@ SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&ov8856_spm_Obj, &ov8856Obj, NULL, NULL},
     {&og02b10_spm_Obj, &og02b10Obj, NULL, NULL},
     {&mlx75027_spm_Obj, &mlx75027Obj, NULL, NULL},
+    {&bf2257cs_spm_Obj, &bf2257csObj, NULL, NULL},
 };
 
 VCM_OBJ_S *sensors_vcms_list[] = {
