@@ -225,9 +225,13 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
                 snr_width = sensors_module_context->sensor_capability.snr_config[0].width;
                 snr_height = sensors_module_context->sensor_capability.snr_config[0].height;
 
-                *width = snr_width > 1920 ? 1920 : snr_width;
-                *height = snr_height > 1080 ? 1080 : snr_height;
+                //*width = snr_width > 1920 ? 1920 : snr_width;
+                //*height = snr_height > 1080 ? 1080 : snr_height;
 
+		if (snr_width > 1920) {
+			*width = 1920;
+			*height = snr_height > 1080 ? 1080 : snr_height;
+		}
                 CLOG_INFO("detect %s sensors in csi%d: success, set %dx%d to %dx%d", 
                     sensors_module_list[module_id].module_obj_p->name, devId + 1, snr_width, snr_height, *width, *height);
                 break;
