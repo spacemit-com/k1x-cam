@@ -816,11 +816,6 @@ static int bf2257cs_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
     ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
     if (ret) {
         CLOG_INFO("read vendor id register failed: %s\n", strerror(errno));
-            for (i=0; i<1000; i++) {
-                sleep(1);
-                if (i % 60 == 0)
-                    CLOG_INFO("sleep %ds", i);
-            }
         goto out;
     }
 
@@ -829,11 +824,6 @@ static int bf2257cs_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
             || (vendor_id_table[i].val != vendor_id->id_table[i].val)) {
             CLOG_INFO("%s: detect sensor fail", __func__);
             ret = -1;
-            for (i=0; i<1000; i++) {
-                sleep(1);
-                if (i % 60 == 0)
-                    CLOG_INFO("sleep %ds", i);
-            }
             break;
         }
     }
