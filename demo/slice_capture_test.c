@@ -29,6 +29,7 @@
 #define MAX_FIRMWARE_NUM 2
 
 //#define DEBUG_USE_TIME
+#define ENABLE_PRIVIEW 0
 
 typedef enum {
     CAP_FRAMEINFO_CREATE = 0,
@@ -464,6 +465,7 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     }
 
     if (nChn == 0) {
+#ifdef ENABLE_PRIVIEW
         vi_buffer_info = malloc(sizeof(spmVI_BUFFER_INFO_S));
         if (vi_buffer_info) {
             vi_buffer_info->buffer = buffer;
@@ -476,6 +478,13 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
             usleep(1000);
             condition_post(&testAutoRunCond);
         }
+#else
+        if (frameId >= testFrame) {
+            usleep(1000);
+            condition_post(&testAutoRunCond);
+        }
+        viisp_vi_queueBuffer(0, buffer);
+#endif
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
             if (buffer->planes[0].virAddr == vi_out_buffer_capture_pool->buffers[i].planes[0].virAddr) {
@@ -554,12 +563,14 @@ static int isp_buffer_callback(uint32_t pipelineID, void* pstFrameinfoBuf)
     }
 
     //for preview
+#ifdef ENABLE_PRIVIEW
     isp_buffer_info = malloc(sizeof(spmISP_BUFFER_INFO_S));
     if (isp_buffer_info) {
         memcpy(&isp_buffer_info->frameInfo, data, sizeof(FRAME_INFO_S));
         isp_buffer_info->frameId = frameId;
         List_Push(isp_out_list, (void*)isp_buffer_info);
     }
+#endif
 
 try_again:
     //for slice capture
@@ -818,10 +829,11 @@ static int test_buffer_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_inf
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         frameinfo_buffer_alloc(&frameInfoBuf[i]);
     }
-
+#ifdef ENABLE_PRIVIEW
     cpp_out_buffer_pool =
         create_buffer_pool(img_info.width, img_info.height, img_info.format, "cpp channel0 out buffer");
     buffer_pool_alloc(cpp_out_buffer_pool, MAX_BUFFER_NUM);
+#endif
 
     return 0;
 }
@@ -838,11 +850,12 @@ static int test_buffer_prepare(int pipelineId, int firmwareId)
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         viisp_isp_queueBuffer(firmwareId, &frameInfoBuf[i]);
     }
-
+#ifdef ENABLE_PRIVIEW
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(cpp_out_buffer_pool);
         List_Push(cpp_out_list, (void*)buffer);
     }
+#endif
 
     return 0;
 }
@@ -856,10 +869,12 @@ static int test_buffer_reset(int pipelineId)
         buffer_pool_put_buffer(vi_out_buffer_pool, &vi_out_buffer_pool->buffers[i]);
     }
 
+#ifdef ENABLE_PRIVIEW
     List_Clear(cpp_out_buffer_pool->buf_list);
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         buffer_pool_put_buffer(cpp_out_buffer_pool, &cpp_out_buffer_pool->buffers[i]);
     }
+#endif
 
     return 0;
 }
@@ -1040,7 +1055,9 @@ int slice_capture_test(struct testConfig *config)
     viisp_set_vi_callback(viChn1Id, vi_buffer_callback);
 
     // cpp init
+#ifdef ENABLE_PRIVIEW
     cpp_init(pipeline0Id, img0_out_info, cpp_buffer_callback);
+#endif
     cpp_init(pipeline1Id, img1_out_info, capture_cpp_buffer_callback);
 
     // buffer init
@@ -1048,12 +1065,13 @@ int slice_capture_test(struct testConfig *config)
     test_buffer_capture_init(img1_out_info, sensor_info);
 
     // thread init
+#ifdef ENABLE_PRIVIEW
     strcpy(pipelineProcThread.threadName, "previewFunc");
     pipelineProcThread.threadProcessFunc = previewThreadFunc;
     pipelineProcThread.pipelineId = pipeline0Id;
     pipelineProcThread.firmwareId = firmwareId;
     ProcThreadInit(&pipelineProcThread);
-
+#endif
     strcpy(rawProcessProcThread.threadName, "rawProcessFunc");
     rawProcessProcThread.threadProcessFunc = rawProcessThreadFunc;
     rawProcessProcThread.pipelineId = pipeline1Id;
@@ -1080,7 +1098,9 @@ int slice_capture_test(struct testConfig *config)
         cpp_start(pipeline1Id);
         viisp_vi_offline_streamOn(pipeline1Id);
         test_buffer_prepare(pipeline0Id, firmwareId);
+#ifdef ENABLE_PRIVIEW
         cpp_start(pipeline0Id);
+#endif
         viisp_vi_online_streamOn(pipeline0Id);
         viisp_isp_streamOn(firmwareId);
         testSensorStart(sensorHandle);
@@ -1102,7 +1122,9 @@ int slice_capture_test(struct testConfig *config)
         viisp_vi_online_streamOff(pipeline0Id);
         testSensorStop(sensorHandle);
         viisp_isp_streamOff(firmwareId);
+#ifdef ENABLE_PRIVIEW
         cpp_stop(pipeline0Id);
+#endif
         test_buffer_reset(pipeline0Id);
         CLOG_INFO("sensor stream off");
 
@@ -1121,7 +1143,9 @@ int slice_capture_test(struct testConfig *config)
                 viisp_vi_offline_streamOn(pipeline1Id);
 
                 test_buffer_prepare(pipeline0Id, firmwareId);
+#ifdef ENABLE_PRIVIEW
                 cpp_start(pipeline0Id);
+#endif
                 viisp_vi_online_streamOn(pipeline0Id);
                 viisp_isp_streamOn(firmwareId);
                 testSensorStart(sensorHandle);
@@ -1144,7 +1168,9 @@ int slice_capture_test(struct testConfig *config)
                 viisp_vi_online_streamOff(pipeline0Id);
                 testSensorStop(sensorHandle);
                 viisp_isp_streamOff(firmwareId);
+#ifdef ENABLE_PRIVIEW
                 cpp_stop(pipeline0Id);
+#endif
                 test_buffer_reset(pipeline0Id);
                 CLOG_INFO("sensor stream off");
                 continue;
