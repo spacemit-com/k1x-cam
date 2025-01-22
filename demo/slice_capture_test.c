@@ -1180,8 +1180,9 @@ int slice_capture_test(struct testConfig *config)
 
     ProcThreadDeinit(&cppProcessProcThread);
     ProcThreadDeinit(&rawProcessProcThread);
+#ifdef ENABLE_PRIVIEW
     ProcThreadDeinit(&pipelineProcThread);
-
+#endif
     viisp_isp_deinit(firmwareId, sensor_info.sensorId);
     viisp_vi_deInit();
     testSensorDeInit(sensorHandle);

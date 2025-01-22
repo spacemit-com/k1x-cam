@@ -1127,8 +1127,9 @@ int slice_pipeline_stop(struct gstParam *para)
     test_buffer_reset(para->pipeline0Id);
     ProcThreadDeinit(&cppProcessProcThread);
     ProcThreadDeinit(&rawProcessProcThread);
+#ifdef ENABLE_PRIVIEW
     ProcThreadDeinit(&pipelineProcThread);
-
+#endif
     viisp_isp_deinit(para->firmwareId, para->sensorInfoId);
     viisp_vi_deInit();
     testSensorDeInit(para->sensorHandle);
