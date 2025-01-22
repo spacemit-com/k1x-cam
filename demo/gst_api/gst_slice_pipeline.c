@@ -31,7 +31,7 @@
 #define MAX_FIRMWARE_NUM 2
 
 //#define DEBUG_USE_TIME
-#define ENABLE_PRIVIEW 0
+// #define ENABLE_PRIVIEW
 
 typedef enum {
     CAP_FRAMEINFO_CREATE = 0,
@@ -890,8 +890,10 @@ static int test_buffer_deInit()
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         frameinfo_buffer_free(&frameInfoBuf[i]);
     }
+#ifdef ENABLE_PRIVIEW
     buffer_pool_free(cpp_out_buffer_pool);
     destroy_buffer_pool(cpp_out_buffer_pool);
+#endif
 
     return 0;
 }
@@ -1133,8 +1135,9 @@ int slice_pipeline_stop(struct gstParam *para)
     viisp_isp_deinit(para->firmwareId, para->sensorInfoId);
     viisp_vi_deInit();
     testSensorDeInit(para->sensorHandle);
+#ifdef ENABLE_PRIVIEW
     cpp_deInit(para->pipeline0Id);
-
+#endif
     test_buffer_capture_deInit();
     test_buffer_deInit();
 
