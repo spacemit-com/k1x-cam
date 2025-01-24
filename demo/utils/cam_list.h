@@ -35,9 +35,9 @@ bool List_Destroy(LIST_HANDLE handle);
 ssize_t List_GetSize(LIST_HANDLE handle);
 
 bool List_IsEmpty(LIST_HANDLE handle);
-
+LIST_ITERATOR_S *List_Push_With_Cond(LIST_HANDLE handle, const void *item);
 LIST_ITERATOR_S *List_Push(LIST_HANDLE handle, const void *item);
-
+void *List_Pop_With_Cond(LIST_HANDLE handle);
 void *List_Pop(LIST_HANDLE handle);
 
 LIST_ITERATOR_S *List_InsertByIterator(LIST_ITERATOR_S *insertIterator, const void *item);

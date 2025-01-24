@@ -84,18 +84,21 @@ BufferAllocator::~BufferAllocator() {
     CloseDmabufHeap();
 }
 
-int BufferAllocator::DmabufAlloc(const std::string& heap_name, size_t len) {
+int BufferAllocator::DmabufAlloc(const std::string& heap_name, size_t len, unsigned int heap_flags) {
     int fd = OpenDmabufHeap(heap_name);
     if (fd < 0) return fd;
 
     struct dma_heap_allocation_data heap_data{
         .len = len,  // length of data to be allocated in bytes
         .fd_flags = O_RDWR | O_CLOEXEC,  // permissions for the memory to be allocated
+        .heap_flags = heap_flags,
     };
 
     struct timespec timeStart, timeEnd;
     long timeCostms = 0;
     clock_gettime(CLOCK_MONOTONIC, &timeStart);
+
+    // printf("allocate from DMA-BUF heap: %x\n", heap_flags);
 
     auto ret = TEMP_FAILURE_RETRY(ioctl(fd, DMA_HEAP_IOCTL_ALLOC, &heap_data));
     if (ret < 0) {
@@ -113,7 +116,7 @@ int BufferAllocator::DmabufAlloc(const std::string& heap_name, size_t len) {
 
 int BufferAllocator::Alloc(const std::string& heap_name, size_t len,
                            unsigned int heap_flags, size_t legacy_align) {
-    int fd = DmabufAlloc(heap_name, len);
+    int fd = DmabufAlloc(heap_name, len, heap_flags);
 
     if (fd < 0)
         cout << "Alloc dma buf fail. len is " << len << endl;
@@ -134,7 +137,7 @@ int BufferAllocator::AllocSystem(bool cpu_access_needed, size_t len, unsigned in
         }();
 
         if (uncached_dmabuf_system_heap_support)
-            return DmabufAlloc(kDmabufSystemUncachedHeapName, len);
+            return DmabufAlloc(kDmabufSystemUncachedHeapName, len, heap_flags);
 
         cout << "AllocSystem. don't support system-uncached dma buf." << endl;
     }

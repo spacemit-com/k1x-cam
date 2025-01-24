@@ -81,6 +81,7 @@ struct testConfig {
     int dumpFrame;
     int useSnrNode;
     int useV4l;
+    int autoDetect;
 
     int vcmEnable;
     int vcmI2cAddr;
@@ -94,6 +95,7 @@ struct testConfig {
 };
 
 int getTestConfig(struct testConfig *config, char *jsonfile);
+int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_name, int width, int height);
 
 #ifdef __cplusplus
 }

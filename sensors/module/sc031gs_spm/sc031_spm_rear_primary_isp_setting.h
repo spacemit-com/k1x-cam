@@ -10,7 +10,7 @@
 {
     /* @m_nBayerPattern  Size: 1x1  BitWidth: 32_u  Range~[0, 4]  Type: firmware */
     /* 0 - RGGB, 1 - GRBG, 2 - GBRG, 3 - BGGR, 4 - monochrome */
-    3,
+    4,
     /* @m_bAELinkZoom  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - AE not link with zoom, 1 - AE link with zoom */
     1,
@@ -47,7 +47,7 @@
     0,
     /* @m_nInitialExpTime  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
     /* initial exposure time, sync with sensor */
-    4921,
+    33314,
     /* @m_nInitialAnaGain  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
     /* initial analog gain, sync with sensor */
     256,
@@ -121,7 +121,7 @@
     1,
     /* @m_bManualMode  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-auto mode, 1-manual mode */
-    0,
+    1,
     /* @m_pGlobalBlackValueManual  Size: 1x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in manual mode */
     {261, 261, 261, 261},
@@ -178,12 +178,13 @@
 
 //CColorMatrixFirmwareFilter
 {
+   
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable CCM, 1-enable CCM */
-    1,
+    0,
     /* @m_bManualMode  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-auto mode, 1-manual mode */
-    0,
+    1,
     /* @m_bColorFringleRemoveEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable cfr, 1-enable cfr */
     0,
@@ -246,7 +247,7 @@
 
 //CBPCFirmwareFilter
 {
-    /* @m_bEnable  Size: 1x1  BitWidth: 1_u  Range~[0, 1]  Type: firmware */
+   /* @m_bEnable  Size: 1x1  BitWidth: 1_u  Range~[0, 1]  Type: firmware */
     /* Enable of BPC module */
     1,
     /* @m_bManualMode  Size: 1x1  BitWidth: 1_u  Range~[0, 1]  Type: firmware */
@@ -421,9 +422,9 @@
 
 //CLSCFirmwareFilter
 {
-    /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
+     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable LSC, 1-enable LSC */
-    1,
+    0,
     /* @m_bUseOTP  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-ignore otp information, 1-use otp information */
     0,
@@ -916,13 +917,13 @@
     375,
     /* @m_nWinStartYPermil  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* The Y permille coordinate of top left pixel in AF area configured by firmware */
-    375,
+    333,
     /* @m_nWinEndXPermil  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* The X permille coordinate of bottom right pixel in AF area configured by firmware */
     625,
     /* @m_nWinEndYPermil  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* The Y permille coordinate of bottom right pixel in AF area configured by firmware */
-    625,
+    667,
     /* @m_nMinWidthPermil  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* the min permil of the statistical window width */
     150,
@@ -1684,7 +1685,7 @@
 {
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - disable gtm1, 1 - enable gtm1 */
-    1,
+    0,
     /* @m_bEbGtmAfterLinearcurve  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - no modification of gtm1 curve, 1 - modify gtm1 curve with linear curve */
     0,
@@ -2206,10 +2207,10 @@
     0,
     /* @m_nSensitivityRatio  Size: 1x1  BitWidth: 32_s  Range~[-1024, 1024]  Type: firmware */
     /* the sensitivity ratio between capture frame and preview frame, Q8 format */
-    256,
+    1024,
     /* @m_nCompensation  Size: 1x1  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* the compensation of target luma */
-    100,
+    512,
     /* @m_nSmoothness  Size: 1x1  BitWidth: 32_u  Range~[1, 16]  Type: firmware */
     /* smoothness of two adjacent frames */
     16,
@@ -2248,11 +2249,11 @@
     {
         {10000, 512, 256},
         {20000, 1024, 256},
-        {30000, 1024, 256},
-        {40000, 1024, 256},
-        {50000, 1024, 256},
-        {60000, 4096, 256},
-        {70000, 16384, 256},
+        {30000, 2048, 256},
+        {40000, 2048, 256},
+        {50000, 2048, 256},
+        {60000, 16384, 256},
+        {0, 0, 0},
         {0, 0, 0},
         {0, 0, 0},
         {0, 0, 0},
@@ -2268,9 +2269,9 @@
     {
         {8333, 512, 256},
         {16666, 1024, 256},
-        {24999, 1024, 256},
-        {33332, 1024, 256},
-        {49998, 1024, 256},
+        {24999, 2048, 256},
+        {33332, 2048, 256},
+        {49998, 2048, 256},
         {66664, 16384, 256},
         {0, 0, 0},
         {0, 0, 0},
@@ -2303,13 +2304,13 @@
     {1, 1},
     /* @m_pUnStableRefFrame  Size: 1x2  BitWidth: 32_u  Range~[1, 31]  Type: firmware */
     /* [0]:long, [1]:short, unstable reference frame number */
-    {1, 3},
+    {2, 3},
     /* @m_pMinExpTime  Size: 1x2  BitWidth: 32_u  Range~[1, 2147483647]  Type: firmware */
     /* Limit: m_pMinExpTime <= m_pMaxExpTime. [0]:long, [1]:short, minimum exposure time, unit us */
     {50, 50},
     /* @m_pMaxExpTime  Size: 1x2  BitWidth: 32_u  Range~[1, 2147483647]  Type: firmware */
     /* Limit: m_pMaxExpTime >= m_pMinExpTime. [0]:long, [1]:short, maximum exposure time, unit us */
-    {66752, 61999},
+    {33344, 61999},
     /* @m_pMinAnaGain  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* Limit: m_pMinAnaGain <= m_pMaxAnaGain. [0]:long, [1]:short, minimum analog gain, Q8 format */
     {256, 256},
@@ -2349,10 +2350,10 @@
     /* @m_pLumaBlockWeight  Size: 4x3  BitWidth: 32_u  Range~[0, 128]  Type: firmware */
     /* [0~3][i] different exp index, [i][0]:low luma weight, [i][1]:mid luma weight, [i][2]:high luma weight */
     {
-        {16, 16, 16},
-        {16, 16, 16},
-        {16, 16, 16},
-        {16, 16, 16}
+        {8, 12, 16},
+        {8, 12, 16},
+        {8, 12, 16},
+        {8, 12, 16}
     },
     /* @m_pLumaBlockThre  Size: 1x4  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* luma threshold for calculating each block's weight, one block's luma is interpolated between low/mid/high luma weight */
@@ -2362,7 +2363,7 @@
     {16, 0, 0, 0, 0, 0, 0},
     /* @m_pTargetRange  Size: 1x2  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* Limit: m_pTargetRange[0] <= m_pTargetRange[1]. [0]:lower limit of target luma, [1]:upper limit of target luma */
-    {16, 48},
+    {48, 64},
     /* @m_pTargetDeclineRatio  Size: 1x16  BitWidth: 32_u  Range~[0, 128]  Type: firmware */
     /* the ratio of target luma declines along with gain */
     {128, 128, 128, 128, 128, 128, 122, 116, 110, 104, 98, 92, 86, 80, 74, 68},
@@ -2390,10 +2391,10 @@
     8,
     /* @m_pAjustSplitFrameNum  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* the number of frames to be split for each adjustment */
-    {1, 1},
+    {2, 2},
     /* @m_pSingleStepAdjustLumaThr  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* single adjust luma = max((target - mean)/AjustSplitFrameNum, SingleStepAdjustLumaThr) */
-    {255, 255},
+    {8, 8},
     /* @m_pFaceAjustSplitFrameNum  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* the number of frames to be split for each adjustment in face mode */
     {12, 12},
@@ -2402,7 +2403,7 @@
     {2, 2},
     /* @m_pFastStep  Size: 1x2  BitWidth: 32_u  Range~[0, 256]  Type: firmware */
     /* fast step */
-    {224, 224},
+    {192, 192},
     /* @m_pFastStepRangePer  Size: 1x2  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* when the distance between the current luma and target luma is greater than (m_nFastStepRangePer*target luma), use fast step */
     {40, 40},
@@ -2411,7 +2412,7 @@
     {12, 12},
     /* @m_pSlowStep  Size: 1x2  BitWidth: 32_u  Range~[0, 256]  Type: firmware */
     /* slow step */
-    {160, 160},
+    {128, 128},
     /* @m_pSlowStepRangePer  Size: 1x2  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* when the distance between the current luma and target luma is between (m_nFastStepRangePer*target luma,m_nSlowStepRangePer*target luma), use slow step */
     {20, 20},
@@ -2423,16 +2424,16 @@
     {128, 128},
     /* @m_pMaxFastRatio  Size: 1x2  BitWidth: 32_u  Range~[256, 4096]  Type: firmware */
     /* max fast step ratio, Q8 format */
-    {640, 640},
+    {512, 512},
     /* @m_pMaxSlowRatio  Size: 1x2  BitWidth: 32_u  Range~[256, 4096]  Type: firmware */
     /* max slow step ratio, Q8 format */
-    {512, 512},
+    {384, 384},
     /* @m_pMinFineRatio  Size: 1x2  BitWidth: 32_u  Range~[256, 4096]  Type: firmware */
     /* min fine step ratio, Q8 format */
     {256, 256},
     /* @m_pMaxFineRatio  Size: 1x2  BitWidth: 32_u  Range~[256, 4096]  Type: firmware */
     /* max fine step ratio, Q8 format */
-    {320, 320},
+    {272, 272},
     /* @m_bLumaPredict  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - no luma correction when calculating drc gain, 1 - do luma correction when calculating drc gain */
     1,
@@ -2453,7 +2454,7 @@
     48,
     /* @m_nMaxDRCGainDark  Size: 1x1  BitWidth: 32_u  Range~[16, 64]  Type: firmware */
     /* the max drc dark gain, Q4 format */
-    48,
+    32,
     /* @m_bQuickResponseEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: normal speed ae , 1: quick response ae */
     0,
@@ -2473,6 +2474,7 @@
     /* calibrate scene lux */
     401
 },
+
 
 //CAFFilter
 {
@@ -2593,34 +2595,34 @@
     /* @m_pFVDropPercentage  Size: 12x6  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* FV drop percentage for direction detection */
     {
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90}
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95}
     },
     /* @m_pCurrentStartFVDropPercentage  Size: 12x6  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* FV drop percentage for direction detection, if start from current position */
     {
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90},
-        {90, 90, 90, 90, 90, 90}
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95},
+        {95, 95, 95, 95, 95, 95}
     },
     /* @m_pFVFailPercentage  Size: 12x6  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* FV change percentage for failure judgement */
@@ -2696,7 +2698,7 @@
     7,
     /* @m_nPDStepDiscountRatio  Size: 1x1  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* discount ratio of step calculated by pd shift */
-    70,
+    50,
     /* @m_pPDConfThr  Size: 1x12  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* PD confidence threshold for PD information use or not */
     {10, 20, 30, 40, 60, 80, 100, 120, 120, 120, 120, 120},
@@ -2923,7 +2925,7 @@
     },
     /* @m_bCAFForce  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* interrupt the processing of caf and trigger a single focus */
-    1,
+    0,
     /* @m_bCAFHold  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* af holds the current status */
     0,
@@ -3165,7 +3167,7 @@
     415,
     /* @m_nRoiXMin  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary */
-    285,
+    283,
     /* @m_pRoiCtHighAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary in different lum */
     {1265, 1453, 1619, 1619, 1619, 1619, 1619, 1619, 1619, 1619, 1619},

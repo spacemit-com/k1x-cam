@@ -2206,10 +2206,10 @@
     0,
     /* @m_nSensitivityRatio  Size: 1x1  BitWidth: 32_s  Range~[-1024, 1024]  Type: firmware */
     /* the sensitivity ratio between capture frame and preview frame, Q8 format */
-    256,
+    1024,
     /* @m_nCompensation  Size: 1x1  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* the compensation of target luma */
-    100,
+    512,
     /* @m_nSmoothness  Size: 1x1  BitWidth: 32_u  Range~[1, 16]  Type: firmware */
     /* smoothness of two adjacent frames */
     16,
@@ -2473,6 +2473,7 @@
     /* calibrate scene lux */
     401
 },
+
 
 //CAFFilter
 {

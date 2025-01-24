@@ -1385,17 +1385,20 @@ static int test_buffer_only_cpp_deInit(int pipelineId)
     return 0;
 }
 
-int detect_camera(char* sensors_name, int devId)
+int auto_detect_camera(char *sensors_name, int *width, int *height, int devId)
 {
     int ret = 0;
 
-    CLOG_INFO("start detect sensor %s devId %d", sensors_name, devId);
+    CLOG_INFO("auto detect sensor ===================== start ");
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, -1);
+    ret = SPM_SENSORS_MODULE_Detect_Auto(sensors_name, width, height, devId);
     if (ret) {
-        CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
+        CLOG_ERROR("no sensor in csi%d", devId);
+        CLOG_INFO("auto detect sensor ===================== finish ");
         return ret;
     }
+
+    CLOG_INFO("auto detect sensor ===================== finish ");
 
     return 0;
 }
@@ -1412,6 +1415,7 @@ int single_pipeline_online_test(struct testConfig *config)
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
 
     CLOG_INFO("test start");
 
@@ -1490,6 +1494,7 @@ int single_pipeline_online_test(struct testConfig *config)
         condition_init(&testAutoRunCond[pipelineId]);
 
         test_buffer_prepare(pipelineId, firmwareId);
+        cpp_load_fw_settingfile(pipelineId, SettingFile);
         cpp_start(pipelineId);
         viisp_vi_online_streamOn(pipelineId);
 
@@ -1519,6 +1524,7 @@ int single_pipeline_online_test(struct testConfig *config)
             }
             if (ch == 's' || ch == 'S') {
                 test_buffer_prepare(pipelineId, firmwareId);
+                cpp_load_fw_settingfile(pipelineId, SettingFile);
                 cpp_start(pipelineId);
                 viisp_vi_online_streamOn(pipelineId);
                 viisp_isp_streamOn(firmwareId);

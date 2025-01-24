@@ -75,6 +75,15 @@ install(DIRECTORY ./gst_api/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         FILES_MATCHING PATTERN "*.h"
         )
+install(FILES "./cfgs/files/csi1_camera_detect.json"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/share/camera_json")
+install(FILES "./cfgs/files/csi2_camera_detect.json"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/share/camera_json")
+install(FILES "./cfgs/files/csi3_camera_detect.json"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/share/camera_json")
+install(FILES "./cfgs/files/sensor_rear_primary_cpp_preview_setting.data"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/share/camera_json")
+
 CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pkgconfig/k1x-cam.pc.cmake"
         "${CMAKE_BINARY_DIR}/k1x-cam.pc" @ONLY)
 

@@ -821,6 +821,7 @@ int single_pipeline_online_start(struct gstParam *para, struct testConfig *confi
     int rawdumpChnId = 0;
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
+    char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
 
     CLOG_INFO("test start");
     // sensor init
@@ -884,6 +885,7 @@ int single_pipeline_online_start(struct gstParam *para, struct testConfig *confi
         showFps = 1;
 
     test_buffer_prepare(pipelineId, firmwareId, para->gst_cam_buf_prepare, para->gst_cam_buf_prepare_data);
+    cpp_load_fw_settingfile(pipelineId, SettingFile);
     cpp_start(pipelineId);
     viisp_vi_online_streamOn(pipelineId);
     viisp_isp_streamOn(firmwareId);

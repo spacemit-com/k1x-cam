@@ -21,11 +21,6 @@ static struct regval_tab stream_on_regs[] = {
     {0x0100, 0x01},
 };
 
-static struct regval_tab after_stream_on_regs[] = {
-	{0x3e06, 0x00},
-	{0x3e07, 0x80},
-};
-
 static struct regval_tab stream_off_regs[] = {
     {0x0100, 0x00},
 };
@@ -35,7 +30,7 @@ static struct regval_tab stream_soft_reset_regs[] = {
 };
 
 static struct regval_tab color_bar_regs[] = {
-    {0x3e01, 0x01},
+    { 0x0601, 0x02},
 };
 
 #define sc031_VTS_ADJUST     (4) /* vts - max_exposure*/
@@ -169,7 +164,6 @@ static int sc031_sensor_write_reg(void* snsHandle, uint32_t regAddr, uint32_t va
 static int sc031_sensor_group_reg_start(void* snsHandle)
 {
     int ret = 0;
-    /*
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
@@ -179,14 +173,12 @@ static int sc031_sensor_group_reg_start(void* snsHandle)
     pthread_mutex_lock(&sensor_context->apiLock);
     sc031_write_register(snsHandle, sc031_GROUP_ACCESS, 1);
     pthread_mutex_unlock(&sensor_context->apiLock);
-    */
     return ret;
 }
 
 static int sc031_sensor_group_reg_done(void* snsHandle)
 {
     int ret = 0;
-    /*
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
@@ -196,7 +188,6 @@ static int sc031_sensor_group_reg_done(void* snsHandle)
     pthread_mutex_lock(&sensor_context->apiLock);
     sc031_write_register(snsHandle, sc031_GROUP_ACCESS, 0x00);
     pthread_mutex_unlock(&sensor_context->apiLock);
-    */
     return ret;
 }
 
@@ -637,7 +628,6 @@ static int sc031_power_on(SENSOR_CONTEXT_S* sensor_context)
     sensor_set_mclk_rate(sensor_context->devId, 24000000);
 
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
-
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
 
     sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
@@ -650,6 +640,7 @@ static int sc031_power_on(SENSOR_CONTEXT_S* sensor_context)
 
     sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
     sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 1);
+
     usleep(2100);
 
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
@@ -806,8 +797,6 @@ static int sc031_stream_on(void* handle)
     }
     */
     ret = sc031_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
-    usleep(5000);
-    ret = sc031_write_burst_register(handle, after_stream_on_regs, ARRAY_SIZE(after_stream_on_regs));
 
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);

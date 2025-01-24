@@ -12,19 +12,18 @@ extern "C" {
 #endif /* extern "C" */
 
 #define OG02B10_TABLE_END		0xffff
-#define OG02B10_MIPI_4LANE 0
 
 /* MCLK:24 MHz  1600x1300  60fps   MIPI LANE2 */
 struct regval_tab og02b10_spm_1600x1300_10bit_60fps_tab[] = {
-//@@1600x1300 60fps ??Mbps-lane  = 940 * 480 * 30 * 12 = 112M
-// MCLK: 8 Mhz
+//@@1600x1300 60fps
+// MCLK: 24 Mhz
 // resolution: 1600x1300
 // Mipi : 2 lane
 // Mipi data rate: 400 Mbps/Lane (hts x vts x fps x 10bit / 2) = 936 * 1416 * 60 * 10 / 2 = 397,612,800 = 398 M ,使用 400M 档位
 // FPS      :60fps
-// HTS      :936 -> 0x3a8
-// VTS      :1416 -> 0x588
-// PCLK - system clk     :80M HZ  (PCLK = 80M)
+// HTS      :936 -> 0x3a8 (0x380c:0x380d)  //maybe x2
+// VTS      :1416 -> 0x588 (0x380e:0x380f)
+// PCLK - system clk     :80M HZ  (PCLK = 80M) //79522560
 // Htime=htsx1/pclk= 936 /80M = 11.7us = 11700 ns; Vblank= ? ms
     {0x0103, 0x01}, // reset
     {0x0100, 0x00},

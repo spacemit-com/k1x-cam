@@ -163,7 +163,7 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     moduleObj->pfnGetSnrVendorId(&vendor_id_table);
     moduleObj->pfnGetSnrI2cAddr(&sensor_i2c_addr);
 
-    if (addr != -1) {
+    if (addr > 0) {
         sensorObj->pfnInit(&snr_handle, devId, (uint8_t)addr);
     } else {
         sensorObj->pfnInit(&snr_handle, devId, sensor_i2c_addr);
@@ -175,6 +175,81 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     return ret;
 }
 /**********************************************************************************************/
+CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, int devId)
+{
+    int ret = 0;
+    int module_id, rc;
+    int module_num = ARRAY_SIZE(sensors_module_list);
+    int sensor_config_num = 0;
+    MODULE_OBJ_S* moduleObj = NULL;
+    SENSORS_MODULE_OBJ_S* sensors_module_obj_p = NULL;
+    SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
+    int snr_width, snr_height;
+
+    sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)calloc(1, sizeof(SENSORS_MODULE_CONTEXT_S));
+    if (NULL == sensors_module_context) {
+        CLOG_ERROR("sensors_module_context malloc memory failed!");
+        return -ENOMEM;
+    }
+    sensors_module_context->devId = devId;
+    sensors_module_context->magic = SENSORS_MODULE_MAGIC;
+
+
+    for (module_id = 0; module_id < module_num; module_id++) {
+        if (sensors_module_list[module_id].module_obj_p) {
+            sensors_module_check_obj(sensors_module_list[module_id].module_obj_p->name,
+                                     &sensors_module_list[module_id]);
+
+            sensors_module_obj_p = &sensors_module_list[module_id];
+            ret = sensors_module_detect_sensor(sensors_module_obj_p, devId, -1);
+            if (ret == 0) {
+                memcpy(name, sensors_module_list[module_id].module_obj_p->name,
+                       strlen(sensors_module_list[module_id].module_obj_p->name) + 1);
+
+                sensors_module_context->sensors_module_obj_p = &sensors_module_list[module_id];
+                moduleObj = sensors_module_context->sensors_module_obj_p->module_obj_p;
+
+                moduleObj->pfnGetsnrCapSize(&sensor_config_num);
+                sensors_module_context->sensor_capability.snr_config =
+                    (SENSOR_CONFIG_S*)calloc(1, sensor_config_num * sizeof(SENSOR_CONFIG_S));
+                if (NULL == sensors_module_context->sensor_capability.snr_config) {
+                    CLOG_ERROR("sensors_module_context malloc memory failed!");
+                    if (sensors_module_context) {
+                        free(sensors_module_context);
+                        sensors_module_context = NULL;
+                    }
+                    return -ENOMEM;
+                }
+
+                moduleObj->pfnGetsnrCapbility(sensor_config_num, &sensors_module_context->sensor_capability);
+                snr_width = sensors_module_context->sensor_capability.snr_config[0].width;
+                snr_height = sensors_module_context->sensor_capability.snr_config[0].height;
+
+                //*width = snr_width > 1920 ? 1920 : snr_width;
+                //*height = snr_height > 1080 ? 1080 : snr_height;
+
+                if (snr_width > 1920) {
+                    *width = 1920;
+                    *height = snr_height > 1080 ? 1080 : snr_height;
+                } else {
+                    *width = snr_width;
+                    *height = snr_height;
+                }
+                CLOG_INFO("detect %s sensors in csi%d: success, set %dx%d to %dx%d", 
+                    sensors_module_list[module_id].module_obj_p->name, devId + 1, snr_width, snr_height, *width, *height);
+                break;
+            } else {
+                CLOG_INFO("detect %s sensors in csi%d: fail", 
+                    sensors_module_list[module_id].module_obj_p->name, devId + 1);
+            }
+        }
+    }
+
+    free(sensors_module_context->sensor_capability.snr_config);
+    free(sensors_module_context);
+
+    return ret;
+}
 CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr)
 {
     int ret = 0;
@@ -248,7 +323,7 @@ CAM_API int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId,
         }
         moduleObj->pfnGetsnrCapbility(sensor_config_num, &sensors_module_context->sensor_capability);
     }
-    if (addr != -1)
+    if (addr > 0)
         sensors_module_context->sensor_i2c_addr = addr;
     else
         moduleObj->pfnGetSnrI2cAddr(&sensors_module_context->sensor_i2c_addr);

@@ -17,7 +17,7 @@ typedef enum GC13A0_SPM_WORK_MODE {
     GC13A0_SPM_WORK_MODE_SIZE,
 } GC13A0_SPM_WORK_MODE_E;
 
-#define GC13A0_VTS_ADJUST (16) /* make real fps less than stand fps because NVR require*/
+#define GC13A0_VTS_ADJUST (16)
 
 #define GC13A0_VMAX_13M30_10bit_LINEAR     (3232 + GC13A0_VTS_ADJUST)//1260
 #define GC13A0_LINETIME_13M30_10bit_LINEAR 10310  // ns
