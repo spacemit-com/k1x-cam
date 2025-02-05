@@ -393,6 +393,7 @@ static void* cppProcessThreadFunc(void* param)
             if (outputBuf) {
                 inputBuf = List_Pop(vi_capture_list);
                 frameId = inputBuf->frameId;
+                outputBuf->timeStamp = inputBuf->timeStamp;
                 outputBuf->frameId = frameId;
 
                 isp_capture_buffer_info = pop_near_item_to_capture(isp_capture_repeat_list, frameId, LIST_CAP_ISP_REPEAT);
@@ -488,6 +489,8 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
             if (buffer->planes[0].virAddr == vi_out_buffer_capture_pool->buffers[i].planes[0].virAddr) {
+                vi_out_buffer_capture_pool->buffers[i].timeStamp = vi_buffer->timeStamp;
+
                 List_Push(vi_capture_list, (void*)&vi_out_buffer_capture_pool->buffers[i]);
 #ifdef DEBUG_USE_TIME
                 rawviT2 = get_timestamp();
@@ -674,8 +677,8 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                     // CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
                     //     List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
                     //     isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
-                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld", frameCapId,
-                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool));
+                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, t:%lu", frameCapId,
+                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool), cpp_out_buffer_capture_pool->buffers[i].timeStamp);
                     buffer_pool_put_buffer(cpp_out_buffer_capture_pool, &cpp_out_buffer_capture_pool->buffers[i]);
                 }
                 {
