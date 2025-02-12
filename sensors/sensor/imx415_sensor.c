@@ -51,14 +51,6 @@ static struct regval_tab color_bar_regs[] = {
 #define IMX415_AGAIN_L      (0x3090)
 #define IMX415_AGAIN_H      (0x3091)
 
-// #define IMX415_DGAIN_GR_H   (0x020E)
-// #define IMX415_DGAIN_GR_L   (0x020F)
-// #define IMX415_DGAIN_R_H    (0x0210)
-// #define IMX415_DGAIN_R_L    (0x0211)
-// #define IMX415_DGAIN_B_H    (0x0212)
-// #define IMX415_DGAIN_B_L    (0x0213)
-// #define IMX415_DGAIN_GB_H   (0x0214)
-// #define IMX415_DGAIN_GB_L   (0x0215)
 #define IMX415_GROUP_ACCESS (0x3001)
 
 /*******************************************************************/
@@ -302,23 +294,6 @@ static int imx415_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_VTS_ADDR_H;  // VTS
         sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 0;
         sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX415_VTS_ADDR_H16;  // VTS
-        // sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX415_DGAIN_GR_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_DGAIN_GR_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX415_DGAIN_R_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = IMX415_DGAIN_R_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[9].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[9].u32RegAddr = IMX415_DGAIN_B_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[10].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[10].u32RegAddr = IMX415_DGAIN_B_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[11].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[11].u32RegAddr = IMX415_DGAIN_GB_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[12].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[12].u32RegAddr = IMX415_DGAIN_GB_L;  // digital gain
-
         sensor_context->syncInit = true;
     } else {
         for (i = 0; i < (sensor_context->sensorRegs[0].u32RegNum); i++) {
@@ -835,9 +810,9 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memcpy(&sensor_context->work_info, work_info, sizeof(SENSOR_WORK_INFO_S));
     memset(&sensor_context->init_3a_attr, 0x00, sizeof(SENSOR_INIT_ATTR_S));
 
-    if (sensor_context->work_info.mclk) {
-        sensor_set_mclk_rate(sensor_context->devId, sensor_context->work_info.mclk * 1000000);
-        CLOG_INFO("change imx415 mclk to %dMhz", sensor_context->work_info.mclk);
+    if (sensor_context->work_info.mclk == 27000000) {
+        sensor_set_mclk_rate(sensor_context->devId, sensor_context->work_info.mclk);
+        CLOG_INFO("change imx415 mclk to %dhz", sensor_context->work_info.mclk);
     }
 
     sensor_context->initVTS = sensor_context->work_info.vts;

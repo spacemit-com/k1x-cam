@@ -151,6 +151,7 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->setting_table = imx415_spm_3864x2192_10bit_30fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_3864x2192_10bit_30fps_tab);
             snr_info->mipi_clock = 891;  // Mhz
+            snr_info->mclk = 37125000;  // hz
         } break;
         case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {  //rawdump error!!
             snr_info->linetime = IMX415_LINETIME_8M30F_12bit_LINEAR;  // ns
@@ -163,8 +164,9 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->setting_table = imx415_spm_3864x2192_12bit_30fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_3864x2192_12bit_30fps_tab);
             snr_info->mipi_clock = 891;  // Mhz
+            snr_info->mclk = 37125000;  // hz
         } break;
-        case IMX415_SPM_2568x1440_10bit_LINEAR_30_4LANE: {  //rawdump error!!
+        case IMX415_SPM_2568x1440_10bit_LINEAR_30_4LANE: {
             snr_info->linetime = IMX415_LINETIME_3M30F_10bit_LINEAR;  // ns
             snr_info->vts = IMX415_VMAX_3M30F_10bit_LINEAR;
             snr_info->f32maxFps = 30;
@@ -175,7 +177,7 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->setting_table = imx415_spm_2568x1440_10bit_30fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_2568x1440_10bit_30fps_tab);
             snr_info->mipi_clock = 891;  // Mhz
-            snr_info->mclk = 27;  // Mhz
+            snr_info->mclk = 27000000;  // hz
         } break;
         default: {
             CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,
