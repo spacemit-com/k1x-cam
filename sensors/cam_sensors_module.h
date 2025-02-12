@@ -57,6 +57,7 @@ typedef struct SENSOR_WORK_INFO {
     struct regval_tab* setting_table;
     int32_t setting_table_size;
     uint32_t vts;
+    uint32_t mclk;
     float f32maxFps;
     uint32_t linetime;                           // uint: ns
     uint32_t exp_time[MAX_EXP_CHAN_PER_SENSOR];  // uint: us

@@ -828,12 +828,17 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
 
     pthread_mutex_lock(&sensor_context->apiLock);
     if (sensor_context->stream_on_flag == 1) {
-        CLOG_ERROR("%s: sensor global config must be done before stream on", __FUNCTION__);
+        CLOG_ERROR("sensor global config must be done before stream on");
         ret = -EPERM;
         goto out;
     }
     memcpy(&sensor_context->work_info, work_info, sizeof(SENSOR_WORK_INFO_S));
     memset(&sensor_context->init_3a_attr, 0x00, sizeof(SENSOR_INIT_ATTR_S));
+
+    if (sensor_context->work_info.mclk) {
+        sensor_set_mclk_rate(sensor_context->devId, sensor_context->work_info.mclk * 1000000);
+        CLOG_INFO("change imx415 mclk to %dMhz", sensor_context->work_info.mclk);
+    }
 
     sensor_context->initVTS = sensor_context->work_info.vts;
     sensor_context->initFps = sensor_context->work_info.f32maxFps;
@@ -846,68 +851,11 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memset(sensor_context->sensorRegs, 0, 2 * sizeof(ISP_SENSOR_REGS_INFO_S));
     sensor_context->syncInit = 0;
 
-    // ret = imx415_write_burst_register(handle, stream_soft_reset_regs, ARRAY_SIZE(stream_soft_reset_regs));
-    // if (ret) {
-    //     goto out;
-    // }
-    usleep(5000);
     ret = imx415_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
     if (ret) {
         goto out;
     }
-    // if(work_info->test_pattern_mode == CC_SENSOR_TEST_PATTERN_COLOR_BARS){
-    //     ret = imx415_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
-    // }
-
-#if 0	//read sensor reg setting
-
-    fprintf(stderr, "-----------------start read sensor reg----------------\n");
-    int i;
-    struct regval_tab* sensor_table = NULL;
-
-    sensor_table = (struct regval_tab*)calloc(sensor_context->work_info.setting_table_size, sizeof(struct regval_tab));
-    if (NULL == sensor_table) {
-        CLOG_ERROR("sensor_table malloc memory failed!");
-        ret = -ENOMEM;
-        goto out;
-    }
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        sensor_table[i].reg = sensor_context->work_info.setting_table[i].reg;
-        sensor_table[i].val = 0;
-    }
-
-    struct cam_burst_i2c_data reg_table_data;
-    reg_table_data.addr = sensor_context->i2c_addr;
-    reg_table_data.reg_len = imx415_reg_addr_byte;
-    reg_table_data.val_len = imx415_reg_data_byte;
-    reg_table_data.tab = sensor_table;
-    reg_table_data.num = sensor_context->work_info.setting_table_size;
-    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
-    if (ret) {
-        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
-        goto out;
-    }
-
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        if ((sensor_table[i].reg != sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val != sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else if ((sensor_table[i].reg == sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val == sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        }
-    }
-	free(sensor_table);
-
-	fprintf(stderr, "-----------------finish read sensor reg----------------\n");
-
-#endif
 
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
