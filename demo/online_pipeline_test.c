@@ -141,6 +141,7 @@ static int dumpFrame = AUTO_FRAME_NUM;
 static int testFrame = 2 * AUTO_FRAME_NUM;
 static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
+static struct condition testDrawCond;
 static int showFps = 0;
 /****************************************************************/
 static uint64_t get_timestamp(void)
@@ -496,8 +497,11 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     condition_post(&pipelineProcThread[pipelineId].cond);
 
     if (testAutoRunFlag[pipelineId]) {
-        if (frameId == testFrame)
+        if (frameId == testFrame) {
             condition_post(&testAutoRunCond[pipelineId]);
+            streamOnFlags[pipelineId] = 0;
+            condition_post(&testDrawCond);
+        }
         if (frameId == dumpFrame) {
             outputDumpFlag[pipelineId] = 1;
             buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
@@ -621,6 +625,7 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
                 if (is_gpu_render) {
                     UserData *userData = window.userData;
                     userData->current_texture_index = i;
+                    condition_post(&testDrawCond);
                     // gl_window_draw(&window, NULL, 0);
                 }
             }
@@ -1542,6 +1547,7 @@ int single_pipeline_online_test(struct testConfig *config)
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
+        condition_init(&testDrawCond);
 
         test_buffer_prepare(pipelineId, firmwareId);
         cpp_load_fw_settingfile(pipelineId, SettingFile);
@@ -1555,6 +1561,7 @@ int single_pipeline_online_test(struct testConfig *config)
 
         if (is_gpu_render) {
             while (streamOnFlags[pipelineId]) {
+                condition_wait(&testDrawCond);
                 gl_window_draw(&window);
             }
         } else {
@@ -1630,6 +1637,7 @@ int single_pipeline_online_test(struct testConfig *config)
 
     testSensorDeInit(sensorHandle);
     if (is_gpu_render) {
+        condition_deinit(&testDrawCond);
         destroy_window(&window, &display);
         gl_window_shutdown(&window);
     }

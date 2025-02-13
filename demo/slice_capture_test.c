@@ -112,6 +112,7 @@ static BUFFER_POOL* cpp_out_buffer_capture_pool;
 static BUFFER_POOL* vi_rawdump_buffer_capture_pool;
 static int testAutoRunFlag = {0};
 static struct condition testAutoRunCond;
+static struct condition testDrawCond;
 static int dumpFrame = AUTO_FRAME_NUM;
 static int testFrame = 2 * AUTO_FRAME_NUM;
 
@@ -480,12 +481,14 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
             usleep(1000);
             condition_post(&testAutoRunCond);
             streamOnFlag = 0;
+            condition_post(&testDrawCond);
         }
 #else
         if (frameId >= testFrame) {
             usleep(1000);
             condition_post(&testAutoRunCond);
             streamOnFlag = 0;
+            condition_post(&testDrawCond);
         }
         viisp_vi_queueBuffer(0, buffer);
 #endif
@@ -679,6 +682,7 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                     if (is_gpu_render) {
                         UserData *userData = window.userData;
                         userData->current_texture_index = i;
+                        condition_post(&testDrawCond);
                         // gl_window_draw(&window, NULL, 0);
                     }
                     frameCapId = cpp_out_buffer_capture_pool->buffers[i].frameId;
@@ -1027,6 +1031,7 @@ int slice_capture_test(struct testConfig *config)
     int i, ret = 0;
     void* sensorHandle = NULL;
     IMAGE_BUFFER_S* rawdump_buffer;
+    char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
 
     SENSOR_MODULE_INFO sensor_info;
     int pipeline0Id = 0;
@@ -1144,7 +1149,8 @@ int slice_capture_test(struct testConfig *config)
 
         testAutoRunFlag = 1;
         condition_init(&testAutoRunCond);
-
+        condition_init(&testDrawCond);
+        cpp_load_fw_settingfile(pipeline1Id, SettingFile);
         cpp_start(pipeline1Id);
         viisp_vi_offline_streamOn(pipeline1Id);
         test_buffer_prepare(pipeline0Id, firmwareId);
@@ -1165,6 +1171,7 @@ int slice_capture_test(struct testConfig *config)
 
         if (is_gpu_render) {
             while (streamOnFlag) {
+                condition_wait(&testDrawCond);
                 gl_window_draw(&window);
             }
         } else {
@@ -1182,7 +1189,6 @@ int slice_capture_test(struct testConfig *config)
 #endif
         test_buffer_reset(pipeline0Id);
         CLOG_INFO("sensor stream off");
-
         condition_deinit(&testAutoRunCond);
     } else {
         while (1) {
@@ -1248,6 +1254,7 @@ int slice_capture_test(struct testConfig *config)
     test_buffer_deInit();
 
     if (is_gpu_render) {
+        condition_deinit(&testDrawCond);
         destroy_window(&window, &display);
         gl_window_shutdown(&window);
     }
