@@ -22,6 +22,8 @@
 #include "cpp_common.h"
 #include "sensor_common.h"
 #include "viisp_common.h"
+#include "gpu_render.h"
+
 #define MAX_BUFFER_NUM   4
 #define MAX_CAP_BUFFER_NUM   8
 
@@ -30,6 +32,13 @@
 
 //#define DEBUG_USE_TIME
 // #define ENABLE_PRIVIEW
+
+static struct Display display = {0};
+static struct Window window = {0};
+
+static int is_gpu_render = false;
+
+/****************************************************************/
 
 typedef enum {
     CAP_FRAMEINFO_CREATE = 0,
@@ -125,7 +134,6 @@ static int preview_cnt[MAX_PIPELINE_NUM*2] = {0};
 static double viT1[MAX_PIPELINE_NUM*2] = {0};
 static double viT2[MAX_PIPELINE_NUM*2] = {0};
 
-/****************************************************************/
 static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
 {
     switch (bitDepth) {
@@ -151,13 +159,6 @@ static bool find_frameinfo_preview(const void* item, const void* condition)
 
     return (isp_buffer_info->frameId == *frameId);
 }
-// static bool find_frameinfo_raw_capture(const void* item, const void* condition)
-// {
-//     spmISP_CAP_BUFFER_INFO_S* isp_cap_buffer_info = (spmISP_CAP_BUFFER_INFO_S*)item;
-//     uint32_t* frameId = (uint32_t*)condition;
-
-//     return (isp_cap_buffer_info->frameIspId == *frameId);
-// }
 
 static bool find_frameinfo_frameid(const void* item, const void* condition)
 {
@@ -478,11 +479,13 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
         if (frameId >= testFrame) {
             usleep(1000);
             condition_post(&testAutoRunCond);
+            streamOnFlag = 0;
         }
 #else
         if (frameId >= testFrame) {
             usleep(1000);
             condition_post(&testAutoRunCond);
+            streamOnFlag = 0;
         }
         viisp_vi_queueBuffer(0, buffer);
 #endif
@@ -673,13 +676,18 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                 if (i == BUFFER_POOL_MAX_SIZE) {
                     CLOG_ERROR("can't find valid cpp capture out buffer");
                 } else {
+                    if (is_gpu_render) {
+                        UserData *userData = window.userData;
+                        userData->current_texture_index = i;
+                        // gl_window_draw(&window, NULL, 0);
+                    }
                     frameCapId = cpp_out_buffer_capture_pool->buffers[i].frameId;
                     // CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
                     //     List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
                     //     isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
-                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, t:%lu", frameCapId,
-                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool), cpp_out_buffer_capture_pool->buffers[i].timeStamp);
-                    buffer_pool_put_buffer(cpp_out_buffer_capture_pool, &cpp_out_buffer_capture_pool->buffers[i]);
+                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, t:%lu, i:%d", frameCapId,
+                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool), cpp_out_buffer_capture_pool->buffers[i].timeStamp, i);
+                    buffer_pool_put_buffer(cpp_out_buffer_capture_pool, &cpp_out_buffer_capture_pool->buffers[i]);                    
                 }
                 {
                     preview_cnt[mppCpp.devId+2]++;
@@ -929,6 +937,7 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
 {
     spmISP_CAP_BUFFER_INFO_S* isp_cap_buffer_info = NULL;
     IMAGE_BUFFER_S *fCaptureBuf;
+    IMAGE_BUFFER_S *buffers;
     int i,ret = 0;
 
     // buffer list init
@@ -972,6 +981,16 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
                            toPixelFormatType(sensor_info.sensor_cfg->bitDepth), "vi rawdump channel0 out buffer");
     buffer_pool_alloc(vi_rawdump_buffer_capture_pool, MAX_BUFFER_NUM);
 
+    if (is_gpu_render) {
+        UserData *userData = window.userData;
+        userData->textures = malloc(MAX_CAP_BUFFER_NUM * sizeof(GLuint)); // Allocate space for 2 textures
+        userData->current_texture_index = 0;
+
+        for (i = 0; i < MAX_CAP_BUFFER_NUM; i++) {
+            buffers = &cpp_out_buffer_capture_pool->buffers[i];
+            userData->textures[i] = create_texture_dma(&display, buffers->planes[0].width, buffers->planes[0].height, buffers->m.fd);
+        }
+    }
     return 0;
 }
 
@@ -1023,9 +1042,36 @@ int slice_capture_test(struct testConfig *config)
 
     CLOG_INFO("test start");
 
-    if (!config)
+    if (!config) {
         return -1;
+    }
 
+    is_gpu_render = config->gpuRender;
+    if (is_gpu_render) {
+        memset (&window, 0, sizeof(struct Window));
+        memset (&display, 0, sizeof(struct Display));
+        window.display = &display;
+        display.window = &window;
+        window.geometry.width = config->renderW;
+        window.geometry.height = config->renderH;
+        window.window_size = window.geometry;
+        window.buffer_size = 0;
+        window.frame_sync = 1;
+        window.delay = 0;
+        window.userData = malloc(sizeof(UserData));
+
+        if (create_window(&window, &display, ret) == -1) {
+            CLOG_ERROR("create window faild!");
+            destroy_window(&window, &display);
+            gl_window_shutdown(&window);
+            return -1;
+        }
+
+        if (!gl_window_init(&window))	{
+            CLOG_ERROR("init openGL faild!");
+            return -1;
+        }
+    }
     atomic_store(&flag_tirg, 1);
     viChn0Id = pipeline0Id;
     viChn1Id = pipeline1Id;
@@ -1117,8 +1163,13 @@ int slice_capture_test(struct testConfig *config)
 
         CLOG_INFO("sensor stream on");
 
-        condition_wait(&testAutoRunCond);
-
+        if (is_gpu_render) {
+            while (streamOnFlag) {
+                gl_window_draw(&window);
+            }
+        } else {
+            condition_wait(&testAutoRunCond);
+        }
         streamOnFlag = 0;
 
         viisp_vi_offline_streamOff(pipeline1Id);
@@ -1195,6 +1246,11 @@ int slice_capture_test(struct testConfig *config)
 #endif
     test_buffer_capture_deInit();
     test_buffer_deInit();
+
+    if (is_gpu_render) {
+        destroy_window(&window, &display);
+        gl_window_shutdown(&window);
+    }
     CLOG_INFO("test end");
 
     return ret;

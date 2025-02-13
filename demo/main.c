@@ -72,6 +72,10 @@ void showTestConfig(struct testConfig config)
                 printf("flash_name: %s\n", config.snrConfig[i].flashName);
         }
     }
+    if (config.gpuRender) {
+        printf("render width: %d\n", config.renderW);
+        printf("render height: %d\n", config.renderH);
+    }
 }
 
 int checkTestConfig(struct testConfig *cfg)

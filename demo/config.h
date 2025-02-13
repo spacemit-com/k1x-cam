@@ -82,6 +82,9 @@ struct testConfig {
     int useSnrNode;
     int useV4l;
     int autoDetect;
+    int gpuRender;
+    int renderW;
+    int renderH;
 
     int vcmEnable;
     int vcmI2cAddr;

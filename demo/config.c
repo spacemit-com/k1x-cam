@@ -519,6 +519,27 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         config->autoDetect = cjson_get_int(item) ? 1 : 0;
     }
 
+    item = cJSON_GetObjectItem(root, "gpu_render");
+    if (!item) {
+        config->gpuRender = 0;
+    } else {
+        config->gpuRender = cjson_get_int(item) ? 1 : 0;
+    }
+
+    if (config->gpuRender) {
+        item = cJSON_GetObjectItem(root, "render_width");
+        if (!item) {
+            config->renderW = 1280;
+        } else {
+            config->renderW = cjson_get_int(item) > 1920 ? 1920 : cjson_get_int(item);
+        }
+        item = cJSON_GetObjectItem(root, "render_height");
+        if (!item) {
+            config->renderH = 720;
+        } else {
+            config->renderH = cjson_get_int(item) > 1080 ? 1080 : cjson_get_int(item);
+        }
+    }
     ret = getCppNodeConfig (config, root);
     if (ret) {
         CLOG_ERROR("cpp_node parse error");
