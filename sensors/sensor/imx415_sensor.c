@@ -810,7 +810,7 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memcpy(&sensor_context->work_info, work_info, sizeof(SENSOR_WORK_INFO_S));
     memset(&sensor_context->init_3a_attr, 0x00, sizeof(SENSOR_INIT_ATTR_S));
 
-    if (sensor_context->work_info.mclk == 27000000) {
+    if (sensor_context->work_info.mclk == 27000000 || sensor_context->work_info.mclk == 24000000) {
         sensor_set_mclk_rate(sensor_context->devId, sensor_context->work_info.mclk);
         CLOG_INFO("change imx415 mclk to %dhz", sensor_context->work_info.mclk);
     }
