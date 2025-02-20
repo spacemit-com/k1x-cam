@@ -23,6 +23,7 @@
 #include "sensor_common.h"
 #include "viisp_common.h"
 #include "gpu_render.h"
+#include "tuning_server.h"
 
 #define MAX_BUFFER_NUM   4
 #define MAX_CAP_BUFFER_NUM   8
@@ -118,22 +119,64 @@ static int testFrame = 2 * AUTO_FRAME_NUM;
 
 static atomic_int flag_tirg = 0;
 static long isp_capture_list_num = 0;
+#define VRF_INFO_LEN (128)
 
-static uint64_t get_timestamp(void)
-{
-    uint64_t tmp;
-    struct timeval tv = {0};
-
-    gettimeofday(&tv, NULL);
-    tmp = tv.tv_sec;
-    tmp = tmp * 1000000;
-    tmp = tmp + tv.tv_usec;
-
-    return tmp;
-}
-static int preview_cnt[MAX_PIPELINE_NUM*2] = {0};
-static double viT1[MAX_PIPELINE_NUM*2] = {0};
-static double viT2[MAX_PIPELINE_NUM*2] = {0};
+struct rawdump_info {
+    int width;
+    int height;
+    int format;
+    int start;
+    int count;
+    char addVrf;
+    int bitDepth;
+    uint32_t ispInfoListLen;
+    CAM_VI_WORK_MODE_E viWorkMode;
+    LIST_HANDLE rawdumpList;
+    LIST_HANDLE ispInfoList;
+    LIST_HANDLE isp_done_list;
+    pthread_mutex_t rawdumpListLock;
+    pthread_mutex_t ispInfoListLock;
+    pthread_cond_t rawdumpListCond;
+    BUFFER_POOL *rawdumpPool;
+};
+typedef struct VRF_INFO {
+    uint16_t imageWidth;   /* [0  ] Raw image width in pixel number */
+    uint16_t imageHeight;  /* [2  ] Raw image height in pixel number */
+    uint16_t totalGain;    /* [4  ] Total gain for the raw file. Q4 format. 0x0010 means 1x, 0x0028 means 2.5x */
+    uint16_t exposureLine; /* [6  ] Exposure line number for the raw file. Q0 format. 0x0001 means 1 line, 0x0010 means
+                              16 line */
+    uint16_t sensorVts;    /* [8  ] Sensor VTS line number. Q0 format */
+    uint16_t awbBGain1;    /* [10 ] AWB gain set 1(before AWB shift), Q7 format, 0x80 means 1x */
+    uint16_t awbGGain1;    /* [12 ] */
+    uint16_t awbRGain1;    /* [14 ] */
+    uint16_t awbBGain2;    /* [16 ] */
+    uint16_t awbGbGain2;   /* [18 ] */
+    uint16_t awbGrGain2;   /* [20 ] */
+    uint16_t awbRGain2;    /* [22 ] */
+    uint8_t blackLevel;    /* [24 ] In 10 bit */
+    uint8_t bayerOrder;    /* [25 ] 0 BGGR, 1 GBRG, 2 GRBG, 3 RGGB */
+    uint16_t blcApply;     /* [26 ] */
+    uint8_t reserved[78];  /* [28 ~ 105] */
+    uint16_t wbGoldenSignatureRG; /* [106] golden WB signature R*512/G (under version 2.8 and above)*/
+    uint16_t wbGoldenSignatureBG; /* [108] golden WB signature B*512/G (under version 2.8 and above)*/
+    uint16_t wbModuleSignatureRG; /* [110] module WB signature R*512/G (under version 2.8 and above)*/
+    uint16_t wbModuleSignatureBG; /* [112] module WB signature B*512/G (under version 2.8 and above)*/
+    uint8_t drcGainDark;          /* [114] Q4 format, range in [16, 255], (under version 2.9)*/
+    uint8_t drcGain;              /* [115] Q4 format, range in [16, 255], (under version 2.9)*/
+    uint32_t exposureTime;        /* [116] us */
+    uint8_t packRawFlag;          /* [120] 0 - no pack, 1 - pack */
+    uint8_t rawBitDepth;          /* [121] can be one of 8,10,12,14,16 */
+    uint16_t analogGain; /* [122] Analog gain for the raw file. Q4 format. 0x0010 means 1x, 0x0028 means 2.5x */
+    uint8_t version;     /* [124] 0x20 means v2.0, 0x21means v2.1 ... */
+    uint8_t v;           /* [125] 'V'. In ASCII code, can be used for file format identification */
+    uint8_t r;           /* [126] 'R'. In ASCII code, can be used for file format identification */
+    uint8_t f;           /* [127] 'F'. In ASCII code, can be used for file format identification */
+} VRF_INFO_S;            // V2.6
+typedef struct spmTuning_BUFFER_INFO {
+    TUNING_BUFFER_S tuningInfo;
+    char hasVrf;
+} spmTuning_BUFFER_INFO_S;
+static struct rawdump_info g_rawdump_info[MAX_PIPELINE_NUM] = {0};
 
 static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
 {
@@ -152,6 +195,256 @@ static PIXEL_FORMAT_E toPixelFormatType(int bitDepth)
     }
     return PIXEL_FORMAT_MAX;
 }
+static bool isp_buffer_list_find_ret(const void* item, const void* condition)
+{
+    spmISP_BUFFER_INFO_S* isp_buffer_info = (spmISP_BUFFER_INFO_S*)item;
+    uint32_t* frameId = (uint32_t*)condition;
+
+    return (isp_buffer_info->frameId == *frameId);
+}
+static int fillVrfInfo(VRF_INFO_S *mVrf, FRAME_INFO_S* frameInfo, int width, int height, int depth)
+{
+    if (!mVrf || !frameInfo)
+        return -1;
+
+    memset(mVrf, 0, sizeof(*mVrf));
+    mVrf->imageWidth = width;
+    mVrf->imageHeight = height;
+    mVrf->totalGain = frameInfo->imageTGain >> 4;
+    mVrf->exposureLine = (frameInfo->sensorExposureTime / 1000) >> 4;
+    mVrf->sensorVts = (frameInfo->sensorExposureTime / 1000) >> 4;
+    mVrf->awbBGain1 = frameInfo->awbBgain >> 5;
+    mVrf->awbGGain1 = frameInfo->awbGgain >> 5;
+    mVrf->awbRGain1 = frameInfo->awbRgain >> 5;
+    mVrf->awbBGain2 = frameInfo->awbApplyBgain >> 5;
+    mVrf->awbGbGain2 = frameInfo->awbGbgain >> 5;
+    mVrf->awbGrGain2 = frameInfo->awbGrgain >> 5;
+    mVrf->awbRGain2 = frameInfo->awbApplyRgain >> 5;
+    mVrf->blackLevel = frameInfo->blc12b >> 2;
+    mVrf->bayerOrder = (frameInfo->bayerOrder > 3) ? 4 : (3 - frameInfo->bayerOrder);
+    mVrf->blcApply = frameInfo->blc12b;
+    mVrf->exposureTime = frameInfo->sensorExposureTime / 1000;
+    mVrf->wbGoldenSignatureRG = frameInfo->wbGoldenSignatureRG;
+    mVrf->wbGoldenSignatureBG = frameInfo->wbGoldenSignatureBG;
+    mVrf->wbModuleSignatureRG = frameInfo->wbModuleSignatureRG;
+    mVrf->wbModuleSignatureBG = frameInfo->wbModuleSignatureBG;
+    mVrf->drcGain = frameInfo->drcGain >> 4;
+    mVrf->drcGainDark = frameInfo->drcGainDark >> 4;
+    mVrf->packRawFlag = 1;
+    mVrf->rawBitDepth = depth;
+    mVrf->analogGain = (int)(((uint64_t)frameInfo->snsAGain * frameInfo->snsDGain) >> 16);
+    mVrf->version = 0x29;
+    mVrf->v = 'V';
+    mVrf->r = 'R';
+    mVrf->f = 'F';
+
+    return 0;
+}
+static int32_t ispStartDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId, uint32_t count,
+                        TUNING_BUFFER_S buffers[])
+{
+    uint32_t i;
+    int ret = 0;
+    spmTuning_BUFFER_INFO_S *tunBuffer = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
+    spmISP_BUFFER_INFO_S* isp_buffer_info1 = NULL;
+    IMAGE_BUFFER_S *buffer;
+    uint32_t rawChn = 0;
+    int cnt = 0;
+    uint32_t size = 0;
+    uint32_t pipelineID = 0;
+
+    if (groupId > 1) {
+        CLOG_ERROR("unsupported isp group\n");
+        return -1;
+    }
+    pipelineID = groupId;
+
+    CLOG_INFO("isp group%d buffer count %d\n", groupId, count);
+
+    ret = buffer_pool_alloc(g_rawdump_info[pipelineID].rawdumpPool, count);
+    if (ret < 0) {
+        CLOG_ERROR("failed to alloc buffer for tuning tool rawdump\n");
+        return ret;
+    }
+
+    VIU_GET_RAW_CHN(pipelineID, rawChn);
+    while (true) {
+        buffer = buffer_pool_get_buffer(g_rawdump_info[pipelineID].rawdumpPool);
+        if (!buffer) {
+            CLOG_INFO("failed to get buffer from tuning tool pool\n");
+            break;
+        } else {
+            CLOG_INFO("get one buffer frome tuning tool pool\n");
+        }
+
+        ret = ASR_VI_ChnQueueBuffer(rawChn, buffer);
+        if (ret < 0)
+            CLOG_ERROR("ASR_VI_ChnQueueBuffer failed func:%s line:%d\n", __func__, __LINE__);
+    }
+
+    g_rawdump_info[pipelineID].ispInfoListLen = MAX_BUFFER_NUM;
+    for (i = 0; i < g_rawdump_info[pipelineID].ispInfoListLen; i++) {
+        isp_buffer_info1 = malloc(sizeof(*isp_buffer_info1));
+        if (isp_buffer_info1)
+            List_Push(g_rawdump_info[pipelineID].ispInfoList, isp_buffer_info1);
+    }
+
+    pthread_mutex_lock(&g_rawdump_info[pipelineID].rawdumpListLock);
+    g_rawdump_info[pipelineID].start = 1;
+    g_rawdump_info[pipelineID].count = count;
+    pthread_cond_wait(&g_rawdump_info[pipelineID].rawdumpListCond, &g_rawdump_info[pipelineID].rawdumpListLock);
+    pthread_mutex_unlock(&g_rawdump_info[pipelineID].rawdumpListLock);
+
+    for (tunBuffer = List_GetBeginItem(g_rawdump_info[pipelineID].rawdumpList), i = 0;
+        tunBuffer && i < count;
+        tunBuffer = List_GetNextItem(g_rawdump_info[pipelineID].rawdumpList, tunBuffer), i++) {
+        buffers[i].frameId = tunBuffer->tuningInfo.frameId;
+        buffers[i].length = tunBuffer->tuningInfo.length;
+        buffers[i].virAddr = tunBuffer->tuningInfo.virAddr;
+        if (tunBuffer->hasVrf) {
+            CLOG_INFO("to append vrf info in raw buffer tail\n");
+            isp_buffer_info = List_FindItemIf(g_rawdump_info[pipelineID].isp_done_list,
+                                              isp_buffer_list_find_ret,
+                                              &(tunBuffer->tuningInfo.frameId));
+            if (!isp_buffer_info) {
+                CLOG_WARNING("frameId mismatch, use the latest frame's info");
+                isp_buffer_info = List_GetBeginItem(g_rawdump_info[pipelineID].isp_done_list);
+                if (!isp_buffer_info) {
+                    CLOG_WARNING("there is no isp info\n");
+                    continue;
+                }
+            }
+            fillVrfInfo((VRF_INFO_S *)((char *)(buffers[i].virAddr) + tunBuffer->tuningInfo.length),
+                        &isp_buffer_info->frameInfo,
+                        g_rawdump_info[pipelineID].width,
+                        g_rawdump_info[pipelineID].height,
+                        g_rawdump_info[pipelineID].bitDepth);
+            buffers[i].length += VRF_INFO_LEN;
+
+            if (isp_buffer_info->frameId == buffers[i].frameId) {
+                List_Push(g_rawdump_info[pipelineID].ispInfoList, isp_buffer_info);
+                List_EraseByItem(g_rawdump_info[pipelineID].isp_done_list, isp_buffer_info);
+            }
+        }
+        cnt++;
+    }
+
+    g_rawdump_info[pipelineID].start = 0;
+    return cnt;
+}
+
+static int32_t ispEndDumpRaw(TUNING_MODULE_TYPE_E type, uint32_t groupId)
+{
+    spmTuning_BUFFER_INFO_S *tunBuffer = NULL;
+    spmISP_BUFFER_INFO_S *isp_buffer_info = NULL;
+    uint32_t pipelineID;
+
+    if (groupId > 1) {
+        CLOG_INFO("unsupported isp groupId");
+        return -1;
+    }
+    pipelineID = groupId;
+
+    for (tunBuffer = List_GetBeginItem(g_rawdump_info[pipelineID].rawdumpList);
+            tunBuffer != NULL;
+            tunBuffer = List_GetNextItem(g_rawdump_info[pipelineID].rawdumpList, tunBuffer))
+    {
+        pthread_mutex_lock(&(g_rawdump_info[pipelineID].rawdumpListLock));
+        List_EraseByItem(g_rawdump_info[pipelineID].rawdumpList, tunBuffer);
+        pthread_mutex_unlock(&g_rawdump_info[pipelineID].rawdumpListLock);
+        if (tunBuffer)
+        {
+            free(tunBuffer->tuningInfo.virAddr);
+            tunBuffer->tuningInfo.virAddr = NULL;
+            free(tunBuffer);
+            tunBuffer = NULL;
+        }
+    }
+
+    if (List_IsEmpty(g_rawdump_info[pipelineID].isp_done_list) == false) {
+        do {
+            isp_buffer_info = List_Pop(g_rawdump_info[pipelineID].isp_done_list);
+            if (isp_buffer_info) {
+                free(isp_buffer_info);
+                isp_buffer_info = NULL;
+            }
+        } while (isp_buffer_info);
+    }
+
+    if (List_IsEmpty(g_rawdump_info[pipelineID].ispInfoList) == false) {
+        do {
+            isp_buffer_info = List_Pop(g_rawdump_info[pipelineID].ispInfoList);
+            if (isp_buffer_info) {
+                free(isp_buffer_info);
+                isp_buffer_info = NULL;
+            }
+        } while (isp_buffer_info);
+    }
+
+    buffer_pool_free(g_rawdump_info[pipelineID].rawdumpPool);
+    return 0;
+}
+
+static int init_rawdump_info(int pipelineID, SENSOR_CONFIG_S *sensor_cfg, CAM_VI_WORK_MODE_E workmode)
+{
+    g_rawdump_info[pipelineID].width = sensor_cfg->width;
+    g_rawdump_info[pipelineID].height = sensor_cfg->height;
+    g_rawdump_info[pipelineID].bitDepth = sensor_cfg->bitDepth;
+    g_rawdump_info[pipelineID].format = toPixelFormatType(sensor_cfg->bitDepth);
+    g_rawdump_info[pipelineID].viWorkMode = workmode;
+
+    g_rawdump_info[pipelineID].rawdumpList = List_Create(0);
+    g_rawdump_info[pipelineID].ispInfoList = List_Create(0);
+    g_rawdump_info[pipelineID].isp_done_list = List_Create(0);
+    pthread_mutex_init(&g_rawdump_info[pipelineID].rawdumpListLock, NULL);
+    pthread_mutex_init(&g_rawdump_info[pipelineID].ispInfoListLock, NULL);
+
+    g_rawdump_info[pipelineID].rawdumpPool = create_buffer_pool(g_rawdump_info[pipelineID].width,
+                                                                g_rawdump_info[pipelineID].height,
+                                                                g_rawdump_info[pipelineID].format,
+                                                                "tuning tool rawdump buffer");
+    if (!g_rawdump_info[pipelineID].rawdumpPool) {
+        CLOG_ERROR("failed to create buffer pool for tuning tool rawdump\n");
+        return -1;
+    }
+    return 0;
+}
+
+static void deinit_rawdump_info(int pipelineID)
+{
+    g_rawdump_info[pipelineID].width = 0;
+    g_rawdump_info[pipelineID].height = 0;
+    g_rawdump_info[pipelineID].format = 0;
+    g_rawdump_info[pipelineID].viWorkMode = CAM_VI_WORK_MODE_INVALID;
+
+    List_Clear(g_rawdump_info[pipelineID].rawdumpList);
+    List_Clear(g_rawdump_info[pipelineID].ispInfoList);
+    List_Clear(g_rawdump_info[pipelineID].isp_done_list);
+    List_Destroy(g_rawdump_info[pipelineID].rawdumpList);
+    List_Destroy(g_rawdump_info[pipelineID].ispInfoList);
+    List_Destroy(g_rawdump_info[pipelineID].isp_done_list);
+    pthread_mutex_destroy(&g_rawdump_info[pipelineID].rawdumpListLock);
+    pthread_mutex_destroy(&g_rawdump_info[pipelineID].ispInfoListLock);
+    pthread_cond_destroy(&g_rawdump_info[pipelineID].rawdumpListCond);
+
+    destroy_buffer_pool(g_rawdump_info[pipelineID].rawdumpPool);
+}
+static uint64_t get_timestamp(void)
+{
+    uint64_t tmp;
+    struct timeval tv = {0};
+
+    gettimeofday(&tv, NULL);
+    tmp = tv.tv_sec;
+    tmp = tmp * 1000000;
+    tmp = tmp + tv.tv_usec;
+
+    return tmp;
+}
+static int preview_cnt[MAX_PIPELINE_NUM*2] = {0};
+static double viT1[MAX_PIPELINE_NUM*2] = {0};
+static double viT2[MAX_PIPELINE_NUM*2] = {0};
 
 static bool find_frameinfo_preview(const void* item, const void* condition)
 {
@@ -483,20 +776,14 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
             streamOnFlag = 0;
             condition_post(&testDrawCond);
         }
-#else
-        if (frameId >= testFrame) {
-            usleep(1000);
-            condition_post(&testAutoRunCond);
-            streamOnFlag = 0;
-            condition_post(&testDrawCond);
-        }
-        viisp_vi_queueBuffer(0, buffer);
 #endif
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
             if (buffer->planes[0].virAddr == vi_out_buffer_capture_pool->buffers[i].planes[0].virAddr) {
-                vi_out_buffer_capture_pool->buffers[i].timeStamp = vi_buffer->timeStamp;
+                atomic_store(&flag_tirg, 1);
+                // condition_post(&rawProcessProcThread.cond);
 
+                vi_out_buffer_capture_pool->buffers[i].timeStamp = vi_buffer->timeStamp;
                 List_Push(vi_capture_list, (void*)&vi_out_buffer_capture_pool->buffers[i]);
 #ifdef DEBUG_USE_TIME
                 rawviT2 = get_timestamp();
@@ -520,19 +807,17 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
                 }
                 List_Push(rawdump_capture_origin_list, (void*)rawBufferBack);
                 rawBufferBackCnt++;
-                // buffer_pool_put_buffer(vi_rawdump_buffer_capture_pool, rawBufferBack);
             }
-
-            // while (1) {
-            //     rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
-            //     if (!rawdump_buffer) {
-            //         break;
-            //     }
-            //     rawBufferQueueCnt++;
-            //     viisp_vi_queueBuffer(2, rawdump_buffer);
-            // }
         }
-        atomic_store(&flag_tirg, 1);
+#ifndef ENABLE_PRIVIEW
+        if (frameId >= testFrame) {
+            usleep(1000);
+            condition_post(&testAutoRunCond);
+            streamOnFlag = 0;
+            condition_post(&testDrawCond);
+        }
+#endif
+        // atomic_store(&flag_tirg, 1);
 #ifdef DEBUG_USE_TIME
         {
             preview_cnt[nChn]++;
@@ -833,18 +1118,18 @@ static int test_buffer_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_inf
     int i = 0;
 
     // buffer list init
-    vi_out_list = List_Create(0);
     isp_out_list = List_Create(0);
-    cpp_out_list = List_Create(0);
-
-    // buffer init
-    vi_out_buffer_pool = create_buffer_pool(img_info.width, img_info.height, img_info.format, "vi channel0 out buffer");
-    buffer_pool_alloc(vi_out_buffer_pool, MAX_BUFFER_NUM);
 
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         frameinfo_buffer_alloc(&frameInfoBuf[i]);
     }
 #ifdef ENABLE_PRIVIEW
+    cpp_out_list = List_Create(0);
+    vi_out_list = List_Create(0);
+
+    // buffer init
+    vi_out_buffer_pool = create_buffer_pool(img_info.width, img_info.height, img_info.format, "vi channel0 out buffer");
+    buffer_pool_alloc(vi_out_buffer_pool, MAX_BUFFER_NUM);
     cpp_out_buffer_pool =
         create_buffer_pool(img_info.width, img_info.height, img_info.format, "cpp channel0 out buffer");
     buffer_pool_alloc(cpp_out_buffer_pool, MAX_BUFFER_NUM);
@@ -859,13 +1144,13 @@ static int test_buffer_prepare(int pipelineId, int firmwareId)
     int viChnId = pipelineId;
 
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(vi_out_buffer_pool);
-        viisp_vi_queueBuffer(viChnId, buffer);
-    }
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
         viisp_isp_queueBuffer(firmwareId, &frameInfoBuf[i]);
     }
 #ifdef ENABLE_PRIVIEW
+    for (i = 0; i < MAX_BUFFER_NUM; i++) {
+        IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(vi_out_buffer_pool);
+        viisp_vi_queueBuffer(viChnId, buffer);
+    }
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(cpp_out_buffer_pool);
         List_Push(cpp_out_list, (void*)buffer);
@@ -879,12 +1164,11 @@ static int test_buffer_reset(int pipelineId)
 {
     int i = 0;
 
+#ifdef ENABLE_PRIVIEW
     List_Clear(vi_out_buffer_pool->buf_list);
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         buffer_pool_put_buffer(vi_out_buffer_pool, &vi_out_buffer_pool->buffers[i]);
     }
-
-#ifdef ENABLE_PRIVIEW
     List_Clear(cpp_out_buffer_pool->buf_list);
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         buffer_pool_put_buffer(cpp_out_buffer_pool, &cpp_out_buffer_pool->buffers[i]);
@@ -900,6 +1184,13 @@ static int test_buffer_deInit()
     spmISP_BUFFER_INFO_S* isp_buffer_info = NULL;
     spmVI_BUFFER_INFO_S* vi_buffer_info = NULL;
 
+    List_Destroy(isp_out_list);
+    isp_out_list = NULL;
+
+    for (i = 0; i < MAX_BUFFER_NUM; i++) {
+        frameinfo_buffer_free(&frameInfoBuf[i]);
+    }
+#ifdef ENABLE_PRIVIEW
     List_Destroy(cpp_out_list);
     cpp_out_list = NULL;
 
@@ -911,9 +1202,6 @@ static int test_buffer_deInit()
             }
         } while (isp_buffer_info);
     }
-    List_Destroy(isp_out_list);
-    isp_out_list = NULL;
-
     if (List_IsEmpty(vi_out_list) == false) {
         do {
             vi_buffer_info = List_Pop(vi_out_list);
@@ -924,13 +1212,8 @@ static int test_buffer_deInit()
     }
     List_Destroy(vi_out_list);
     vi_out_list = NULL;
-
     buffer_pool_free(vi_out_buffer_pool);
     destroy_buffer_pool(vi_out_buffer_pool);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        frameinfo_buffer_free(&frameInfoBuf[i]);
-    }
-#ifdef ENABLE_PRIVIEW
     buffer_pool_free(cpp_out_buffer_pool);
     destroy_buffer_pool(cpp_out_buffer_pool);
 #endif
@@ -1044,6 +1327,7 @@ int slice_capture_test(struct testConfig *config)
     IMAGE_INFO_S img0_out_info = {};
     IMAGE_INFO_S img1_in_info = {};
     IMAGE_INFO_S img1_out_info = {};
+    struct tuning_objs_config tuning_cfg = {0};
 
     CLOG_INFO("test start");
 
@@ -1101,7 +1385,9 @@ int slice_capture_test(struct testConfig *config)
     // viisp init
     viisp_vi_init();
     viisp_vi_online_config(pipeline0Id, img0_out_info, &sensor_info);
+#ifdef ENABLE_PRIVIEW
     viisp_set_vi_callback(viChn0Id, vi_buffer_callback);
+#endif
     viisp_isp_init(firmwareId, img0_out_info, &sensor_info, isp_buffer_callback, true);
     viisp_set_vi_callback(rawdumpChnId, vi_rawdump_buffer_callback);
 
@@ -1140,6 +1426,17 @@ int slice_capture_test(struct testConfig *config)
     ProcThreadInit(&cppProcessProcThread);
 
     streamOnFlag = 0;
+
+    if (config->tuningServerEnalbe) {
+        // be consistent with isp firmwareId
+        tuning_cfg.objs_is_enabled[TUNING_OBJS_ISP0] = 1;
+        tuning_cfg.objs_rawdump_is_enabled[TUNING_OBJS_ISP0] = 1;
+        tuning_cfg.StartDumpRaw = ispStartDumpRaw;
+        tuning_cfg.EndDumpRaw = ispEndDumpRaw;
+
+        init_rawdump_info(pipeline0Id, sensor_info.sensor_cfg, CAM_VI_WORK_MODE_ONLINE);
+        tuning_server_init(tuning_cfg);
+    }
 
     testFrame =  config->testFrame;
     dumpFrame = config->dumpFrame;
@@ -1238,7 +1535,11 @@ int slice_capture_test(struct testConfig *config)
             }
         }
     }
-
+    if (config->tuningServerEnalbe) {
+        tuning_server_deinit();
+        deinit_rawdump_info(pipeline0Id);
+        deinit_rawdump_info(pipeline1Id);
+    }
     ProcThreadDeinit(&cppProcessProcThread);
     ProcThreadDeinit(&rawProcessProcThread);
 #ifdef ENABLE_PRIVIEW

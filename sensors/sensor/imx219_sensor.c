@@ -35,22 +35,13 @@ static struct regval_tab color_bar_regs[] = {
 
 #define IMX219_VTS_ADJUST     (4) /* vts - max_exposure*/
 #define IMX219_VTS_LINES_MAX  (0xffff)
-#define IMX219_EXPO_LINES_MIN (0x0001)
+#define IMX219_EXPO_LINES_MIN (0x0004)
 
-#define IMX219_VTS_ADDR_H   (0x0340)
-#define IMX219_VTS_ADDR_L   (0x0341)
-#define IMX219_EXPO_H       (0x0202)
-#define IMX219_EXPO_L       (0x0203)
-#define IMX219_AGAIN_GLOBAL (0x0205)
-#define IMX219_DGAIN_GR_H   (0x020E)
-#define IMX219_DGAIN_GR_L   (0x020F)
-#define IMX219_DGAIN_R_H    (0x0210)
-#define IMX219_DGAIN_R_L    (0x0211)
-#define IMX219_DGAIN_B_H    (0x0212)
-#define IMX219_DGAIN_B_L    (0x0213)
-#define IMX219_DGAIN_GB_H   (0x0214)
-#define IMX219_DGAIN_GB_L   (0x0215)
-#define IMX219_GROUP_ACCESS (0x0104)
+#define IMX219_VTS_ADDR_H   (0x0160)
+#define IMX219_VTS_ADDR_L   (0x0161)
+#define IMX219_EXPO_H       (0x015a)
+#define IMX219_EXPO_L       (0x015b)
+#define IMX219_AGAIN_GLOBAL (0x0157)
 
 /*******************************************************************/
 static int imx219_write_register(void* handle, uint16_t regAddr, uint16_t value)
@@ -170,9 +161,9 @@ static int imx219_sensor_group_reg_start(void* snsHandle)
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
-    pthread_mutex_lock(&sensor_context->apiLock);
-    imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 1);
-    pthread_mutex_unlock(&sensor_context->apiLock);
+    // pthread_mutex_lock(&sensor_context->apiLock);
+    // imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 1);
+    // pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
 
@@ -185,9 +176,9 @@ static int imx219_sensor_group_reg_done(void* snsHandle)
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
-    pthread_mutex_lock(&sensor_context->apiLock);
-    imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 0x00);
-    pthread_mutex_unlock(&sensor_context->apiLock);
+    // pthread_mutex_lock(&sensor_context->apiLock);
+    // imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 0x00);
+    // pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
 
@@ -268,7 +259,7 @@ static int imx219_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
     pthread_mutex_lock(&sensor_context->apiLock);
     if (false == sensor_context->syncInit) {
         sensor_context->sensorRegs[0].u8CfgDelayMax = 2;
-        sensor_context->sensorRegs[0].u32RegNum = 13;
+        sensor_context->sensorRegs[0].u32RegNum = 5;
         sensor_context->sensorRegs[0].stSensorComBus.s8I2cDev = sensor_context->twsi_no;
 
         for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
@@ -288,22 +279,6 @@ static int imx219_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = IMX219_VTS_ADDR_L;  // VTS
         sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = IMX219_VTS_ADDR_H;  // VTS
-        sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX219_DGAIN_GR_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX219_DGAIN_GR_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX219_DGAIN_R_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = IMX219_DGAIN_R_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[9].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[9].u32RegAddr = IMX219_DGAIN_B_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[10].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[10].u32RegAddr = IMX219_DGAIN_B_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[11].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[11].u32RegAddr = IMX219_DGAIN_GB_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[12].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[12].u32RegAddr = IMX219_DGAIN_GB_L;  // digital gain
 
         sensor_context->syncInit = true;
     } else {
@@ -345,9 +320,6 @@ static int imx219_sensor_dump_info(void* snsHandle)
     exp_time = (reg_val_h << 8) | reg_val_l;
     imx219_read_register(snsHandle, IMX219_AGAIN_GLOBAL, &reg_val_h);
     again = reg_val_h;
-    imx219_read_register(snsHandle, IMX219_DGAIN_GR_H, &reg_val_h);
-    imx219_read_register(snsHandle, IMX219_DGAIN_GR_L, &reg_val_l);
-    dgain = ((reg_val_h & 0x3) << 8) | reg_val_l;
     pthread_mutex_lock(&sensor_context->apiLock);
     CLOG_INFO("imx219 regs(vts=%d,exptime=%d,again=0x%x,dain =0x%x),struct(initVTS=%d,initFps=%f,vts=%d,expline=%d)",
         vts, exp_time, again, dgain, sensor_context->initVTS, sensor_context->initFps, sensor_context->vts[0],
@@ -509,28 +481,15 @@ static int imx219_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     pthread_mutex_lock(&sensor_context->apiLock);
     if (*pAgainVal < 0x0100) //Q8 1x (265 is 1x)
         AGain_Reg = 0x0;
-    else if (*pAgainVal > 0x1000) //16x (256x16 is 16x)
-        AGain_Reg = 0x00F0;
+    else if (*pAgainVal > 2728) //16x (256x10.66 is 10.66x)
+        AGain_Reg = 0x00E8;
     else //Gain_an = 256 / (256 - reg);  reg: 0~240
         AGain_Reg = ((*pAgainVal - 256) * 256 ) / *pAgainVal;
-    DGain_Reg = (*pDgainVal >> 4);  // Q12 -> Q8
-    if (DGain_Reg < 0x100)
-        DGain_Reg = 0x100;
-    if (DGain_Reg > 0x0FE0)
-        DGain_Reg = 0x0FE0;
 
     sensor_context->sensorRegs[0].astI2cData[2].u32Data = AGain_Reg;     // bit[7:0] = Again[7:0]
-    sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[9].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[10].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[11].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[12].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
 
     *pAgainVal = (0x0100 * 256) / (256 - AGain_Reg);  // Q8
-    *pDgainVal = DGain_Reg << 4;  // Q8 -> Q12
+    *pDgainVal = 4096;
     pthread_mutex_unlock(&sensor_context->apiLock);
 //printf("again: %x (%x), dgain: %x\n", *pAgainVal, tval, *pDgainVal);
     return ret;
@@ -723,55 +682,6 @@ static int imx219_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     if(work_info->test_pattern_mode == CC_SENSOR_TEST_PATTERN_COLOR_BARS){
         ret = imx219_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
     }
-
-#if 0	//read sensor reg setting
-
-    fprintf(stderr, "-----------------start read sensor reg----------------\n");
-    int i;
-    struct regval_tab* sensor_table = NULL;
-
-    sensor_table = (struct regval_tab*)calloc(sensor_context->work_info.setting_table_size, sizeof(struct regval_tab));
-    if (NULL == sensor_table) {
-        CLOG_ERROR("sensor_table malloc memory failed!");
-        ret = -ENOMEM;
-        goto out;
-    }
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        sensor_table[i].reg = sensor_context->work_info.setting_table[i].reg;
-        sensor_table[i].val = 0;
-    }
-
-    struct cam_burst_i2c_data reg_table_data;
-    reg_table_data.addr = sensor_context->i2c_addr;
-    reg_table_data.reg_len = imx219_reg_addr_byte;
-    reg_table_data.val_len = imx219_reg_data_byte;
-    reg_table_data.tab = sensor_table;
-    reg_table_data.num = sensor_context->work_info.setting_table_size;
-    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
-    if (ret) {
-        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
-        goto out;
-    }
-
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        if ((sensor_table[i].reg != sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val != sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else if ((sensor_table[i].reg == sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val == sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        }
-    }
-	free(sensor_table);
-
-	fprintf(stderr, "-----------------finish read sensor reg----------------\n");
-
-#endif
 
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
