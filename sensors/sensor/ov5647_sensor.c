@@ -501,16 +501,17 @@ static int ov5647_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     else
         sensor_context->vts[0] = sensor_context->initVTS;
 
-    sensor_context->sensorRegs[0].astI2cData[8].u32Data = LOW_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[9].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine & 0xff0000) >> 16;
+    sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[0].u32Data = (expLine & 0xf) << 4;
+    sensor_context->sensorRegs[0].astI2cData[1].u32Data = (expLine >> 4) & 0xff;
+    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine >> 12) & 0xf;
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
+	// printf("exp time: %d us, L:%d, vts:%d\n", u32ExpoTime, expLine, sensor_context->vts[0]);
 
     return 0;
 }
@@ -520,6 +521,7 @@ static int ov5647_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
     uint32_t AGain_Reg, DGain_Reg = 0;
+    uint32_t agint_ori = *pAgainVal;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     SENSORS_CHECK_PARA_POINTER(pAgainVal);
@@ -540,6 +542,8 @@ static int ov5647_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     *pAgainVal = AGain_Reg << 4;  // Q7 -> Q8
     *pDgainVal = 4096;  // Q10 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
+
+// printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, agint_ori, AGain_Reg);
 
     return ret;
 }
@@ -645,7 +649,7 @@ static int ov5647_power_on(SENSOR_CONTEXT_S* sensor_context)
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
     usleep(5000);
 
-    ret = ov5647_write_burst_register((void *)sensor_context, sensor_oe_enable_regs, ARRAY_SIZE(sensor_oe_enable_regs));
+    // ret = ov5647_write_burst_register((void *)sensor_context, sensor_oe_enable_regs, ARRAY_SIZE(sensor_oe_enable_regs));
 
     CLOG_INFO("finish power on %d", ret);
     return ret;
@@ -681,7 +685,7 @@ static int ov5647_power_off(SENSOR_CONTEXT_S* sensor_context)
 {
     SENSORS_CHECK_PARA_POINTER(sensor_context);
 
-    ov5647_write_burst_register((void *)sensor_context, sensor_oe_disable_regs, ARRAY_SIZE(sensor_oe_disable_regs));
+    // ov5647_write_burst_register((void *)sensor_context, sensor_oe_disable_regs, ARRAY_SIZE(sensor_oe_disable_regs));
 
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 0);

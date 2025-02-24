@@ -10,7 +10,7 @@
 {
     /* @m_nBayerPattern  Size: 1x1  BitWidth: 32_u  Range~[0, 4]  Type: firmware */
     /* 0 - RGGB, 1 - GRBG, 2 - GBRG, 3 - BGGR, 4 - monochrome */
-    0,
+    2,
     /* @m_bAELinkZoom  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - AE not link with zoom, 1 - AE link with zoom */
     1,

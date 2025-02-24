@@ -2146,7 +2146,7 @@ extern "C" {
 
 struct regval_tab ov5647_spm_2592x1944_10bit_15fps_tab[] = {
     //@@2592x1936 15fps 400Mbps/lane
-    // MCLK: 15Mhz
+    // MCLK: 25Mhz
     // resolution: 2592x1936
     // Mipi : 2 lane
     // Mipi data rate: 400Mbps/Lane
@@ -2214,7 +2214,7 @@ struct regval_tab ov5647_spm_2592x1944_10bit_15fps_tab[] = {
     {0x380f,0xb0},
 
     {0x3036, 0x69},
-    {0x3821, 0x00},
+    {0x3821, 0x03},
     {0x3820, 0x00},
     {0x3612, 0x5b},
     {0x3618, 0x04},
@@ -2251,7 +2251,7 @@ struct regval_tab ov5647_spm_2592x1944_10bit_15fps_tab[] = {
 
 struct regval_tab ov5647_spm_1920x1080_10bit_30fps_tab[] = {
     //@@1920x1080 30fps 400Mbps/lane
-    // MCLK: 15Mhz
+    // MCLK: 25Mhz
     // resolution: 1920x1080
     // Mipi : 2 lane
     // Mipi data rate: (438)480Mbps/Lane
@@ -2318,7 +2318,7 @@ struct regval_tab ov5647_spm_1920x1080_10bit_30fps_tab[] = {
     {0x380f,0x50},
 
 	{0x3036, 0x69},
-	{0x3821, 0x00},
+    {0x3821, 0x03},
 	{0x3820, 0x00},
 	{0x3612, 0x5b},
 	{0x3618, 0x04},
