@@ -18,13 +18,8 @@ static const unsigned int ov5647_reg_addr_byte = I2C_16BIT; /*byte width of the 
 static const unsigned int ov5647_reg_data_byte = I2C_8BIT;  /*byte width of sensor register data*/
 
 static struct regval_tab stream_on_regs[] = {
-    {0x0100, 0x01},
-};
-
-static struct regval_tab stream_on_after_regs[] = {
-    {0x4800, 0x34}, // CLOCK_LANE_GATE and LINE_SYNC_ENABLE and BUS_IDLE
-    {0x4202, 0x00},
-    {0x300d, 0x00},
+    {0x4202, 0x00}, //OV5647_REG_FRAME_OFF_NUMBER
+    {0x300d, 0x00}, //OV5640_REG_PAD_OUT
 };
 
 static struct regval_tab stream_off_regs[] = {
@@ -32,9 +27,20 @@ static struct regval_tab stream_off_regs[] = {
     {0x4202, 0x0F},
     {0x300d, 0x01},
 };
+static const struct regval_tab sensor_oe_disable_regs[] = {
+	{0x3000, 0x00},
+	{0x3001, 0x00},
+	{0x3002, 0x00},
+};
+static const struct regval_tab sensor_oe_enable_regs[] = {
+	{0x3000, 0x0f},
+	{0x3001, 0xff},
+	{0x3002, 0xe4},
+};
 
 static struct regval_tab stream_soft_reset_regs[] = {
-    // {0x0103, 0x01},
+    {0x0100, 0x00},
+    {0x0103, 0x01},
 };
 
 static struct regval_tab color_bar_regs[] = {
@@ -56,6 +62,8 @@ static struct regval_tab color_bar_regs[] = {
 // #define OV5647_DGAIN_M    (0x350B)
 // #define OV5647_DGAIN_L    (0x350C)
 #define OV5647_GROUP_ACCESS (0x3208)
+
+static int ov5647_stream_off(void* handle);
 
 /*******************************************************************/
 static int ov5647_write_register(void* handle, uint16_t regAddr, uint16_t value)
@@ -109,7 +117,7 @@ static int ov5647_write_burst_register(void* handle, struct regval_tab* reg_tabl
     SENSORS_CHECK_PARA_POINTER(reg_table);
     sensor_context = (SENSOR_CONTEXT_S*)handle;
 
-#if 1
+#if 0
     reg_table_data.addr = sensor_context->i2c_addr;
     reg_table_data.reg_len = ov5647_reg_addr_byte;
     reg_table_data.val_len = ov5647_reg_data_byte;
@@ -319,7 +327,23 @@ static int ov5647_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
 
     return 0;
 }
+static int ov5647_set_virtual_channel(void* snsHandle, int channel)
+{
+    SENSOR_CONTEXT_S* sensor_context = NULL;
+    uint16_t reg_val;
 
+    SENSORS_CHECK_PARA_POINTER(snsHandle);
+    sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
+    SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
+
+    // pthread_mutex_lock(&sensor_context->apiLock);
+    ov5647_read_register(snsHandle, 0x4814, &reg_val);  //OV5647_REG_MIPI_CTRL14
+	reg_val &= ~(3 << 6);
+    ov5647_write_register(snsHandle, 0x4814, reg_val | (channel << 6));
+    // pthread_mutex_unlock(&sensor_context->apiLock);
+
+    return 0;
+}
 static int ov5647_sensor_dump_info(void* snsHandle)
 {
     int ret = 0;
@@ -606,35 +630,25 @@ static int ov5647_get_awblib_default_settings(void* snsHandle, uint32_t u32Chane
 
     return 0;
 }
+
 static int ov5647_power_on(SENSOR_CONTEXT_S* sensor_context)
 {
+    int ret = 0;
+
     SENSORS_CHECK_PARA_POINTER(sensor_context);
 
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
-    usleep(6000);
-
-    sensor_set_mclk_enable(sensor_context->devId, 1);
-    sensor_set_mclk_rate(sensor_context->devId, 15000000);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 1);
     usleep(5000);
-
-    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
-    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1);
-    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1200000);
-    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1);
-    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 2800000);
-    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 1);
-    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
-    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 1);
-
-    usleep(2100);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    usleep(8000);
 
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 1);
-    usleep(2100);
+    usleep(5000);
 
-    CLOG_INFO("finish power on");
-    return 0;
+    ret = ov5647_write_burst_register((void *)sensor_context, sensor_oe_enable_regs, ARRAY_SIZE(sensor_oe_enable_regs));
+
+    CLOG_INFO("finish power on %d", ret);
+    return ret;
 }
 /*******************************************************************/
 static int ov5647_init(void** pHandle, int sns_id, uint8_t sns_addr)
@@ -656,14 +670,26 @@ static int ov5647_init(void** pHandle, int sns_id, uint8_t sns_addr)
     pthread_mutex_init(&sensor_context->apiLock, NULL);
 
     sensor_hw_init(sensor_context->devId);
-    sensor_hw_unreset(sensor_context->devId);
+    ov5647_power_on(sensor_context);
     sensor_get_hw_info(sensor_context->devId, &sensor_hw_info);
     sensor_context->twsi_no = sensor_hw_info.twsi_no;
 
     *pHandle = sensor_context;
     return 0;
 }
+static int ov5647_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
 
+    ov5647_write_burst_register((void *)sensor_context, sensor_oe_disable_regs, ARRAY_SIZE(sensor_oe_disable_regs));
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 0);
+    usleep(1000);
+
+    CLOG_INFO("finish power off");
+    return 0;
+}
 static int ov5647_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -680,7 +706,8 @@ static int ov5647_deinit(void* handle)
     }
 
     sensor_hw_reset(sensor_context->devId);
-    sensor_hw_exit(sensor_context->devId);
+    // sensor_hw_exit(sensor_context->devId);
+    ov5647_power_off(sensor_context);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
     pthread_mutex_destroy(&sensor_context->apiLock);
@@ -691,7 +718,6 @@ static int ov5647_deinit(void* handle)
     }
     return 0;
 }
-
 static int ov5647_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -701,6 +727,8 @@ static int ov5647_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     SENSORS_CHECK_PARA_POINTER(work_info);
     sensor_context = (SENSOR_CONTEXT_S*)handle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
+
+    ov5647_stream_off(handle);
 
     pthread_mutex_lock(&sensor_context->apiLock);
     if (sensor_context->stream_on_flag == 1) {
@@ -722,22 +750,17 @@ static int ov5647_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memset(sensor_context->sensorRegs, 0, 2 * sizeof(ISP_SENSOR_REGS_INFO_S));
     sensor_context->syncInit = 0;
 
-    // ret = ov5647_write_burst_register(handle, stream_soft_reset_regs, ARRAY_SIZE(stream_soft_reset_regs));
-    // if (ret) {
-    //     goto out;
-    // }
-    // usleep(5000);
     ret = ov5647_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
     if (ret) {
         goto out;
     }
-    // if(work_info->test_pattern_mode == CC_SENSOR_TEST_PATTERN_COLOR_BARS){
-    //     ret = ov5647_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
-    // }
 
+    ov5647_set_virtual_channel(sensor_context, 0);
+    ov5647_write_register(handle, 0x0100, 0x01);    // OV5647_SW_STANDBY
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
+
     return ret;
 }
 
@@ -753,12 +776,15 @@ static int ov5647_set_param(void* handle, const SENSOR_INIT_ATTR_S* init_attr)
 
     return 0;
 }
+#define CLOCK_NCONT
 
 static int ov5647_stream_on(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
     uint32_t i = 0;
+    uint8_t val = 0x4;    //MIPI_CTRL00_BUS_IDLE
+    uint16_t reg_val;
 
     SENSORS_CHECK_PARA_POINTER(handle);
     sensor_context = (SENSOR_CONTEXT_S*)handle;
@@ -768,12 +794,21 @@ static int ov5647_stream_on(void* handle)
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
     if (ret)
         return ret;
+
+#ifdef CLOCK_NCONT
+    val |= 0x30;    //MIPI_CTRL00_CLOCK_LANE_GATE | MIPI_CTRL00_LINE_SYNC_ENABLE
+#endif
+    ov5647_write_register(handle, 0x4800, val);    // OV5647_REG_MIPI_CTRL00
+    ov5647_read_register(sensor_context, 0x4800, &reg_val);
+
     for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
         ov5647_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
+
     ret = ov5647_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
-    ret |= ov5647_write_burst_register(handle, stream_on_after_regs, ARRAY_SIZE(stream_on_after_regs));
+    usleep(20000);
+    CLOG_INFO("finish stream on");
 
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);
@@ -851,6 +886,7 @@ static int ov5647_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
         ret = -ENOMEM;
         goto out;
     }
+
     for (i = 0; i < vendor_id->id_table_size; i++) {
         vendor_id_table[i].reg = vendor_id->id_table[i].reg;
         vendor_id_table[i].val = 0;

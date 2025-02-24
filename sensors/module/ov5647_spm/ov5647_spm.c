@@ -84,9 +84,9 @@ static int ov5647_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
     sensor_capability->snr_config_num = OV5647_SPM_WORK_MODE_SIZE;
     for (i = 0; i < OV5647_SPM_WORK_MODE_SIZE; i++) {
         switch (i) {
-            case OV5647_SPM_2592x1936_10bit_LINEAR_30_4LANE: {
+            case OV5647_SPM_2592x1944_10bit_LINEAR_30_4LANE: {
                 sensor_capability->snr_config[i].width = 2592;
-                sensor_capability->snr_config[i].height = 1936;
+                sensor_capability->snr_config[i].height = 1944;
                 sensor_capability->snr_config[i].bitDepth = 10;
                 sensor_capability->snr_config[i].maxFps = 30;
                 sensor_capability->snr_config[i].minFps = 25;
@@ -94,7 +94,20 @@ static int ov5647_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].lane_num = 2;
                 sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
                 sensor_capability->snr_config[i].supportPDAF = 0;
-                sensor_capability->snr_config[i].work_mode = OV5647_SPM_2592x1936_10bit_LINEAR_30_4LANE;
+                sensor_capability->snr_config[i].work_mode = OV5647_SPM_2592x1944_10bit_LINEAR_30_4LANE;
+                sensor_capability->snr_config[i].setting = &ov5647_spm_setting;
+            } break;
+            case OV5647_SPM_1920x1080_10bit_LINEAR_30_2LANE: {
+                sensor_capability->snr_config[i].width = 1920;
+                sensor_capability->snr_config[i].height = 1080;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 30;
+                sensor_capability->snr_config[i].minFps = 25;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 2;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = OV5647_SPM_1920x1080_10bit_LINEAR_30_2LANE;
                 sensor_capability->snr_config[i].setting = &ov5647_spm_setting;
             } break;
             default: {
@@ -116,17 +129,29 @@ static int ov5647_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
     // snr_info->id_table_size = ARRAY_SIZE(ov5647_spm_vendor_id);
 
     switch (work_mode) {
-        case OV5647_SPM_2592x1936_10bit_LINEAR_30_4LANE: {
-            snr_info->linetime = OV5647_LINETIME_2K30_10bit_LINEAR;  // ns
-            snr_info->vts = OV5647_VMAX_2K30_10bit_LINEAR;
+        case OV5647_SPM_2592x1944_10bit_LINEAR_30_4LANE: {
+            snr_info->linetime = 32503;  // ns
+            snr_info->vts = 1968 + 4;
             snr_info->f32maxFps = 30;
-            snr_info->exp_time[0] = 1974 * snr_info->linetime / 1000;
+            snr_info->exp_time[0] = 1968 * snr_info->linetime / 1000;
             snr_info->again[0] = 1 * 0x100;   // Q8 format
             snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
             snr_info->image_mode = SENSOR_LINEAR_MODE;
-            snr_info->setting_table = ov5647_spm_2592x1936_10bit_15fps_tab;
-            snr_info->setting_table_size = ARRAY_SIZE(ov5647_spm_2592x1936_10bit_15fps_tab);
-            snr_info->mipi_clock = 400;  // Mhz
+            snr_info->setting_table = ov5647_spm_2592x1944_10bit_15fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov5647_spm_2592x1944_10bit_15fps_tab);
+            snr_info->mipi_clock = 438;  // Mhz
+        } break;
+        case OV5647_SPM_1920x1080_10bit_LINEAR_30_2LANE: {
+            snr_info->linetime = 29603;  // ns
+            snr_info->vts = 1104 + 4;
+            snr_info->f32maxFps = 30;
+            snr_info->exp_time[0] = 1104 * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = ov5647_spm_1920x1080_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov5647_spm_1920x1080_10bit_30fps_tab);
+            snr_info->mipi_clock = 438;  // Mhz
         } break;
         default: {
             CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,
