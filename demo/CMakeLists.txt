@@ -19,6 +19,7 @@ include_directories(./extern)
 include_directories(./gst_api/)
 include_directories(./v4l2_test/)
 include_directories(../libs/include)
+include_directories(../sensors/)
 
 # message("test ------------------- ${CMAKE_INSTALL_PREFIX}, ${PROJECT_SOURCE_DIR}, ${CMAKE_BINARY_DIR} ")
 

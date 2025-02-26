@@ -736,10 +736,12 @@ static int imx415_power_on(SENSOR_CONTEXT_S* sensor_context)
 }
 
 /*******************************************************************/
-static int imx415_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int imx415_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 

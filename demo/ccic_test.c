@@ -148,6 +148,7 @@ int only_ccic_test(struct testConfig *config)
     void *sensor_handle = NULL;
     SENSORS_MODULE_INFO_S sensor_module_info;
     SENSORS_MODULE_CAPABILITY_S sensor_cap;
+    SENSOR_CUSTOM_S snr_custom;
 
     IMAGE_BUFFER_S *buffer = NULL;
     bool stream_on = false;
@@ -156,7 +157,11 @@ int only_ccic_test(struct testConfig *config)
 
     CLOG_INFO("ccic_test enter, sensors_name %s, ccic_id %d work_mode_id %d vc_mode %d\n", sensors_name, ccic_id, work_mode_id,
               g_vc_mode);
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, ccic_id, -1);
+
+    snr_custom.dev_id = ccic_id;
+    snr_custom.i2c_addr = -1;
+
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_INFO("detect sensor fail!\n");
         return ret;

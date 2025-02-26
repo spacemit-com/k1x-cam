@@ -25,6 +25,11 @@ typedef enum {
 #define LSC_PROFILE_DIMENSION 3
 #define OTP_LSC_PROFILE_LEN 576
 
+typedef struct SENSOR_CUSTOM {
+    int dev_id;
+    int i2c_addr;
+} SENSOR_CUSTOM_S;
+
 typedef struct spmSENSOR_INIT_ATTR_S {
     int32_t initSceneLuma[MAX_EXP_CHAN_PER_SENSOR];
     int32_t initSceneLux[MAX_EXP_CHAN_PER_SENSOR];  // Q8 format

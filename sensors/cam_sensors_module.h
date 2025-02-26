@@ -72,7 +72,7 @@ typedef struct SENSOR_WORK_INFO {
 
 typedef struct SENSOR_OBJ {
     const char* name;
-    int (*pfnInit)(void** pHandle, int sns_id, uint8_t sns_addr);
+    int (*pfnInit)(void** pHandle, SENSOR_CUSTOM_S snr_custom);
     int (*pfnDeinit)(void* handle);
     int (*pfnGloablConfig)(void* handle, SENSOR_WORK_INFO_S* work_info);
     int (*pfnSetParam)(void* handle, const SENSOR_INIT_ATTR_S* init_attr);

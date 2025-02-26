@@ -145,7 +145,7 @@ static int sensors_module_find_obj(const char* name)
     return -1;
 }
 
-static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj_p, int devId, int addr)
+static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj_p, SENSOR_CUSTOM_S snr_custom)
 {
     void* snr_handle = NULL;
     int ret = 0;
@@ -163,11 +163,10 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     moduleObj->pfnGetSnrVendorId(&vendor_id_table);
     moduleObj->pfnGetSnrI2cAddr(&sensor_i2c_addr);
 
-    if (addr > 0) {
-        sensorObj->pfnInit(&snr_handle, devId, (uint8_t)addr);
-    } else {
-        sensorObj->pfnInit(&snr_handle, devId, sensor_i2c_addr);
-    }
+    if (snr_custom.i2c_addr <= 0)
+        snr_custom.i2c_addr = sensor_i2c_addr;  //use default i2c addr
+
+    sensorObj->pfnInit(&snr_handle, snr_custom);
 
     ret = sensorObj->pfnDetectSns(snr_handle, &vendor_id_table);
     sensorObj->pfnDeinit(snr_handle);
@@ -185,6 +184,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
     SENSORS_MODULE_OBJ_S* sensors_module_obj_p = NULL;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     int snr_width, snr_height;
+    SENSOR_CUSTOM_S snr_custom;
 
     sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)calloc(1, sizeof(SENSORS_MODULE_CONTEXT_S));
     if (NULL == sensors_module_context) {
@@ -193,7 +193,8 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
     }
     sensors_module_context->devId = devId;
     sensors_module_context->magic = SENSORS_MODULE_MAGIC;
-
+    snr_custom.dev_id = devId;
+    snr_custom.i2c_addr = -1;
 
     for (module_id = 0; module_id < module_num; module_id++) {
         if (sensors_module_list[module_id].module_obj_p) {
@@ -201,7 +202,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
                                      &sensors_module_list[module_id]);
 
             sensors_module_obj_p = &sensors_module_list[module_id];
-            ret = sensors_module_detect_sensor(sensors_module_obj_p, devId, -1);
+            ret = sensors_module_detect_sensor(sensors_module_obj_p, snr_custom);
             if (ret == 0) {
                 memcpy(name, sensors_module_list[module_id].module_obj_p->name,
                        strlen(sensors_module_list[module_id].module_obj_p->name) + 1);
@@ -250,7 +251,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
 
     return ret;
 }
-CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr)
+CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, SENSOR_CUSTOM_S snr_custom)
 {
     int ret = 0;
     int module_id;
@@ -267,7 +268,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr)
 
     /*sensor*/
     if (sensors_module_obj_p->sensor_obj_p) {
-        ret = sensors_module_detect_sensor(sensors_module_obj_p, devId, addr);
+        ret = sensors_module_detect_sensor(sensors_module_obj_p, snr_custom);
         if (ret) {
             goto out;
         }
@@ -275,7 +276,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect(const char* name, int devId, int addr)
 
 out:
     if (ret) {
-        CLOG_INFO("can not detect sensors module %s devId(%d)", name, devId);
+        CLOG_INFO("can not detect sensors module %s devId(%d)", name, snr_custom.dev_id);
     }
     return ret;
 }
@@ -436,6 +437,7 @@ CAM_API int SPM_SENSOR_Open(void* handle)
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     SENSOR_OBJ_S* sensorObj = NULL;
+    SENSOR_CUSTOM_S snr_custom;
 
     SENSORS_CHECK_PARA_POINTER(handle);
     sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)handle;
@@ -446,9 +448,11 @@ CAM_API int SPM_SENSOR_Open(void* handle)
     }
     SENSORS_CHECK_POINTER(sensors_module_context->sensors_module_obj_p->sensor_obj_p);
     sensorObj = sensors_module_context->sensors_module_obj_p->sensor_obj_p;
+    snr_custom.dev_id = sensors_module_context->devId;
+    snr_custom.i2c_addr = sensors_module_context->sensor_i2c_addr;
 
-    ret = sensorObj->pfnInit(&sensors_module_context->sensor_handle, sensors_module_context->devId,
-                             sensors_module_context->sensor_i2c_addr);
+    ret = sensorObj->pfnInit(&sensors_module_context->sensor_handle, snr_custom);
+
     return ret;
 }
 

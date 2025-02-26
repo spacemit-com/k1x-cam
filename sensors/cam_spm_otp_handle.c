@@ -43,7 +43,7 @@ int _get_settingfile_absolute_path(const char *tuning_file, char *file_path)
         char *str = strstr(lineBuffer, tag);
         if (str == NULL)
             continue;
-        fgets(lineBuffer, sizeof(lineBuffer), fp);
+        char *fret = fgets(lineBuffer, sizeof(lineBuffer), fp);
         str = strstr(lineBuffer, "{");
         if (str == NULL) {
             CLOG_ERROR("Invalid camera tuning config file");
@@ -219,7 +219,7 @@ int cam_read_otp_lsc_profile_from_file(int *lsc_top_data)
         str = strstr(lineBuffer, tag);
         if (str == NULL)
             continue;
-        fgets(lineBuffer, sizeof(lineBuffer), fp);
+        char *fret = fgets(lineBuffer, sizeof(lineBuffer), fp);
         str = strstr(lineBuffer, "{");
         if (str == NULL) {
             CLOG_ERROR("Invalid otp file");
@@ -227,7 +227,7 @@ int cam_read_otp_lsc_profile_from_file(int *lsc_top_data)
             goto end;
         }
 
-        fgets(lineBuffer, sizeof(lineBuffer), fp);
+        fret = fgets(lineBuffer, sizeof(lineBuffer), fp);
         str = strstr(lineBuffer, "Size:");
         if (str == NULL) {
             CLOG_ERROR("Invalid otp file");

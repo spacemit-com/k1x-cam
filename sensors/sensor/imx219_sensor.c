@@ -582,11 +582,35 @@ static int imx219_get_awblib_default_settings(void* snsHandle, uint32_t u32Chane
     return 0;
 }
 
+static int imx219_power_on(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 1);
+    usleep(5000);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    usleep(8000);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
+    usleep(10000);
+
+    CLOG_INFO("finish power on 222");
+    int i;
+            for (i=0; i<1000; i++) {
+                sleep(1);
+                if (i % 60 == 0)
+                    CLOG_INFO("sleep %ds", i);
+            }
+    return 0;
+}
+
 /*******************************************************************/
-static int imx219_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int imx219_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -602,14 +626,25 @@ static int imx219_init(void** pHandle, int sns_id, uint8_t sns_addr)
     pthread_mutex_init(&sensor_context->apiLock, NULL);
 
     sensor_hw_init(sensor_context->devId);
-    sensor_hw_unreset(sensor_context->devId);
+    imx219_power_on(sensor_context);
+    // sensor_hw_unreset(sensor_context->devId);
     sensor_get_hw_info(sensor_context->devId, &sensor_hw_info);
     sensor_context->twsi_no = sensor_hw_info.twsi_no;
 
     *pHandle = sensor_context;
     return 0;
 }
+static int imx219_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
 
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 0);
+    usleep(1000);
+
+    CLOG_INFO("finish power off");
+    return 0;
+}
 static int imx219_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -624,8 +659,8 @@ static int imx219_deinit(void* handle)
         imx219_write_burst_register(handle, stream_off_regs, ARRAY_SIZE(stream_off_regs));
         sensor_context->stream_on_flag = 0;
     }
-
-    sensor_hw_reset(sensor_context->devId);
+    imx219_power_off(sensor_context);
+    // sensor_hw_reset(sensor_context->devId);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
@@ -855,6 +890,11 @@ static int imx219_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
     ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
     if (ret) {
         CLOG_INFO("read vendor id register failed: %s\n", strerror(errno));
+            for (i=0; i<1000; i++) {
+                sleep(1);
+                if (i % 60 == 0)
+                    CLOG_INFO("sleep %ds", i);
+            }
         goto out;
     }
 
@@ -874,6 +914,11 @@ static int imx219_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
             CLOG_INFO("valid sensor vendor id (0x%04x, 0x%04x)", vendor_id->id_table[i].reg,
                       vendor_id->id_table[i].val);
         }
+            for (i=0; i<1000; i++) {
+                sleep(1);
+                if (i % 60 == 0)
+                    CLOG_INFO("sleep %ds", i);
+            }
     } else {
         CLOG_INFO("detect sensor%d success", sensor_context->devId);
     }

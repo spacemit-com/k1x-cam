@@ -26,6 +26,7 @@ int main(int argc, char* argv[])
     SENSORS_MODULE_CAPABILITY_S sensors_cap;
     int i = 0;
     ISP_SENSOR_REGISTER_S sensor_ops;
+    SENSOR_CUSTOM_S snr_custom;
 
     if (argc == 3) {
         devId = atoi(argv[1]);
@@ -35,7 +36,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, -1);
+    snr_custom.dev_id = devId;
+    snr_custom.i2c_addr = -1;
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_ERROR("detect sensor fail");
         return ret;

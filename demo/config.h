@@ -91,6 +91,7 @@ struct testConfig {
     int vcmI2cBus;
     int flashEnable;
     int auxDevice;  //0
+    int boardId;
 
     struct cppTestConfig cppConfig[2];
     struct isFeTestConfig ispFeConfig[2];
