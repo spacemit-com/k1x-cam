@@ -11,6 +11,7 @@
 
 #include "spm_comm_cam.h"
 #include "spm_comm_tuning.h"
+#include "board_option.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,7 @@ typedef enum {
 typedef struct SENSOR_CUSTOM {
     int dev_id;
     int i2c_addr;
+    SPM_Board_Option board_id;
 } SENSOR_CUSTOM_S;
 
 typedef struct spmSENSOR_INIT_ATTR_S {

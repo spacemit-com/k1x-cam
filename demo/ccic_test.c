@@ -160,7 +160,7 @@ int only_ccic_test(struct testConfig *config)
 
     snr_custom.dev_id = ccic_id;
     snr_custom.i2c_addr = -1;
-
+    snr_custom.board_id = config->boardId;
     ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_INFO("detect sensor fail!\n");

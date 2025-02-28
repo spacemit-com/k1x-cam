@@ -16,6 +16,7 @@
 #define IMX219_NAME "imx219"
 static const unsigned int imx219_reg_addr_byte = I2C_16BIT; /*byte width of the sensor register address*/
 static const unsigned int imx219_reg_data_byte = I2C_8BIT;  /*byte width of sensor register data*/
+static int board_id = BOARD_DEFAULT;
 
 static struct regval_tab stream_on_regs[] = {
     {0x0100, 0x01},
@@ -594,13 +595,8 @@ static int imx219_power_on(SENSOR_CONTEXT_S* sensor_context)
     sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
     usleep(10000);
 
-    CLOG_INFO("finish power on 222");
-    int i;
-            for (i=0; i<1000; i++) {
-                sleep(1);
-                if (i % 60 == 0)
-                    CLOG_INFO("sleep %ds", i);
-            }
+    CLOG_INFO("finish power on");
+
     return 0;
 }
 
@@ -619,6 +615,7 @@ static int imx219_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
         CLOG_ERROR("%s: sensor_context malloc memory failed!", __FUNCTION__);
         return -ENOMEM;
     }
+    board_id = snr_custom.board_id;
     sensor_context->name = IMX219_NAME;
     sensor_context->devId = sns_id;
     sensor_context->i2c_addr = sns_addr;
@@ -626,8 +623,10 @@ static int imx219_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
     pthread_mutex_init(&sensor_context->apiLock, NULL);
 
     sensor_hw_init(sensor_context->devId);
-    imx219_power_on(sensor_context);
-    // sensor_hw_unreset(sensor_context->devId);
+    if (board_id == BOARD_MUSE_PI2)
+        imx219_power_on(sensor_context);
+    else
+        sensor_hw_unreset(sensor_context->devId);
     sensor_get_hw_info(sensor_context->devId, &sensor_hw_info);
     sensor_context->twsi_no = sensor_hw_info.twsi_no;
 
@@ -659,8 +658,10 @@ static int imx219_deinit(void* handle)
         imx219_write_burst_register(handle, stream_off_regs, ARRAY_SIZE(stream_off_regs));
         sensor_context->stream_on_flag = 0;
     }
-    imx219_power_off(sensor_context);
-    // sensor_hw_reset(sensor_context->devId);
+    if (board_id == BOARD_MUSE_PI2)
+        imx219_power_off(sensor_context);
+    else
+        sensor_hw_reset(sensor_context->devId);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 

@@ -50,6 +50,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
 
     snr_custom.dev_id = devId;
     snr_custom.i2c_addr = handle->snr_test_cfg[handle->snr_test_idx].snrI2cAddr;
+    snr_custom.board_id = config->boardId;
     ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);

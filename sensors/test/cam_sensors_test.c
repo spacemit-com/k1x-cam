@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
 
     snr_custom.dev_id = devId;
     snr_custom.i2c_addr = -1;
+
     ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_ERROR("detect sensor fail");
