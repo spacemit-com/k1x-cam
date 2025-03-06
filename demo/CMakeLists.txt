@@ -72,6 +72,10 @@ install(DIRECTORY ../sensors/include/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         FILES_MATCHING PATTERN "*.h"
         )
+install(DIRECTORY ../sensors/
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+        FILES_MATCHING PATTERN "*.h"
+        )
 
 install(DIRECTORY ./include/
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
