@@ -99,32 +99,6 @@ int checkTestConfig(struct testConfig *cfg)
     return 0;
 }
 
-static int checkSpacemitBoard(void)
-{
-    FILE *stream;
-    int ret = BOARD_DEFAULT, i;
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t read;
-
-    stream = popen ("cat /sys/firmware/devicetree/base/model", "r");
-    if ((read = getline (&line, &len, stream)) != -1) {
-        for (i = 0; i < BOARD_MAX; i++) {
-            if (strstr (line, "MUSE-Pi2")) {
-                ret = BOARD_MUSE_PI2;
-                printf ("the borad is MUSE-Pi2: %d, max board: %d\n", ret, BOARD_MAX);
-                break;
-            }
-        }
-    }
-    pclose (stream);
-
-    if (ret == BOARD_DEFAULT)
-        printf ("the borad is default: %d, max board: %d\n", ret, BOARD_MAX);
-
-    return ret;
-}
-
 int main(int argc, char* argv[])
 {
     char sensors_name[64] = {0};

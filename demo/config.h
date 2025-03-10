@@ -100,6 +100,7 @@ struct testConfig {
 
 int getTestConfig(struct testConfig *config, char *jsonfile);
 int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_name, int width, int height);
+int checkSpacemitBoard(void);
 
 #ifdef __cplusplus
 }
