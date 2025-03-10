@@ -432,12 +432,12 @@ Safe_Exit:
 }
 
 /*sensor*/
-CAM_API int SPM_SENSOR_Open(void* handle)
+CAM_API int SPM_SENSOR_Open(void* handle, SENSOR_CUSTOM_S snr_custom)
 {
     int ret = 0;
     SENSORS_MODULE_CONTEXT_S* sensors_module_context = NULL;
     SENSOR_OBJ_S* sensorObj = NULL;
-    SENSOR_CUSTOM_S snr_custom;
+    // SENSOR_CUSTOM_S snr_custom;
 
     SENSORS_CHECK_PARA_POINTER(handle);
     sensors_module_context = (SENSORS_MODULE_CONTEXT_S*)handle;

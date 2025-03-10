@@ -95,7 +95,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -3;
     }
 
-    ret = SPM_SENSOR_Open(handle->sensors_handle);
+    ret = SPM_SENSOR_Open(handle->sensors_handle, snr_custom);
     if (ret) {
         CLOG_ERROR("%s: open sensor failed!", __FUNCTION__);
         return -4;

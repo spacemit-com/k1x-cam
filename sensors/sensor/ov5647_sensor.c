@@ -711,9 +711,9 @@ static int ov5647_deinit(void* handle)
         sensor_context->stream_on_flag = 0;
     }
 
-    sensor_hw_reset(sensor_context->devId);
-    // sensor_hw_exit(sensor_context->devId);
+    // sensor_hw_reset(sensor_context->devId);
     ov5647_power_off(sensor_context);
+    sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
     pthread_mutex_destroy(&sensor_context->apiLock);

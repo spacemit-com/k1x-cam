@@ -709,9 +709,9 @@ static int imx219_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
         goto out;
     }
     usleep(5000);
+
     ret = imx219_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
-
     if (ret) {
         goto out;
     }
@@ -801,6 +801,8 @@ static int imx219_stream_on(void* handle)
 #endif
 
     ret = imx219_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
+    usleep(2000);
+    CLOG_INFO("finish stream on");
 
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);

@@ -31,7 +31,7 @@ int SPM_SENSORS_MODULE_EnumCapability(void* handle, SENSORS_MODULE_CAPABILITY_S*
 int SPM_GetDeviceInfo(void* handle, void* devInfo);
 
 /*sensor*/
-int SPM_SENSOR_Open(void* handle);
+int SPM_SENSOR_Open(void* handle, SENSOR_CUSTOM_S snr_custom);
 int SPM_SENSOR_Close(void* handle);
 int SPM_SENSOR_Config(void* handle, int32_t work_mode);
 int SPM_SENSOR_SetParam(void* handle, const SENSOR_INIT_ATTR_S* sensor_init_attr);

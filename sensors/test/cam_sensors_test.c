@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
         goto out;
     }
 
-    ret = SPM_SENSOR_Open(sensors_handle);
+    ret = SPM_SENSOR_Open(sensors_handle, snr_custom);
     if (ret) {
         goto out;
     }

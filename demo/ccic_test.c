@@ -256,7 +256,7 @@ int only_ccic_test(struct testConfig *config)
         CLOG_INFO("ASR_CCIC_EnableDev dev(%d) failed\n", ccic_id);
         goto free_raw_buffers;
     }
-    ret = SPM_SENSOR_Open(sensor_handle);
+    ret = SPM_SENSOR_Open(sensor_handle, snr_custom);
     if (ret) {
         CLOG_INFO("failed to open sensor\n");
         goto disable_devs;
