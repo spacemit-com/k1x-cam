@@ -8,7 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
+#include <math.h>
 #include "spm_comm_cam.h"
 #include "cam_sensor.h"
 
@@ -36,13 +36,14 @@ static struct regval_tab color_bar_regs[] = {
 
 #define IMX219_VTS_ADJUST     (4) /* vts - max_exposure*/
 #define IMX219_VTS_LINES_MAX  (0xffff)
-#define IMX219_EXPO_LINES_MIN (0x0004)
+#define IMX219_EXPO_LINES_MIN (0x0001)
 
 #define IMX219_VTS_ADDR_H   (0x0160)
 #define IMX219_VTS_ADDR_L   (0x0161)
 #define IMX219_EXPO_H       (0x015a)
 #define IMX219_EXPO_L       (0x015b)
 #define IMX219_AGAIN_GLOBAL (0x0157)
+#define IMX219_GROUP_ACCESS (0x0150)
 
 /*******************************************************************/
 static int imx219_write_register(void* handle, uint16_t regAddr, uint16_t value)
@@ -162,9 +163,9 @@ static int imx219_sensor_group_reg_start(void* snsHandle)
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
-    // pthread_mutex_lock(&sensor_context->apiLock);
-    // imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 1);
-    // pthread_mutex_unlock(&sensor_context->apiLock);
+    pthread_mutex_lock(&sensor_context->apiLock);
+    imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 1);
+    pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
 
@@ -177,9 +178,9 @@ static int imx219_sensor_group_reg_done(void* snsHandle)
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
-    // pthread_mutex_lock(&sensor_context->apiLock);
-    // imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 0x00);
-    // pthread_mutex_unlock(&sensor_context->apiLock);
+    pthread_mutex_lock(&sensor_context->apiLock);
+    imx219_write_register(snsHandle, IMX219_GROUP_ACCESS, 0x00);
+    pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
 
@@ -446,10 +447,10 @@ static int imx219_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
                                                                        : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
-    if (expLine > (sensor_context->initVTS - IMX219_VTS_ADJUST))
-        sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
-    else
-        sensor_context->vts[0] = sensor_context->initVTS;
+    //if (expLine > (sensor_context->initVTS - IMX219_VTS_ADJUST))
+    //    sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
+    //else
+    //    sensor_context->vts[0] = sensor_context->initVTS;
 
     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
@@ -460,7 +461,7 @@ static int imx219_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-//	printf("exp time: %d us, L:%d\n", u32ExpoTime, expLine);
+	// printf("exp time: %d us, L:%d\n", u32ExpoTime, expLine);
 
     return 0;
 }
@@ -470,6 +471,7 @@ static int imx219_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
     uint32_t AGain_Reg, DGain_Reg = 0;
+    float gain_fval;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     SENSORS_CHECK_PARA_POINTER(pAgainVal);
@@ -484,15 +486,17 @@ static int imx219_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
         AGain_Reg = 0x0;
     else if (*pAgainVal > 2728) //16x (256x10.66 is 10.66x)
         AGain_Reg = 0x00E8;
-    else //Gain_an = 256 / (256 - reg);  reg: 0~240
-        AGain_Reg = ((*pAgainVal - 256) * 256 ) / *pAgainVal;
+    else { //Gain_an = 256 / (256 - reg);  reg: 0~240
+        gain_fval = (float)((*pAgainVal - 256) * 256 ) / *pAgainVal;
+        AGain_Reg = (uint32_t)round(gain_fval);
+    }
 
     sensor_context->sensorRegs[0].astI2cData[2].u32Data = AGain_Reg;     // bit[7:0] = Again[7:0]
 
     *pAgainVal = (0x0100 * 256) / (256 - AGain_Reg);  // Q8
     *pDgainVal = 4096;
     pthread_mutex_unlock(&sensor_context->apiLock);
-//printf("again: %x (%x), dgain: %x\n", *pAgainVal, tval, *pDgainVal);
+// printf("again: %x (%x), dgain: %d, %f\n", *pAgainVal, tval, AGain_Reg, gain_fval);
     return ret;
 }
 
