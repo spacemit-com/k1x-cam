@@ -34,6 +34,7 @@
 #include <wayland-client.h>
 #include <wayland-egl.h>
 #include <wayland-cursor.h>
+
 #include <stb_image.h>
 #include <utils_opengles.h>
 
@@ -112,11 +113,14 @@ platform_get_egl_display(EGLenum platform, void *native_display,
 	return eglGetDisplay((EGLNativeDisplayType)native_display);
 }
 
-static inline EGLSurface
+static inline EGLSurface __attribute__((unused))
 platform_create_egl_surface(EGLDisplay dpy, EGLConfig config,
 							void *native_window,
 							const EGLint *attrib_list)
 {
+#ifdef GPU_RENDER_SAVE
+	return eglCreatePbufferSurface(dpy, config, attrib_list);
+#else
 	static PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC
 		create_platform_window = NULL;
 
@@ -135,6 +139,7 @@ platform_create_egl_surface(EGLDisplay dpy, EGLConfig config,
 	return eglCreateWindowSurface(dpy, config,
 								  (EGLNativeWindowType)native_window,
 								  attrib_list);
+#endif
 }
 
 static inline EGLBoolean
@@ -166,7 +171,11 @@ void init_egl(struct Display *display, struct Window *window)
 	const char *extensions;
 
 	EGLint config_attribs[] = {
+#if defined(GPU_RENDER_SAVE)
+		EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+#else
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+#endif
 		EGL_RED_SIZE, 8,
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
@@ -182,7 +191,11 @@ void init_egl(struct Display *display, struct Window *window)
 	if (window->opaque || window->buffer_size == 16)
 		config_attribs[9] = 0;
 	// Create EGL and obtain display connection
+#if defined(GPU_RENDER_SAVE)
+	display->egl.dpy = platform_get_egl_display(EGL_PLATFORM_SURFACELESS_MESA, NULL, NULL);
+#else
 	display->egl.dpy = platform_get_egl_display(EGL_PLATFORM_WAYLAND_KHR, display->display, NULL);
+#endif
 	assert(display->egl.dpy);
 	// Initialize EGL and configure
 	ret = eglInitialize(display->egl.dpy, &major, &minor);
@@ -292,6 +305,18 @@ void init_gl(struct Window *window)
 	GLint status;
 	EGLBoolean ret;
 
+#ifdef GPU_RENDER_SAVE
+	const EGLint pbufferAttribs[] = {
+		EGL_WIDTH, window->geometry.width,
+		EGL_HEIGHT, window->geometry.height,
+		EGL_NONE
+	};
+
+	window->egl_surface = eglCreatePbufferSurface(
+		window->display->egl.dpy,
+		window->display->egl.conf,
+		pbufferAttribs);
+#else
 	window->native = wl_egl_window_create(window->surface,
 										  window->geometry.width,
 										  window->geometry.height);
@@ -299,7 +324,7 @@ void init_gl(struct Window *window)
 	window->egl_surface = platform_create_egl_surface(window->display->egl.dpy,
 													  window->display->egl.conf,
 													  window->native, NULL);
-
+#endif
 	ret = eglMakeCurrent(window->display->egl.dpy, window->egl_surface,
 						 window->egl_surface, window->display->egl.ctx);
 	assert(ret == EGL_TRUE);
@@ -379,6 +404,11 @@ void create_surface(struct Window *window)
 {
 	struct Display *display = window->display;
 
+#ifdef GPU_RENDER_SAVE
+    window->surface = NULL;
+    window->xdg_surface = NULL;
+    window->xdg_toplevel = NULL;
+#else
 	window->surface = wl_compositor_create_surface(display->compositor);
 
 	window->xdg_surface = xdg_wm_base_get_xdg_surface(display->wm_base,
@@ -405,18 +435,21 @@ void create_surface(struct Window *window)
 
 	if (!window->frame_sync)
 		eglSwapInterval(display->egl.dpy, 0);
+#endif
 }
 
 void destroy_surface(struct Window *window)
 {
 	/* Required, otherwise segfault in egl_dri2.c: dri2_make_current()
 	 * on eglReleaseThread(). */
-	eglMakeCurrent(window->display->egl.dpy, EGL_NO_SURFACE, EGL_NO_SURFACE,
-				   EGL_NO_CONTEXT);
+	eglMakeCurrent(
+		window->display->egl.dpy, EGL_NO_SURFACE, EGL_NO_SURFACE,
+		EGL_NO_CONTEXT);
 
-	platform_destroy_egl_surface(window->display->egl.dpy,
-								 window->egl_surface);
-	wl_egl_window_destroy(window->native);
+	platform_destroy_egl_surface(window->display->egl.dpy, window->egl_surface);
+
+	if (window->native)
+		wl_egl_window_destroy(window->native);
 
 	if (window->xdg_toplevel)
 		xdg_toplevel_destroy(window->xdg_toplevel);
@@ -730,6 +763,12 @@ static int handle_events(int fd, uint32_t mask, void *data) {
 }
 int create_window(struct Window *window, struct Display *display, int ret)
 {
+#ifdef GPU_RENDER_SAVE
+	init_egl(display, window);
+	create_surface(window);
+	init_gl(window);
+
+#else
 
 	display->display = wl_display_connect(NULL);
 	// If the connection fails, prompt the user to set environment variables
@@ -781,7 +820,7 @@ int create_window(struct Window *window, struct Display *display, int ret)
 
     struct wl_event_loop *event_loop = wl_display_get_event_loop(display->display);
     wl_event_loop_add_fd(event_loop, wl_display_get_fd(display->display), 1, handle_events, &display);
-
+#endif
 	return 0;
 }
 

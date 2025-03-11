@@ -114,11 +114,9 @@ void gl_window_draw(struct Window *window)
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glDisable(GL_BLEND);
-
+#ifdef GPU_RENDER_SAVE
+	glBindFramebuffer(GL_FRAMEBUFFER, userData->out_textures[0]);
+#endif
 	// Use the program object
 	glUseProgram(userData->programObject);
 
@@ -133,21 +131,114 @@ void gl_window_draw(struct Window *window)
 	}
 
 	// Rendering
-	glUniform1i(glGetUniformLocation(userData->programObject, "useTexture"), GL_TRUE);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_EXTERNAL_OES, userData->textures[userData->current_texture_index]); // Bind the correct texture
 	glUniform1i(glGetUniformLocation(userData->programObject, "uSampler"), 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, userData->ebo);
 	glDrawElements(GL_TRIANGLES, userData->num_indices[0], GL_UNSIGNED_INT, 0);
+#ifdef GPU_RENDER_SAVE
+	glFinish();
+#else
+	eglSwapBuffers(display->egl.dpy, window->egl_surface);
+#endif
+}
+bool save_buffer_to_bin(void *buffer, const char *filename, int total_size)
+{
+	fprintf(stderr, "save_buffer_to_bin, total_size = '%d'\n", total_size);	
+	FILE *file = fopen(filename, "wb"); // Open file in binary write mode
+	if (!file)
+	{
+		fprintf(stderr, "Failed to open file '%s' for writing: %s\n", filename, strerror(errno));
+		return false;
+	}
 
-	// Swap buffer
-    // if (ready_to_render) {
-	    // Swap buffer
-	    eglSwapBuffers(display->egl.dpy, window->egl_surface);
+	size_t bytes_written = fwrite(buffer, 1, total_size, file); // Write data
 
-    //     ready_to_render = false;
-    //     render_done = true;
-    // }
+	if (bytes_written != total_size)
+	{
+		fprintf(stderr, "Failed to write all data to file '%s'\n", filename);
+		fclose(file);
+		return false;
+	}
+
+	fclose(file);
+	return true;
+}
+GLuint create_texture_outdma(struct Display *display, void **buffer, int nrChannels)
+{
+	int width  = display->window->geometry.width;
+    int height = display->window->geometry.height;
+	int img_size = width * height * nrChannels;
+	// 1. Allocate DMA-BUF through dma-heap
+	int dma_heap_fd = open("/dev/dma_heap/system", O_RDWR | O_CLOEXEC);
+	if (dma_heap_fd < 0)
+	{
+		perror("Failed to open dma_heap");
+		return -1;
+	}
+
+	struct dma_heap_allocation_data alloc_data = {
+		.len = img_size,
+		.fd_flags = O_RDWR | O_CLOEXEC,
+		.heap_flags = 0};
+
+	if (ioctl(dma_heap_fd, DMA_HEAP_IOCTL_ALLOC, &alloc_data) < 0)
+	{
+		perror("Failed to allocate DMA-BUF");
+		close(dma_heap_fd);
+		return -1;
+	}
+
+	fprintf(stdout, "DMA-BUF data, len: %llu, fd: %d, fd_flags: %d, heap_flags: %llu\n",
+			alloc_data.len, alloc_data.fd, alloc_data.fd_flags, alloc_data.heap_flags);
+
+	int dma_buf_fd = alloc_data.fd;
+	close(dma_heap_fd); // No longer need dma-heap file descriptor
+
+	// 2. Map DMA-BUF to user space
+	*buffer = mmap(NULL, img_size, PROT_READ | PROT_WRITE, MAP_SHARED, dma_buf_fd, 0);
+	if (*buffer == MAP_FAILED)
+	{
+		perror("Failed to mmap DMA-BUF");
+		close(dma_buf_fd);
+		return -1;
+	}
+
+	EGLint attribs[] = {
+		EGL_WIDTH, width,
+		EGL_HEIGHT, height,
+		EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ARGB8888,
+		EGL_DMA_BUF_PLANE0_FD_EXT, dma_buf_fd,
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+		EGL_DMA_BUF_PLANE0_PITCH_EXT, width * 4,
+		EGL_NONE};
+
+	PFNEGLCREATEIMAGEKHRPROC create_image;
+	create_image = (void *)eglGetProcAddress("eglCreateImageKHR");
+	EGLImageKHR egl_image = create_image(display->egl.dpy, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
+										 NULL, attribs);
+
+	if (egl_image == EGL_NO_IMAGE_KHR)
+	{
+		fprintf(stderr, "EGLImageKHR creation failed, eglGetError():0x%x\n", eglGetError());
+		return false;
+	}
+
+	GLuint ex_texture;
+	glGenTextures(1, &ex_texture);
+	glBindTexture(GL_TEXTURE_2D, ex_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d; // for openGL ES2.0
+	image_target_texture_2d = (void *)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+	image_target_texture_2d(GL_TEXTURE_2D, egl_image);
+	// fprintf(stdout, "debug:image_target_texture_2d: glGetError(): %d\n", glGetError());
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return ex_texture;
 }
 
 // Cleanup

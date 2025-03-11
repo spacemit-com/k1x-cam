@@ -38,6 +38,7 @@ static struct Display display = {0};
 static struct Window window = {0};
 
 static int is_gpu_render = false;
+static void *gpu_render_outbuffer = NULL;
 
 /****************************************************************/
 
@@ -968,7 +969,6 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                         UserData *userData = window.userData;
                         userData->current_texture_index = i;
                         condition_post(&testDrawCond);
-                        // gl_window_draw(&window, NULL, 0);
                     }
                     frameCapId = cpp_out_buffer_capture_pool->buffers[i].frameId;
                     // CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
@@ -1219,7 +1219,6 @@ static int test_buffer_deInit()
 #endif
     return 0;
 }
-
 static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info)
 {
     spmISP_CAP_BUFFER_INFO_S* isp_cap_buffer_info = NULL;
@@ -1270,14 +1269,26 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
 
     if (is_gpu_render) {
         UserData *userData = window.userData;
-        userData->textures = malloc(MAX_CAP_BUFFER_NUM * sizeof(GLuint)); // Allocate space for 2 textures
+        userData->textures = malloc((MAX_CAP_BUFFER_NUM + 1) * sizeof(GLuint)); // Allocate space for 2 textures
         userData->current_texture_index = 0;
 
         for (i = 0; i < MAX_CAP_BUFFER_NUM; i++) {
             buffers = &cpp_out_buffer_capture_pool->buffers[i];
             userData->textures[i] = create_texture_dma(&display, buffers->planes[0].width, buffers->planes[0].height, buffers->m.fd);
         }
+
+#ifdef GPU_RENDER_SAVE 
+        // for custom use
+        i = MAX_CAP_BUFFER_NUM;
+        userData->textures[i] = create_texture_outdma(&display, &gpu_render_outbuffer, 4);
+
+        userData->out_textures = malloc(1 * sizeof(GLuint));
+        glGenFramebuffers(1, &userData->out_textures[0]);
+        glBindFramebuffer(GL_FRAMEBUFFER, userData->out_textures[0]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, userData->textures[i], 0);
+#endif
     }
+
     return 0;
 }
 
@@ -1315,7 +1326,7 @@ int slice_capture_test(struct testConfig *config)
     void* sensorHandle = NULL;
     IMAGE_BUFFER_S* rawdump_buffer;
     char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
-
+    char *names[] = {"./test-buffer1.bin", "./test-buffer2.bin", "./test-buffer3.bin", "./test-buffer4.bin"};
     SENSOR_MODULE_INFO sensor_info;
     int pipeline0Id = 0;
     int pipeline1Id = 1;
@@ -1466,14 +1477,21 @@ int slice_capture_test(struct testConfig *config)
 
         CLOG_INFO("sensor stream on");
 
+        i = 0;
         if (is_gpu_render) {
             while (streamOnFlag) {
                 condition_wait(&testDrawCond);
                 gl_window_draw(&window);
+#ifdef GPU_RENDER_SAVE
+                save_buffer_to_bin(gpu_render_outbuffer, names[i], window.geometry.width * window.geometry.height * 4);
+                i += 1;
+                i = i % 4;
+#endif
             }
         } else {
             condition_wait(&testAutoRunCond);
         }
+
         streamOnFlag = 0;
 
         viisp_vi_offline_streamOff(pipeline1Id);

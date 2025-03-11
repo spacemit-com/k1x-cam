@@ -39,6 +39,8 @@
 #ifndef EGL_WL_bind_wayland_display
 #define EGL_WL_bind_wayland_display 1
 
+// #define GPU_RENDER_SAVE
+
 #ifdef EGL_EGLEXT_PROTOTYPES
 EGLAPI EGLBoolean EGLAPIENTRY eglBindWaylandDisplayWL(EGLDisplay dpy, struct wl_display *display);
 EGLAPI EGLBoolean EGLAPIENTRY eglUnbindWaylandDisplayWL(EGLDisplay dpy, struct wl_display *display);
