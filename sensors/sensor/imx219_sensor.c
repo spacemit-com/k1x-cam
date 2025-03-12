@@ -275,7 +275,7 @@ static int imx219_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[0].u32RegAddr = IMX219_EXPO_L;  // exposure time
         sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[1].u32RegAddr = IMX219_EXPO_H;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[2].u32RegAddr = IMX219_AGAIN_GLOBAL;  // analog gain
         sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = IMX219_VTS_ADDR_L;  // VTS
@@ -362,7 +362,7 @@ static int imx219_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     pstSensorAeDft->initTGain = pstSensorAeDft->initAnaGain * pstSensorAeDft->initDGain / 0x1000;
 
     pstSensorAeDft->maxDelayCfg = 2;
-    pstSensorAeDft->minDelayCfg = 2;
+    pstSensorAeDft->minDelayCfg = 1;
 
     /* uint : us */
     // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - IMX219_VTS_ADJUST) * sensor_context->lineTime / 1000;
@@ -447,10 +447,10 @@ static int imx219_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
                                                                        : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
-    //if (expLine > (sensor_context->initVTS - IMX219_VTS_ADJUST))
-    //    sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
-    //else
-    //    sensor_context->vts[0] = sensor_context->initVTS;
+    if (expLine > (sensor_context->initVTS - IMX219_VTS_ADJUST))
+       sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
+    else
+       sensor_context->vts[0] = sensor_context->initVTS;
 
     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
