@@ -727,12 +727,12 @@ static int bf2257cs_stream_on(void* handle)
         bf2257cs_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
-
-    // usleep(5000); // delay 50ms for sensor stable
+    bf2257cs_write_register(handle, 0x00, 0x0d);
     ret = bf2257cs_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(10*1000);
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);
+
 
     return ret;
 }
