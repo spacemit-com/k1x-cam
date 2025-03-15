@@ -47,9 +47,9 @@ static struct regval_tab color_bar_regs[] = {
     // { 0x5080, 0x80},
 };
 
-#define OV5647_VTS_ADJUST     (4) /* vts - max_exposure*/
+#define OV5647_VTS_ADJUST     (0) /* vts - max_exposure*/
 #define OV5647_VTS_LINES_MAX  (0xffff)
-#define OV5647_EXPO_LINES_MIN (0x0004)
+#define OV5647_EXPO_LINES_MIN (0x0001)
 
 #define OV5647_VTS_ADDR_H (0x380E)
 #define OV5647_VTS_ADDR_L (0x380F)
@@ -299,9 +299,9 @@ static int ov5647_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[1].u32RegAddr = OV5647_EXPO_M;  // exposure time
         sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[2].u32RegAddr = OV5647_EXPO_H;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 0;
+        sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = OV5647_AGAIN_L;  // analog gain
-        sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 0;
+        sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = OV5647_AGAIN_H;  // analog gain
         sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = OV5647_VTS_ADDR_L;  // VTS
@@ -407,7 +407,7 @@ static int ov5647_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     pstSensorAeDft->initTGain = pstSensorAeDft->initAnaGain * pstSensorAeDft->initDGain / 0x1000;
 
     pstSensorAeDft->maxDelayCfg = 2;
-    pstSensorAeDft->minDelayCfg = 2;
+    pstSensorAeDft->minDelayCfg = 1;
 
     /* uint : us */
     // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - OV5647_VTS_ADJUST) * sensor_context->lineTime / 1000;
@@ -496,22 +496,22 @@ static int ov5647_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
                                                                        : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
-    if (expLine > (sensor_context->initVTS - OV5647_VTS_ADJUST))
-        sensor_context->vts[0] = expLine + OV5647_VTS_ADJUST;
-    else
-        sensor_context->vts[0] = sensor_context->initVTS;
+    // if (expLine > (sensor_context->initVTS - OV5647_VTS_ADJUST))
+    //     sensor_context->vts[0] = expLine + OV5647_VTS_ADJUST;
+    // else
+    //     sensor_context->vts[0] = sensor_context->initVTS;
 
     sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[0].u32Data = (expLine & 0xf) << 4;
+    sensor_context->sensorRegs[0].astI2cData[0].u32Data = (expLine << 4) & 0xff;
     sensor_context->sensorRegs[0].astI2cData[1].u32Data = (expLine >> 4) & 0xff;
-    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine >> 12) & 0xf;
+    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine >> 12) & 0xff;
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-	// printf("exp time: %d us, L:%d, vts:%d\n", u32ExpoTime, expLine, sensor_context->vts[0]);
+	// printf("exp time: %d us, LL:%d, vts:%d\n", u32ExpoTime, expLine, sensor_context->vts[0]);
 
     return 0;
 }
@@ -543,7 +543,7 @@ static int ov5647_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     *pDgainVal = 4096;  // Q10 -> Q12
     pthread_mutex_unlock(&sensor_context->apiLock);
 
-// printf("again: %x (%x), AGain_Reg: %x\n", *pAgainVal, agint_ori, AGain_Reg);
+// printf("again: %x (%x), 11AGain_Reg: %x\n", *pAgainVal, agint_ori, AGain_Reg);
 
     return ret;
 }
@@ -811,6 +811,7 @@ static int ov5647_stream_on(void* handle)
         ov5647_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
+    ov5647_write_register(handle, 0x3503, 0x10);
 
     ret = ov5647_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(20000);
