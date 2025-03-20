@@ -29,6 +29,10 @@ int checkSpacemitBoard(void)
                 ret = BOARD_MUSE_PI2;
                 printf ("the borad is MUSE-Pi2: %d, max board: %d\n", ret, BOARD_MAX);
                 break;
+            } else if (strstr (line, "MUSE-Pi-Pro")) {
+                ret = BOARD_MUSE_PI2;
+                printf ("the borad is MUSE-Pi-Pro: %d, max board: %d\n", ret, BOARD_MAX);
+                break;
             }
         }
     }
