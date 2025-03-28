@@ -45,6 +45,54 @@ int i2_ctrl_close(int i2c_ctrl_fp)
     return 0;
 }
 
+// set the I2C slave address for all subsequent I2C device transfers
+static int i2cSetAddress(int ctrl_fd,int address)
+{
+	if (ioctl(ctrl_fd, I2C_SLAVE_FORCE, address) < 0) {
+		CLOG_ERROR("i2cSetAddress");
+        return -1;
+	}
+    return 0;
+}
+int i2c_write_r16v8(int ctrl_fd, int slaveAddr, unsigned short reg, uint8_t value)
+{
+	unsigned char data[4];
+
+	i2cSetAddress(ctrl_fd, slaveAddr);
+
+	memset(data, 0, sizeof(data));
+	data[0] = (reg & 0xff00) >> 8;
+	data[1] = (reg & 0x00ff);
+	data[2] = value & 0xff;
+	int ret = write(ctrl_fd, data, 3);
+	if (ret != 3) {
+		CLOG_ERROR("timeout slaveAddr:0x%x reg = %#x, value = %#x ret:%d\n", slaveAddr, reg, value, ret);
+		return -1;
+	}
+	return 0;
+}
+
+int i2c_read_r16v8(int ctrl_fd, int slaveAddr, unsigned int reg, uint8_t *val)
+{
+	unsigned char reg_addr[2];
+
+	i2cSetAddress(ctrl_fd, slaveAddr);
+
+	reg_addr[0] = (reg & 0xff00) >> 8;
+	reg_addr[1] = (reg & 0x00ff);
+	if (write(ctrl_fd, reg_addr, 2) != 2) {
+		CLOG_ERROR("i2c_read_a16d8 write address");
+		return -1;
+	}
+	
+	if (read(ctrl_fd, val, 1) != 1) {
+		CLOG_ERROR("i2c_read_a16d8 Read value");
+		return -1;
+	}
+	//printf("[%s]read addr:%#x val:%#x\n", __func__,reg,*val);
+	return 0;
+}
+
 int i2_ctrl_write(int i2c_ctrl_fp, struct cmd_i2c_data* i2c_data)
 {
     struct i2c_rdwr_ioctl_data ioctl_data;

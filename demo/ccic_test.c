@@ -39,7 +39,7 @@ static struct condition testAutoRunCond;
 static int outputDumpFlag[MAX_PIPELINE_NUM] = {};
 static int streamOnFlags = 0;
 
-static char path[32] = "/data/vendor_de/camera/";
+static char path[32] = "/tmp/";
 
 int writeToFile(const char *filename, IMAGE_BUFFER_S *buffer)
 {
@@ -52,8 +52,9 @@ int writeToFile(const char *filename, IMAGE_BUFFER_S *buffer)
         return -1;
     }
 
+    // size_t ret = fwrite((uint8_t *)buffer->planes[0].virAddr, buffer->planes[0].length, sizeof(char), fp);
     size_t ret = fwrite((uint8_t *)buffer->planes[0].virAddr, buffer->planes[0].length, sizeof(char), fp);
-    CLOG_INFO("%s: write \"%s\" successfully, len %zu", __func__, filename, ret);
+    CLOG_INFO("write %s successfully, ret:%zu, plane len:%d", filename, ret, buffer->planes[0].length);
     // offset = 0;
     // for (i = 0; i < buffer->planes[0].height; i++) {
     //     fwrite((uint8_t*) buffer->planes[0].virAddr + offset, buffer->planes[0].width, 1, fp);
@@ -122,7 +123,7 @@ static int32_t buffer_callback(uint32_t nChn, CCIC_IMAGE_BUFFER_S *ccic_buffer)
         sprintf(filename, "%sch%u_vcmode_%d_size_%dx%d_frameid_%d.raw", path, nChn, g_vc_mode, buffer->planes[0].width / 2,
                 buffer->planes[0].height, frameId);
         writeToFile(filename, buffer);
-        CLOG_INFO("dump the %d frame from ch:%d, write size:%d!\n", frameId, nChn, ret);
+        CLOG_INFO("dump the %d frame from ch:%d!\n", frameId, nChn);
         outputDumpFlag[pipelineId] = 0;
     }
 
@@ -152,7 +153,7 @@ int only_ccic_test(struct testConfig *config)
 
     IMAGE_BUFFER_S *buffer = NULL;
     bool stream_on = false;
-    char sensors_name[20];
+    char sensors_name[50];
     strcpy(sensors_name, config->ispFeConfig[0].sensorName);
 
     CLOG_INFO("ccic_test enter, sensors_name %s, ccic_id %d work_mode_id %d vc_mode %d\n", sensors_name, ccic_id, work_mode_id,
@@ -228,16 +229,16 @@ int only_ccic_test(struct testConfig *config)
         CLOG_INFO("failed to alloc main buffer\n");
         goto destroy_main_buf_pool;
     }
-    g_sub_dump_pool = create_buffer_pool(raw_width, raw_height, raw_format, "sub dump buffer pool");
-    if (!g_sub_dump_pool) {
-        CLOG_INFO("failed to create sub buffer pool\n");
-        goto free_main_buffer;
-    }
-    ret = buffer_pool_continous_alloc(g_sub_dump_pool, BUFFER_NUM, 1);
-    if (ret) {
-        CLOG_INFO("failed to alloc sub buffer\n");
-        goto destroy_sub_buf_pool;
-    }
+    // g_sub_dump_pool = create_buffer_pool(raw_width, raw_height, raw_format, "sub dump buffer pool");
+    // if (!g_sub_dump_pool) {
+    //     CLOG_INFO("failed to create sub buffer pool\n");
+    //     goto free_main_buffer;
+    // }
+    // ret = buffer_pool_continous_alloc(g_sub_dump_pool, BUFFER_NUM, 1);
+    // if (ret) {
+    //     CLOG_INFO("failed to alloc sub buffer\n");
+    //     goto destroy_sub_buf_pool;
+    // }
     // chenshuang
     ccDevAttr.mipi_lane_num = sensor_cap.sensor_capability.snr_config[work_mode_id].lane_num;
     ccDevAttr.mode = g_vc_mode;
@@ -267,7 +268,7 @@ int only_ccic_test(struct testConfig *config)
         goto disable_devs;
     }
     CCU_GET_CCIC_MAIN_CHN(ccic_id, mainChn);
-    ccChnAttr.enPixFormat = CAM_CCIC_PIXEL_FORMAT_RGB_BAYER_10BPP;
+    ccChnAttr.enPixFormat = CAM_CCIC_PIXEL_FORMAT_RGB_BAYER_12BPP;
     ccChnAttr.width = sensor_cap.sensor_capability.snr_config[work_mode_id].width;
     ccChnAttr.height = sensor_cap.sensor_capability.snr_config[work_mode_id].height;
     CLOG_INFO("ccic_test  main ccDevAttr.size  %d x %d\n", ccChnAttr.width, ccChnAttr.height);
@@ -292,45 +293,45 @@ int only_ccic_test(struct testConfig *config)
             goto close_sensor;
         }
     }
-    CCU_GET_CCIC_SUB_CHN(ccic_id, subChn);
-    ccChnAttr.enPixFormat = CAM_CCIC_PIXEL_FORMAT_RGB_BAYER_10BPP;
-    ccChnAttr.width = sensor_cap.sensor_capability.snr_config[work_mode_id].width;
-    ccChnAttr.height = sensor_cap.sensor_capability.snr_config[work_mode_id].height;
-    CLOG_INFO("ccic_test  sub ccDevAttr.size  %d x %d\n", ccChnAttr.width, ccChnAttr.height);
-    ret = ASR_CCIC_SetChnAttr(subChn, &ccChnAttr);
-    if (ret) {
-        CLOG_INFO("ASR_CCIC_SetChnAttr sub failed\n");
-        goto close_sensor;
-    }
-    ret = ASR_CCIC_SetCallback(subChn, buffer_callback);
-    if (ret) {
-        CLOG_INFO("ASR_CCIC_SetCallback sub failed");
-        goto close_sensor;
-    }
-    while (true) {
-        buffer = buffer_pool_get_buffer(g_sub_dump_pool);
-        if (!buffer)
-            break;
-        memset(buffer->planes[0].virAddr, 0x00, buffer->planes[0].length);
-        ret = ASR_CCIC_ChnQueueBuffer(subChn, buffer);
-        if (ret) {
-            CLOG_INFO("ASR_CCIC_ChnQueueBuffer sub failed\n");
-            goto close_sensor;
-        }
-    }
+    // CCU_GET_CCIC_SUB_CHN(ccic_id, subChn);
+    // ccChnAttr.enPixFormat = CAM_CCIC_PIXEL_FORMAT_RGB_BAYER_12BPP;
+    // ccChnAttr.width = sensor_cap.sensor_capability.snr_config[work_mode_id].width;
+    // ccChnAttr.height = sensor_cap.sensor_capability.snr_config[work_mode_id].height;
+    // CLOG_INFO("ccic_test  sub ccDevAttr.size  %d x %d\n", ccChnAttr.width, ccChnAttr.height);
+    // ret = ASR_CCIC_SetChnAttr(subChn, &ccChnAttr);
+    // if (ret) {
+    //     CLOG_INFO("ASR_CCIC_SetChnAttr sub failed\n");
+    //     goto close_sensor;
+    // }
+    // ret = ASR_CCIC_SetCallback(subChn, buffer_callback);
+    // if (ret) {
+    //     CLOG_INFO("ASR_CCIC_SetCallback sub failed");
+    //     goto close_sensor;
+    // }
+    // while (true) {
+    //     buffer = buffer_pool_get_buffer(g_sub_dump_pool);
+    //     if (!buffer)
+    //         break;
+    //     memset(buffer->planes[0].virAddr, 0x00, buffer->planes[0].length);
+        // ret = ASR_CCIC_ChnQueueBuffer(subChn, buffer);
+        // if (ret) {
+        //     CLOG_INFO("ASR_CCIC_ChnQueueBuffer sub failed\n");
+        //     goto close_sensor;
+        // }
+    // }
     ret = ASR_CCIC_EnableChn(mainChn);
     if (ret) {
         CLOG_INFO("ASR_CCIC_EnableChn failed\n");
         goto close_sensor;
     }
-    if (g_vc_mode != 0) {
-        ret = ASR_CCIC_EnableChn(subChn);
-        if (ret) {
-            CLOG_INFO("ASR_CCIC_EnableChn sub failed\n");
-            goto disable_main_chn;
-        }
-        CLOG_INFO("ASR_CCIC_EnableChn sub \n");
-    }
+    // if (g_vc_mode != 0) {
+    //     ret = ASR_CCIC_EnableChn(subChn);
+    //     if (ret) {
+    //         CLOG_INFO("ASR_CCIC_EnableChn sub failed\n");
+    //         goto disable_main_chn;
+    //     }
+    //     CLOG_INFO("ASR_CCIC_EnableChn sub \n");
+    // }
     // stream on sensor
     ret = SPM_SENSOR_StreamOn(sensor_handle);
     if (ret) {
@@ -344,14 +345,14 @@ int only_ccic_test(struct testConfig *config)
     testAutoRunFlag = 1;
     condition_init(&testAutoRunCond);
 
-    ret = SPM_SENSOR_StreamOn(sensor_handle);
-    if (ret) {
-        stream_on = false;
-        CLOG_INFO("SPM_SENSOR_StreamOn failed\n");
-        goto disable_rawdump;
-    } else {
-        stream_on = true;
-    }
+    // ret = SPM_SENSOR_StreamOn(sensor_handle);
+    // if (ret) {
+    //     stream_on = false;
+    //     CLOG_INFO("SPM_SENSOR_StreamOn failed\n");
+    //     goto disable_rawdump;
+    // } else {
+    //     stream_on = true;
+    // }
     streamOnFlags = 1;
     CLOG_INFO("sensor stream on");
 
@@ -364,7 +365,7 @@ int only_ccic_test(struct testConfig *config)
     condition_deinit(&testAutoRunCond);
 
 disable_rawdump:
-    ASR_CCIC_DisableChn(subChn);
+    // ASR_CCIC_DisableChn(subChn);
 disable_main_chn:
     ASR_CCIC_DisableChn(mainChn);
 close_sensor:
@@ -374,9 +375,9 @@ close_sensor:
     SPM_SENSOR_Close(sensor_handle);
 free_raw_buffers:
     // free_sub_buffer:
-    buffer_pool_free(g_sub_dump_pool);
+    // buffer_pool_free(g_sub_dump_pool);
 destroy_sub_buf_pool:
-    destroy_buffer_pool(g_sub_dump_pool);
+    // destroy_buffer_pool(g_sub_dump_pool);
 free_main_buffer:
     buffer_pool_free(g_main_dump_pool);
 destroy_main_buf_pool:
