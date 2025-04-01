@@ -811,11 +811,11 @@ static int ov5647_stream_on(void* handle)
         ov5647_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
-    ov5647_write_register(handle, 0x3503, 0x10);
+    // ov5647_write_register(handle, 0x3503, 0x10);
 
     ret = ov5647_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(20000);
-    CLOG_INFO("finish stream on");
+    CLOG_INFO("finish stream on1");
 
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);

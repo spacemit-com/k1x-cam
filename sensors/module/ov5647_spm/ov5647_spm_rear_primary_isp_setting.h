@@ -136,29 +136,29 @@
         {86, 80, 86, 81},
         {86, 79, 86, 81},
         {87, 80, 86, 81},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261}
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81}
     },
     /* @m_pGlobalBlackValueCapture  Size: 12x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in auto mode, for capture */
     {
-        {259, 259, 259, 259},
-        {259, 259, 259, 259},
-        {260, 260, 260, 260},
-        {261, 261, 261, 261},
-        {261, 261, 261, 261},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260},
-        {260, 260, 260, 260}
+        {86, 80, 86, 81},
+        {87, 80, 86, 81},
+        {86, 80, 86, 81},
+        {86, 79, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81},
+        {87, 80, 86, 81}
     }
 },
 
@@ -882,7 +882,7 @@
     32,
     /* @m_pSigma  Size: 1x12  BitWidth: 9_u  Range~[0, 511]  Type: firmware */
     /* denoise sigma 0~511 */
-    {50, 148, 155, 164, 367, 153, 192, 192, 256, 511, 511, 511},
+    {147, 144, 146, 144, 147, 153, 192, 192, 256, 511, 511, 511},
     /* @m_pGns  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* green denoise strength 0~32 */
     {22, 22, 20, 18, 18, 18, 18, 18, 18, 18, 18, 18},
@@ -891,13 +891,13 @@
     {22, 22, 20, 18, 18, 18, 18, 18, 18, 18, 18, 18},
     /* @m_pL0  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* denoise strength scaling factor, for 1.5% neutral gray */
-    {7, 12, 12, 12, 20, 6, 6, 6, 6, 6, 6, 6},
+    {12, 12, 12, 12, 12, 6, 6, 6, 6, 6, 6, 6},
     /* @m_pL1  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* denoise strength scaling factor, for 7.8% neutral gray */
-    {12, 17, 16, 15, 22, 10, 10, 10, 10, 10, 10, 10},
+    {16, 16, 16, 16, 16, 10, 10, 10, 10, 10, 10, 10},
     /* @m_pL2  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* denoise strength scaling factor, for 20% neutral gray */
-    {20, 23, 21, 20, 27, 17, 17, 17, 17, 17, 17, 17},
+    {22, 23, 22, 22, 22, 17, 17, 17, 17, 17, 17, 17},
     /* @m_pL3  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* denoise strength scaling factor, for 45% neutral gray */
     {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32}
@@ -2309,7 +2309,7 @@
     {50, 50},
     /* @m_pMaxExpTime  Size: 1x2  BitWidth: 32_u  Range~[1, 2147483647]  Type: firmware */
     /* Limit: m_pMaxExpTime >= m_pMinExpTime. [0]:long, [1]:short, maximum exposure time, unit us */
-    {76772, 61999},
+    {76902, 61999},
     /* @m_pMinAnaGain  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* Limit: m_pMinAnaGain <= m_pMaxAnaGain. [0]:long, [1]:short, minimum analog gain, Q8 format */
     {256, 256},
@@ -2330,16 +2330,16 @@
     {16384, 253952},
     /* @m_pExpTimeManual  Size: 1x2  BitWidth: 32_u  Range~[1, 2147483647]  Type: firmware */
     /* [0]:long, [1]:short, manual exposure time */
-    {20000, 1000},
+    {1900, 1000},
     /* @m_pAnaGainManual  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* [0]:long, [1]:short, manual analog gain, Q8 format */
-    {4096, 256},
+    {2048, 256},
     /* @m_pSnsDGainManual  Size: 1x2  BitWidth: 32_u  Range~[4096, 4096000]  Type: firmware */
     /* [0]:long, [1]:short, manual sensor digital gain, Q12 format */
     {4096, 4096},
     /* @m_pTotalGainManual  Size: 1x2  BitWidth: 32_u  Range~[256, 524287]  Type: firmware */
     /* [0]:long, [1]:short, manual total gain, Q8 format */
-    {4096, 256},
+    {2048, 256},
     /* @m_pExpIndexManual  Size: 1x2  BitWidth: 32_u  Range~[0, 4294967295]  Type: firmware */
     /* [0]:long, [1]:short, manual exposure index, Q4 format */
     {2560000, 2560000},
