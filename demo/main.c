@@ -154,6 +154,10 @@ int main(int argc, char* argv[])
                 caseId = 5;
             else if (config.ispFeConfig[0].workMode == ISP_WORKMODE_CCIC)
                 caseId = 7;
+        } else if (config.ispFeConfig[0].enable && config.ispFeConfig[1].enable) {
+            if (config.ispFeConfig[0].workMode == ISP_WORKMODE_CCIC &&
+                config.ispFeConfig[1].workMode == ISP_WORKMODE_CCIC)
+                caseId = 9;
         }
     }
 
@@ -194,6 +198,9 @@ int main(int argc, char* argv[])
         break;
     case 8:
         slice_capture_test(&config);
+        break;
+    case 9:
+        only_dual_ccic_test(&config);
         break;
     case 0xe0:
         ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId);
