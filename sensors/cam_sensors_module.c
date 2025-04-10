@@ -174,7 +174,7 @@ static int sensors_module_detect_sensor(SENSORS_MODULE_OBJ_S* sensors_module_obj
     return ret;
 }
 /**********************************************************************************************/
-CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, int devId)
+CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, int devId, int boardId)
 {
     int ret = 0;
     int module_id, rc;
@@ -195,6 +195,7 @@ CAM_API int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, 
     sensors_module_context->magic = SENSORS_MODULE_MAGIC;
     snr_custom.dev_id = devId;
     snr_custom.i2c_addr = -1;
+    snr_custom.board_id = boardId;
 
     for (module_id = 0; module_id < module_num; module_id++) {
         if (sensors_module_list[module_id].module_obj_p) {

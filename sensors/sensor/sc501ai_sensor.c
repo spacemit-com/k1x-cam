@@ -684,6 +684,29 @@ static int sc501ai_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
     return 0;
 }
 
+static int sc501ai_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
+
+    sensor_set_mclk_enable(sensor_context->devId, 0);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1200000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 0);
+
+    usleep(2100);
+
+    CLOG_INFO("finish power off");
+    return 0;
+}
 static int sc501ai_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -699,7 +722,8 @@ static int sc501ai_deinit(void* handle)
         sensor_context->stream_on_flag = 0;
     }
 
-    sensor_hw_reset(sensor_context->devId);
+    // sensor_hw_reset(sensor_context->devId);
+    sc501ai_power_off(sensor_context);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 

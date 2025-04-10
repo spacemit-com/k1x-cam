@@ -1414,15 +1414,15 @@ static int test_buffer_only_cpp_deInit(int pipelineId)
     return 0;
 }
 
-int auto_detect_camera(char *sensors_name, int *width, int *height, int devId)
+int auto_detect_camera(char *sensors_name, int *width, int *height, int devId, int boardId)
 {
     int ret = 0;
 
-    CLOG_INFO("auto detect sensor ===================== start ");
+    CLOG_INFO("auto detect sensor ===================== start %d", boardId);
 
-    ret = SPM_SENSORS_MODULE_Detect_Auto(sensors_name, width, height, devId);
+    ret = SPM_SENSORS_MODULE_Detect_Auto(sensors_name, width, height, devId, boardId);
     if (ret) {
-        CLOG_ERROR("no sensor in csi%d", devId);
+        CLOG_ERROR("no sensor in csi%d in board %d", devId, boardId);
         CLOG_INFO("auto detect sensor ===================== finish ");
         return ret;
     }

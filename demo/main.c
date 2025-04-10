@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
         only_dual_ccic_test(&config);
         break;
     case 0xe0:
-        ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId);
+        ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId, board_id);
         if (ret == 0) {
             update_json_file(&config, argv[1], sensors_name, width, height);
         }

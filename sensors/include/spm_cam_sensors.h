@@ -23,7 +23,7 @@ typedef struct _CapDeviceCapInfo {
     int32_t deviceConfigCnt;
 } CapDeviceCapInfo;
 
-int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, int devId);
+int SPM_SENSORS_MODULE_Detect_Auto(char* name, int *width, int *height, int devId, int boardId);
 int SPM_SENSORS_MODULE_Detect(const char* name, SENSOR_CUSTOM_S snr_custom);
 int SPM_SENSORS_MODULE_Init(void** pHandle, const char* name, int devId, SENSORS_MODULE_INFO_S* module_info, int addr);
 int SPM_SENSORS_MODULE_Deinit(void* handle);
