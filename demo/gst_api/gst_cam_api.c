@@ -37,6 +37,7 @@ void gst_release_cam_buffer(IMAGE_BUFFER_S* outputBuf, int index)
 int gst_setup_camera_start (struct gstParam *para)
 {
     int ret = 0;
+    int board_id;
 
     gconfig = malloc(sizeof(struct testConfig));
     if (!gconfig) {
@@ -48,6 +49,9 @@ int gst_setup_camera_start (struct gstParam *para)
     ret = getTestConfig(gconfig, para->jsonfile);
     if (ret)
         return -1;
+
+    board_id = checkSpacemitBoard();
+    gconfig->boardId = board_id;
 
     if (gconfig->cppConfig[0].enable && gconfig->cppConfig[1].enable) {
         if (gconfig->ispFeConfig[0].enable && gconfig->ispFeConfig[1].enable) {

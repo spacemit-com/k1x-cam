@@ -11,6 +11,7 @@
 
 #include "spm_comm_cam.h"
 #include "spm_comm_tuning.h"
+#include "board_option.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,12 @@ typedef enum {
 #define MAX_EXP_CHAN_PER_SENSOR 2
 #define LSC_PROFILE_DIMENSION 3
 #define OTP_LSC_PROFILE_LEN 576
+
+typedef struct SENSOR_CUSTOM {
+    int dev_id;
+    int i2c_addr;
+    SPM_Board_Option board_id;
+} SENSOR_CUSTOM_S;
 
 typedef struct spmSENSOR_INIT_ATTR_S {
     int32_t initSceneLuma[MAX_EXP_CHAN_PER_SENSOR];

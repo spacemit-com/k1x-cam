@@ -5,12 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <string.h>
 
 #include "dual_pipeline_capture_test.h"
 #include "online_pipeline_test.h"
 #include "slice_capture_test.h"
 #include "v4l2_single_online.h"
 #include "config.h"
+#include "board_option.h"
 
 void showTestConfig(struct testConfig config)
 {
@@ -72,6 +75,10 @@ void showTestConfig(struct testConfig config)
                 printf("flash_name: %s\n", config.snrConfig[i].flashName);
         }
     }
+    if (config.gpuRender) {
+        printf("render width: %d\n", config.renderW);
+        printf("render height: %d\n", config.renderH);
+    }
 }
 
 int checkTestConfig(struct testConfig *cfg)
@@ -98,11 +105,7 @@ int main(int argc, char* argv[])
     int width = 0, height = 0;
     int caseId = 7;
     struct testConfig config = {0};
-    int ret = 0;
-
-    // if (argc == 3) {
-    //     return detect_camera(argv[1], atoi(argv[2]));
-    // }
+    int ret = 0, board_id;
 
     if (argc == 2) {
         ret = getTestConfig(&config, argv[1]);
@@ -151,6 +154,10 @@ int main(int argc, char* argv[])
                 caseId = 5;
             else if (config.ispFeConfig[0].workMode == ISP_WORKMODE_CCIC)
                 caseId = 7;
+        } else if (config.ispFeConfig[0].enable && config.ispFeConfig[1].enable) {
+            if (config.ispFeConfig[0].workMode == ISP_WORKMODE_CCIC &&
+                config.ispFeConfig[1].workMode == ISP_WORKMODE_CCIC)
+                caseId = 9;
         }
     }
 
@@ -161,6 +168,8 @@ int main(int argc, char* argv[])
     if (config.autoDetect) {
         caseId = 0xe0;
     }
+    board_id = checkSpacemitBoard();
+    config.boardId = board_id;
 
     switch (caseId) {
     case 0:
@@ -190,8 +199,11 @@ int main(int argc, char* argv[])
     case 8:
         slice_capture_test(&config);
         break;
+    case 9:
+        only_dual_ccic_test(&config);
+        break;
     case 0xe0:
-        ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId);
+        ret = auto_detect_camera(sensors_name, &width, &height, config.ispFeConfig[0].sensorId, board_id);
         if (ret == 0) {
             update_json_file(&config, argv[1], sensors_name, width, height);
         }

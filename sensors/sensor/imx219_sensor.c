@@ -8,7 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
+#include <math.h>
 #include "spm_comm_cam.h"
 #include "cam_sensor.h"
 
@@ -16,6 +16,7 @@
 #define IMX219_NAME "imx219"
 static const unsigned int imx219_reg_addr_byte = I2C_16BIT; /*byte width of the sensor register address*/
 static const unsigned int imx219_reg_data_byte = I2C_8BIT;  /*byte width of sensor register data*/
+static int board_id = BOARD_DEFAULT;
 
 static struct regval_tab stream_on_regs[] = {
     {0x0100, 0x01},
@@ -37,20 +38,12 @@ static struct regval_tab color_bar_regs[] = {
 #define IMX219_VTS_LINES_MAX  (0xffff)
 #define IMX219_EXPO_LINES_MIN (0x0001)
 
-#define IMX219_VTS_ADDR_H   (0x0340)
-#define IMX219_VTS_ADDR_L   (0x0341)
-#define IMX219_EXPO_H       (0x0202)
-#define IMX219_EXPO_L       (0x0203)
-#define IMX219_AGAIN_GLOBAL (0x0205)
-#define IMX219_DGAIN_GR_H   (0x020E)
-#define IMX219_DGAIN_GR_L   (0x020F)
-#define IMX219_DGAIN_R_H    (0x0210)
-#define IMX219_DGAIN_R_L    (0x0211)
-#define IMX219_DGAIN_B_H    (0x0212)
-#define IMX219_DGAIN_B_L    (0x0213)
-#define IMX219_DGAIN_GB_H   (0x0214)
-#define IMX219_DGAIN_GB_L   (0x0215)
-#define IMX219_GROUP_ACCESS (0x0104)
+#define IMX219_VTS_ADDR_H   (0x0160)
+#define IMX219_VTS_ADDR_L   (0x0161)
+#define IMX219_EXPO_H       (0x015a)
+#define IMX219_EXPO_L       (0x015b)
+#define IMX219_AGAIN_GLOBAL (0x0157)
+#define IMX219_GROUP_ACCESS (0x0150)
 
 /*******************************************************************/
 static int imx219_write_register(void* handle, uint16_t regAddr, uint16_t value)
@@ -268,7 +261,7 @@ static int imx219_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
     pthread_mutex_lock(&sensor_context->apiLock);
     if (false == sensor_context->syncInit) {
         sensor_context->sensorRegs[0].u8CfgDelayMax = 2;
-        sensor_context->sensorRegs[0].u32RegNum = 13;
+        sensor_context->sensorRegs[0].u32RegNum = 5;
         sensor_context->sensorRegs[0].stSensorComBus.s8I2cDev = sensor_context->twsi_no;
 
         for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
@@ -282,28 +275,12 @@ static int imx219_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[0].u32RegAddr = IMX219_EXPO_L;  // exposure time
         sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[1].u32RegAddr = IMX219_EXPO_H;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[2].u32RegAddr = IMX219_AGAIN_GLOBAL;  // analog gain
         sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = IMX219_VTS_ADDR_L;  // VTS
         sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 2;
         sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = IMX219_VTS_ADDR_H;  // VTS
-        sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX219_DGAIN_GR_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX219_DGAIN_GR_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX219_DGAIN_R_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = IMX219_DGAIN_R_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[9].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[9].u32RegAddr = IMX219_DGAIN_B_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[10].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[10].u32RegAddr = IMX219_DGAIN_B_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[11].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[11].u32RegAddr = IMX219_DGAIN_GB_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[12].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[12].u32RegAddr = IMX219_DGAIN_GB_L;  // digital gain
 
         sensor_context->syncInit = true;
     } else {
@@ -345,9 +322,6 @@ static int imx219_sensor_dump_info(void* snsHandle)
     exp_time = (reg_val_h << 8) | reg_val_l;
     imx219_read_register(snsHandle, IMX219_AGAIN_GLOBAL, &reg_val_h);
     again = reg_val_h;
-    imx219_read_register(snsHandle, IMX219_DGAIN_GR_H, &reg_val_h);
-    imx219_read_register(snsHandle, IMX219_DGAIN_GR_L, &reg_val_l);
-    dgain = ((reg_val_h & 0x3) << 8) | reg_val_l;
     pthread_mutex_lock(&sensor_context->apiLock);
     CLOG_INFO("imx219 regs(vts=%d,exptime=%d,again=0x%x,dain =0x%x),struct(initVTS=%d,initFps=%f,vts=%d,expline=%d)",
         vts, exp_time, again, dgain, sensor_context->initVTS, sensor_context->initFps, sensor_context->vts[0],
@@ -388,7 +362,7 @@ static int imx219_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     pstSensorAeDft->initTGain = pstSensorAeDft->initAnaGain * pstSensorAeDft->initDGain / 0x1000;
 
     pstSensorAeDft->maxDelayCfg = 2;
-    pstSensorAeDft->minDelayCfg = 2;
+    pstSensorAeDft->minDelayCfg = 1;
 
     /* uint : us */
     // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - IMX219_VTS_ADJUST) * sensor_context->lineTime / 1000;
@@ -474,9 +448,9 @@ static int imx219_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
     if (expLine > (sensor_context->initVTS - IMX219_VTS_ADJUST))
-        sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
+       sensor_context->vts[0] = expLine + IMX219_VTS_ADJUST;
     else
-        sensor_context->vts[0] = sensor_context->initVTS;
+       sensor_context->vts[0] = sensor_context->initVTS;
 
     sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
@@ -487,7 +461,7 @@ static int imx219_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
-//	printf("exp time: %d us, L:%d\n", u32ExpoTime, expLine);
+	// printf("exp time: %d us, L:%d\n", u32ExpoTime, expLine);
 
     return 0;
 }
@@ -497,6 +471,7 @@ static int imx219_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
     uint32_t AGain_Reg, DGain_Reg = 0;
+    float gain_fval;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     SENSORS_CHECK_PARA_POINTER(pAgainVal);
@@ -509,30 +484,19 @@ static int imx219_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     pthread_mutex_lock(&sensor_context->apiLock);
     if (*pAgainVal < 0x0100) //Q8 1x (265 is 1x)
         AGain_Reg = 0x0;
-    else if (*pAgainVal > 0x1000) //16x (256x16 is 16x)
-        AGain_Reg = 0x00F0;
-    else //Gain_an = 256 / (256 - reg);  reg: 0~240
-        AGain_Reg = ((*pAgainVal - 256) * 256 ) / *pAgainVal;
-    DGain_Reg = (*pDgainVal >> 4);  // Q12 -> Q8
-    if (DGain_Reg < 0x100)
-        DGain_Reg = 0x100;
-    if (DGain_Reg > 0x0FE0)
-        DGain_Reg = 0x0FE0;
+    else if (*pAgainVal > 2728) //16x (256x10.66 is 10.66x)
+        AGain_Reg = 0x00E8;
+    else { //Gain_an = 256 / (256 - reg);  reg: 0~240
+        gain_fval = (float)((*pAgainVal - 256) * 256 ) / *pAgainVal;
+        AGain_Reg = (uint32_t)round(gain_fval);
+    }
 
     sensor_context->sensorRegs[0].astI2cData[2].u32Data = AGain_Reg;     // bit[7:0] = Again[7:0]
-    sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[9].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[10].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
-    sensor_context->sensorRegs[0].astI2cData[11].u32Data = LOW_8BITS(DGain_Reg);   // bit[3:0] = Dgain[11:8]
-    sensor_context->sensorRegs[0].astI2cData[12].u32Data = HIGH_8BITS(DGain_Reg);  // bit[7:0] = Dgain[7:0]
 
     *pAgainVal = (0x0100 * 256) / (256 - AGain_Reg);  // Q8
-    *pDgainVal = DGain_Reg << 4;  // Q8 -> Q12
+    *pDgainVal = 4096;
     pthread_mutex_unlock(&sensor_context->apiLock);
-//printf("again: %x (%x), dgain: %x\n", *pAgainVal, tval, *pDgainVal);
+// printf("again: %x (%x), dgain: %d, %f\n", *pAgainVal, tval, AGain_Reg, gain_fval);
     return ret;
 }
 
@@ -623,11 +587,30 @@ static int imx219_get_awblib_default_settings(void* snsHandle, uint32_t u32Chane
     return 0;
 }
 
+static int imx219_power_on(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 1);
+    usleep(5000);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    usleep(8000);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
+    usleep(10000);
+
+    CLOG_INFO("finish power on");
+
+    return 0;
+}
+
 /*******************************************************************/
-static int imx219_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int imx219_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -636,6 +619,7 @@ static int imx219_init(void** pHandle, int sns_id, uint8_t sns_addr)
         CLOG_ERROR("%s: sensor_context malloc memory failed!", __FUNCTION__);
         return -ENOMEM;
     }
+    board_id = snr_custom.board_id;
     sensor_context->name = IMX219_NAME;
     sensor_context->devId = sns_id;
     sensor_context->i2c_addr = sns_addr;
@@ -643,14 +627,27 @@ static int imx219_init(void** pHandle, int sns_id, uint8_t sns_addr)
     pthread_mutex_init(&sensor_context->apiLock, NULL);
 
     sensor_hw_init(sensor_context->devId);
-    sensor_hw_unreset(sensor_context->devId);
+    if (board_id == BOARD_MUSE_PI2)
+        imx219_power_on(sensor_context);
+    else
+        sensor_hw_unreset(sensor_context->devId);
     sensor_get_hw_info(sensor_context->devId, &sensor_hw_info);
     sensor_context->twsi_no = sensor_hw_info.twsi_no;
 
     *pHandle = sensor_context;
     return 0;
 }
+static int imx219_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
 
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 0);
+    usleep(1000);
+
+    CLOG_INFO("finish power off");
+    return 0;
+}
 static int imx219_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -665,8 +662,10 @@ static int imx219_deinit(void* handle)
         imx219_write_burst_register(handle, stream_off_regs, ARRAY_SIZE(stream_off_regs));
         sensor_context->stream_on_flag = 0;
     }
-
-    sensor_hw_reset(sensor_context->devId);
+    if (board_id == BOARD_MUSE_PI2)
+        imx219_power_off(sensor_context);
+    else
+        sensor_hw_reset(sensor_context->devId);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
@@ -714,64 +713,15 @@ static int imx219_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
         goto out;
     }
     usleep(5000);
+
     ret = imx219_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
-
     if (ret) {
         goto out;
     }
     if(work_info->test_pattern_mode == CC_SENSOR_TEST_PATTERN_COLOR_BARS){
         ret = imx219_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
     }
-
-#if 0	//read sensor reg setting
-
-    fprintf(stderr, "-----------------start read sensor reg----------------\n");
-    int i;
-    struct regval_tab* sensor_table = NULL;
-
-    sensor_table = (struct regval_tab*)calloc(sensor_context->work_info.setting_table_size, sizeof(struct regval_tab));
-    if (NULL == sensor_table) {
-        CLOG_ERROR("sensor_table malloc memory failed!");
-        ret = -ENOMEM;
-        goto out;
-    }
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        sensor_table[i].reg = sensor_context->work_info.setting_table[i].reg;
-        sensor_table[i].val = 0;
-    }
-
-    struct cam_burst_i2c_data reg_table_data;
-    reg_table_data.addr = sensor_context->i2c_addr;
-    reg_table_data.reg_len = imx219_reg_addr_byte;
-    reg_table_data.val_len = imx219_reg_data_byte;
-    reg_table_data.tab = sensor_table;
-    reg_table_data.num = sensor_context->work_info.setting_table_size;
-    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
-    if (ret) {
-        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
-        goto out;
-    }
-
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        if ((sensor_table[i].reg != sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val != sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else if ((sensor_table[i].reg == sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val == sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        }
-    }
-	free(sensor_table);
-
-	fprintf(stderr, "-----------------finish read sensor reg----------------\n");
-
-#endif
 
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
@@ -855,6 +805,8 @@ static int imx219_stream_on(void* handle)
 #endif
 
     ret = imx219_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
+    usleep(2000);
+    CLOG_INFO("finish stream on");
 
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);

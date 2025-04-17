@@ -653,10 +653,12 @@ static int sc031_power_on(SENSOR_CONTEXT_S* sensor_context)
 
 
 /*******************************************************************/
-static int sc031_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int sc031_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -680,6 +682,30 @@ static int sc031_init(void** pHandle, int sns_id, uint8_t sns_addr)
     return 0;
 }
 
+static int sc031_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
+
+    sensor_set_mclk_enable(sensor_context->devId, 0);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1200000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 0);
+
+    usleep(2100);
+
+    CLOG_INFO("finish power off");
+    return 0;
+}
+
 static int sc031_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -695,7 +721,8 @@ static int sc031_deinit(void* handle)
         sensor_context->stream_on_flag = 0;
     }
 
-    sensor_hw_reset(sensor_context->devId);
+    // sensor_hw_reset(sensor_context->devId);
+    sc031_power_off(sensor_context);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 

@@ -34,6 +34,9 @@ int i2_ctrl_close(int i2c_ctrl_fp);
 int i2_ctrl_write(int i2c_ctrl_fp, struct cmd_i2c_data* i2c_data);
 int i2_ctrl_read(int i2c_ctrl_fp, struct cmd_i2c_data* i2c_data);
 
+int i2c_write_r16v8(int ctrl_fd, int slaveAddr, unsigned short reg, uint8_t value);
+int i2c_read_r16v8(int ctrl_fd, int slaveAddr, unsigned int reg, uint8_t *val);
+
 #if defined(__cplusplus)
 }
 #endif

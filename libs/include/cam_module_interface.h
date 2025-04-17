@@ -102,6 +102,8 @@ typedef struct spmIMAGE_BUFFER_S {
     uint64_t viT1;
     int frameId;
     uint32_t index;
+    uint64_t timeStamp;
+
     union {
         uint64_t phyAddr;
         int32_t blockId;

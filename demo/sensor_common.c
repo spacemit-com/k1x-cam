@@ -25,6 +25,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
     int ret = 0;
     int i = 0;
     SENSOR_MODULE_HANDLE* handle = NULL;
+    SENSOR_CUSTOM_S snr_custom;
 
     handle = (SENSOR_MODULE_HANDLE*)calloc(1, sizeof(SENSOR_MODULE_HANDLE));
     if (!handle) {
@@ -47,7 +48,10 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         }
     }
 
-    ret = SPM_SENSORS_MODULE_Detect(sensors_name, devId, handle->snr_test_cfg[handle->snr_test_idx].snrI2cAddr);
+    snr_custom.dev_id = devId;
+    snr_custom.i2c_addr = handle->snr_test_cfg[handle->snr_test_idx].snrI2cAddr;
+    snr_custom.board_id = config->boardId;
+    ret = SPM_SENSORS_MODULE_Detect(sensors_name, snr_custom);
     if (ret) {
         CLOG_ERROR("detect sensor %s devId %d fail", sensors_name, devId);
         return ret;
@@ -91,7 +95,7 @@ int testSensorInit(void** ppHandle, const char* sensors_name, int devId, int wor
         return -3;
     }
 
-    ret = SPM_SENSOR_Open(handle->sensors_handle);
+    ret = SPM_SENSOR_Open(handle->sensors_handle, snr_custom);
     if (ret) {
         CLOG_ERROR("%s: open sensor failed!", __FUNCTION__);
         return -4;

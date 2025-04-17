@@ -20,9 +20,11 @@ static int gpio_flag = 0;
 
 void sigalrm_handler(int sig)
 {
+    int ret;
+
     if (sig == SIGALRM) {
-        system ("echo 0 > /sys/class/gpio/gpio10/value ");
-        system ("echo 0 > /sys/class/gpio/gpio9/value ");
+        ret = system ("echo 0 > /sys/class/gpio/gpio10/value ");
+        ret |= system ("echo 0 > /sys/class/gpio/gpio9/value ");
     }
 }
 
@@ -48,6 +50,7 @@ static int aw3641e_flash_init(void** pHandle)
     struct stat s;
     FILE *fp = NULL;
     char buffer[30];
+    int ret = 0;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -60,12 +63,12 @@ static int aw3641e_flash_init(void** pHandle)
 
     if (stat("/sys/class/gpio", &s) == 0 && stat("/sys/class/gpio/export", &s) == 0) {
         //config gpio
-        system ("echo 10 > /sys/class/gpio/export ");
-        system ("echo out > /sys/class/gpio/gpio10/direction ");
-        system ("echo 0 > /sys/class/gpio/gpio10/value ");
-        system ("echo 9 > /sys/class/gpio/export ");
-        system ("echo out > /sys/class/gpio/gpio9/direction ");
-        system ("echo 0 > /sys/class/gpio/gpio9/value ");
+        ret = system ("echo 10 > /sys/class/gpio/export ");
+        ret |= system ("echo out > /sys/class/gpio/gpio10/direction ");
+        ret |= system ("echo 0 > /sys/class/gpio/gpio10/value ");
+        ret |= system ("echo 9 > /sys/class/gpio/export ");
+        ret |= system ("echo out > /sys/class/gpio/gpio9/direction ");
+        ret |= system ("echo 0 > /sys/class/gpio/gpio9/value ");
 
         //verify gpio
         fp = popen ("cat /sys/class/gpio/gpio10/direction ", "r");
@@ -114,12 +117,13 @@ static int aw3641e_flash_init(void** pHandle)
 	}
 
     *pHandle = flash_context;
-    return 0;
+    return ret;
 }
 
 static int aw3641e_flash_deinit(void* handle)
 {
     FLASH_CONTEXT_S* flash_context = NULL;
+    int ret = 0;
 
     SENSORS_CHECK_PARA_POINTER(handle);
     flash_context = (FLASH_CONTEXT_S*)handle;
@@ -127,11 +131,11 @@ static int aw3641e_flash_deinit(void* handle)
     flash_context = NULL;
 
     if (gpio_flag == 1) {
-        system ("echo 10 > /sys/class/gpio/unexport ");
-        system ("echo 9 > /sys/class/gpio/unexport ");
+        ret = system ("echo 10 > /sys/class/gpio/unexport ");
+        ret |= system ("echo 9 > /sys/class/gpio/unexport ");
     }
 
-    return 0;
+    return ret;
 }
 static int aw3641e_flash_set_mode(void* handle, int mode)
 {
@@ -148,8 +152,8 @@ static int aw3641e_flash_set_mode(void* handle, int mode)
 
     switch (mode) {
         case 0: {   //flash mode
-            system ("echo 1 > /sys/class/gpio/gpio9/value ");
-            system ("echo 1 > /sys/class/gpio/gpio10/value ");
+            ret = system ("echo 1 > /sys/class/gpio/gpio9/value ");
+            ret |= system ("echo 1 > /sys/class/gpio/gpio10/value ");
             // usleep(250 * 1000);
             signal(SIGALRM, sigalrm_handler);
             set_timer();
@@ -157,10 +161,10 @@ static int aw3641e_flash_set_mode(void* handle, int mode)
             // system ("echo 0 > /sys/class/gpio/gpio9/value ");
         } break;
         case 1: {   // open torch mode
-            system ("echo 1 > /sys/class/gpio/gpio10/value ");
+            ret = system ("echo 1 > /sys/class/gpio/gpio10/value ");
         } break;
         case 2: {   //close torch mode
-            system ("echo 0 > /sys/class/gpio/gpio10/value ");
+            ret = system ("echo 0 > /sys/class/gpio/gpio10/value ");
         } break;
         default:
             break;

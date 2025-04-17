@@ -1,5 +1,8 @@
 etc/init.d/* etc/init.d/
-etc/opt/* etc/opt/
+demo/cfgs/files/sensor_rear_primary_cpp_preview_setting.data usr/share/camera_json/
+demo/cfgs/files/csi1_camera_detect.json usr/share/camera_json/
+demo/cfgs/files/csi2_camera_detect.json usr/share/camera_json/
+demo/cfgs/files/csi3_camera_detect.json usr/share/camera_json/
 usr/lib/systemd/system/* usr/lib/systemd/system/
 usr/lib/udev/rules.d/* usr/lib/udev/rules.d/
 

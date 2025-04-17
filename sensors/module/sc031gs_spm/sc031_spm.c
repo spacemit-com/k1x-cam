@@ -89,7 +89,7 @@ static int sc031_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILIT
                 sensor_capability->snr_config[i].minFps = 25;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 1;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_MONO;// ISP_BAYER_PATTERN_BGGR;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = SC031_SPM_640x480_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &sc031_spm_setting;

@@ -23,29 +23,9 @@ static SENSOR_MODULE_SETTING_S imx219_spm_setting = {
         {
 #include "imx219_spm_rear_primary_isp_setting.h"
         },
-    .ispVideoSetting =
-        {
-#include "imx219_spm_rear_primary_isp_setting_video.h"
-        },
     .cppPreviewSetting =
         {
 #include "imx219_spm_rear_primary_cpp_preview_setting.h"
-        },
-    .cppVideoSetting =
-        {
-#include "imx219_spm_rear_primary_cpp_video_setting.h"
-        },
-    .cppSnapshotSetting =
-        {
-#include "imx219_spm_rear_primary_cpp_snapshot_setting.h"
-        },
-    .cppNightshotSetting =
-        {
-#include "imx219_spm_rear_primary_cpp_nightshot_setting.h"
-        },
-    .nightshotSetting =
-        {
-#include "imx219_spm_rear_primary_nightshot_setting.h"
         },
 };
 

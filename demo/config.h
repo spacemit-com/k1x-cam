@@ -82,12 +82,16 @@ struct testConfig {
     int useSnrNode;
     int useV4l;
     int autoDetect;
+    int gpuRender;
+    int renderW;
+    int renderH;
 
     int vcmEnable;
     int vcmI2cAddr;
     int vcmI2cBus;
     int flashEnable;
     int auxDevice;  //0
+    int boardId;
 
     struct cppTestConfig cppConfig[2];
     struct isFeTestConfig ispFeConfig[2];
@@ -96,6 +100,7 @@ struct testConfig {
 
 int getTestConfig(struct testConfig *config, char *jsonfile);
 int update_json_file(struct testConfig *config, char *jsonfile, char *sensors_name, int width, int height);
+int checkSpacemitBoard(void);
 
 #ifdef __cplusplus
 }

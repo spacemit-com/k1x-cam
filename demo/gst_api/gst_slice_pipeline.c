@@ -31,6 +31,7 @@
 #define MAX_FIRMWARE_NUM 2
 
 //#define DEBUG_USE_TIME
+// #define ENABLE_PRIVIEW
 
 typedef enum {
     CAP_FRAMEINFO_CREATE = 0,
@@ -65,6 +66,8 @@ static LIST_HANDLE cpp_out_list;
 static LIST_HANDLE rawdump_capture_list;
 static LIST_HANDLE vi_capture_list;
 static LIST_HANDLE rawdump_capture_back_list;
+static LIST_HANDLE rawdump_capture_origin_list;
+
 static LIST_HANDLE isp_capture_list;    //isp frameinfo buffer push, use in raw thread
 static LIST_HANDLE isp_capture_repeat_list; //isp frameinfo buffer push, use in cpp thread
 static LIST_HANDLE isp_capture_origin_list; //isp frameinfo buffer origin 
@@ -193,9 +196,10 @@ static spmISP_CAP_BUFFER_INFO_S* pop_near_item_to_capture(LIST_HANDLE buffer_lis
     return ret_info;
 }
 
-static void release_unused_frameinfo_buffer(LIST_HANDLE buffer_list)
+static int release_unused_frameinfo_buffer(LIST_HANDLE buffer_list)
 {
     spmISP_CAP_BUFFER_INFO_S* isp_capture_buffer_info;
+    int free_cnt = 0;
 
     if (List_IsEmpty(buffer_list) == false) {
         do {
@@ -203,9 +207,12 @@ static void release_unused_frameinfo_buffer(LIST_HANDLE buffer_list)
             if (isp_capture_buffer_info) {
                 frameinfo_buffer_free(&isp_capture_buffer_info->buffer);
                 free(isp_capture_buffer_info);
+                free_cnt++;
             }
         } while (isp_capture_buffer_info);
     }
+
+    return free_cnt;
 }
 
 static void* previewThreadFunc(void* param)
@@ -241,8 +248,8 @@ static void* previewThreadFunc(void* param)
                     IMAGE_BUFFER_S* inputBuf = vi_buffer_info->buffer;
                     FRAME_INFO_S* frameInfo = &isp_buffer_info->frameInfo;
                     int32_t frameId = vi_buffer_info->frameId;
-                    CLOG_DEBUG("cpp_post_buffer inputBuf %p, outputBuf %p, frameId %d, frameInfo %p", inputBuf,
-                               outputBuf, frameId, frameInfo);
+                    // CLOG_DEBUG("cpp_post_buffer inputBuf %p, outputBuf %p, frameId %d, frameInfo %p", inputBuf,
+                    //            outputBuf, frameId, frameInfo);
                     cpp_post_buffer(pipelineId, inputBuf, outputBuf, frameId, frameInfo);
                 }
                 if (isp_buffer_info->frameId <= vi_buffer_info->frameId) {
@@ -286,19 +293,19 @@ try_again:
             break;
         }
 
-        // if ((List_IsEmpty(rawdump_capture_list) == false) && atomic_load(&flag_tirg) == 1 && (List_IsEmpty(isp_capture_list) == false)) {
-        begin_raw_frameid = get_begin_item_frameid(rawdump_capture_list, LIST_CAP_RAWDUMP);
-        begin_isp_frameid = get_begin_item_frameid(isp_capture_list, LIST_CAP_ISP);
-        if ((begin_raw_frameid != -1) && (begin_isp_frameid != -1)) {
-            if (begin_isp_frameid > begin_raw_frameid + 15) {
-                CLOG_WARNING("rawdump buffer is too old, begin_raw_frameid %d << begin_isp_frameid %d",
-                    begin_raw_frameid, begin_isp_frameid);
-                inputBuffer = List_Pop(rawdump_capture_list);
-                viisp_vi_queueBuffer(2, inputBuffer);
-                goto try_again;
-            }
-            if (atomic_load(&flag_tirg) == 0)
-                goto try_again;
+        if ((atomic_load(&flag_tirg) == 1 && List_IsEmpty(rawdump_capture_list) == false) && (List_IsEmpty(isp_capture_list) == false)) {
+        // begin_raw_frameid = get_begin_item_frameid(rawdump_capture_list, LIST_CAP_RAWDUMP);
+        // begin_isp_frameid = get_begin_item_frameid(isp_capture_list, LIST_CAP_ISP);
+        // if ((begin_raw_frameid != -1) && (begin_isp_frameid != -1)) {
+        //     if (begin_isp_frameid > begin_raw_frameid + 15) {
+        //         CLOG_WARNING("rawdump buffer too old, begin_raw_frameid %d << begin_isp_frameid %d",
+        //             begin_raw_frameid, begin_isp_frameid);
+        //         inputBuffer = List_Pop(rawdump_capture_list);
+        //         viisp_vi_queueBuffer(2, inputBuffer);
+        //         goto try_again;
+        //     }
+        //     if (atomic_load(&flag_tirg) == 0)
+        //         goto try_again;
 
             outputBuffer = buffer_pool_get_buffer(vi_out_buffer_capture_pool);
             if (outputBuffer) {
@@ -316,6 +323,8 @@ try_again:
 #endif
                 viisp_vi_queueBuffer(rawReadChannelId, inputBuffer);
                 viisp_vi_queueBuffer(viChnId, outputBuffer);
+				CLOG_DEBUG("raw frame id:%d, %d",
+                    frameId, isp_capture_buffer_info->frameIspId);
                 viisp_isp_triggerRawCapture(firmwareId, metaBuffer);
 
                 List_Push(rawdump_capture_back_list, (void*)inputBuffer);
@@ -325,8 +334,6 @@ try_again:
                 if (frameId != isp_capture_buffer_info->frameIspId)
                     CLOG_WARNING("frameId %d mismatch, size:%ld, id:%d",
                         frameId, List_GetSize(isp_capture_list), isp_capture_buffer_info->frameIspId);
-				CLOG_DEBUG("raw frame id:%d, %d, size:%ld",
-                    frameId, isp_capture_buffer_info->frameIspId, List_GetSize(isp_capture_repeat_list));
             }
         }
 
@@ -367,6 +374,7 @@ static void* cppProcessThreadFunc(void* param)
             if (outputBuf) {
                 inputBuf = List_Pop(vi_capture_list);
                 frameId = inputBuf->frameId;
+                outputBuf->timeStamp = inputBuf->timeStamp;
                 outputBuf->frameId = frameId;
 
                 isp_capture_buffer_info = pop_near_item_to_capture(isp_capture_repeat_list, frameId, LIST_CAP_ISP_REPEAT);
@@ -376,11 +384,14 @@ static void* cppProcessThreadFunc(void* param)
 #ifdef DEBUG_USE_TIME
                 outputBuf->viT1 = get_timestamp();
 #endif
+                CLOG_DEBUG("cpp post, frameId %d, id:%d,%d",
+                    frameId, isp_capture_buffer_info->frameViId, isp_capture_buffer_info->frameIspId);
                 cpp_post_buffer(pipelineId, inputBuf, outputBuf, frameId, frameInfo);
+                if (frameId != isp_capture_buffer_info->frameViId)
+                    CLOG_WARNING("frameId %d mismatch, size:%ld, id:%d,%d",
+                        frameId, List_GetSize(isp_capture_list), isp_capture_buffer_info->frameViId, isp_capture_buffer_info->frameIspId);
                 isp_capture_buffer_info->state = CAP_FRAMEINFO_CREATE;
                 List_Push(isp_capture_origin_list, (void *)isp_capture_buffer_info);
-                CLOG_DEBUG("cpp post, frameId %d, size:%ld, id:%d,%d",
-                    frameId, List_GetSize(isp_capture_repeat_list), isp_capture_buffer_info->frameViId, isp_capture_buffer_info->frameIspId);
             }
         }
     } while (thread->threadRunning);
@@ -429,23 +440,30 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
         CLOG_ERROR("invalid chnId %d", nChn);
         return -1;
     }
-    CLOG_DEBUG("VI chn %d out buffer frameId %d, buffer %p, w:%d, h:%d", nChn, frameId, buffer,  buffer->size.width, buffer->size.height);
+    // CLOG_DEBUG("VI chn %d out buffer frameId %d, buffer %p, w:%d, h:%d", nChn, frameId, buffer,  buffer->size.width, buffer->size.height);
 
     if (!streamOnFlag) {
         return 0;
     }
 
     if (nChn == 0) {
+#ifdef ENABLE_PRIVIEW
         vi_buffer_info = malloc(sizeof(spmVI_BUFFER_INFO_S));
         if (vi_buffer_info) {
             vi_buffer_info->buffer = buffer;
             vi_buffer_info->frameId = frameId;
             List_Push(vi_out_list, (void*)vi_buffer_info);
         }
+
         condition_post(&pipelineProcThread.cond);
+#else
+        viisp_vi_queueBuffer(0, buffer);
+#endif
     } else if (nChn == 1) {
         for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
             if (buffer->planes[0].virAddr == vi_out_buffer_capture_pool->buffers[i].planes[0].virAddr) {
+                vi_out_buffer_capture_pool->buffers[i].timeStamp = vi_buffer->timeStamp;
+
                 List_Push(vi_capture_list, (void*)&vi_out_buffer_capture_pool->buffers[i]);
 #ifdef DEBUG_USE_TIME
                 rawviT2 = get_timestamp();
@@ -467,19 +485,19 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
                 if (!rawBufferBack) {
                     break;
                 }
-
+                List_Push(rawdump_capture_origin_list, (void*)rawBufferBack);
                 rawBufferBackCnt++;
-                buffer_pool_put_buffer(vi_rawdump_buffer_capture_pool, rawBufferBack);
+                // buffer_pool_put_buffer(vi_rawdump_buffer_capture_pool, rawBufferBack);
             }
 
-            while (1) {
-                rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
-                if (!rawdump_buffer) {
-                    break;
-                }
-                rawBufferQueueCnt++;
-                viisp_vi_queueBuffer(2, rawdump_buffer);
-            }
+            // while (1) {
+            //     rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
+            //     if (!rawdump_buffer) {
+            //         break;
+            //     }
+            //     rawBufferQueueCnt++;
+            //     viisp_vi_queueBuffer(2, rawdump_buffer);
+            // }
         }
         atomic_store(&flag_tirg, 1);
 #ifdef DEBUG_USE_TIME
@@ -494,11 +512,11 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
                 viT1[nChn] = (double)get_timestamp();
             }
         }
-        CLOG_INFO("VI chn%d frameId %d, cnt: %d, %d, rawnum: %ld, time: %llu us, fid: %d",
-             nChn, frameId, rawBufferBackCnt, rawBufferQueueCnt, List_GetSize(rawdump_capture_list), usetime, frameCapId);
+        CLOG_INFO("VI chn%d frameId %d, cnt: %d, rawnum: %ld, time: %llu us, fid: %d",
+             nChn, frameId, rawBufferBackCnt, List_GetSize(rawdump_capture_list), usetime, frameCapId);
 #else
-        CLOG_INFO("VI chn%d frameId %d, cnt: %d, %d, rawnum: %ld, fid: %d",
-             nChn, frameId, rawBufferBackCnt, rawBufferQueueCnt, List_GetSize(rawdump_capture_list), frameCapId);
+        CLOG_DEBUG("VI chn%d frameId %d, cnt: %d, fid: %d, w:%d, h:%d",
+             nChn, frameId, rawBufferBackCnt, frameCapId, buffer->size.width, buffer->size.height);
 #endif
     }
 
@@ -515,18 +533,20 @@ static int isp_buffer_callback(uint32_t pipelineID, void* pstFrameinfoBuf)
     spmISP_CAP_BUFFER_INFO_S* isp_cap_buffer_info = NULL;
     IMAGE_BUFFER_S *fCaptureBuf;
 
-    CLOG_DEBUG("ISP pipelineID %d out buffer frameId %d", pipelineID, frameId);
+    // CLOG_DEBUG("ISP pipelineID %d out buffer frameId %d", pipelineID, frameId);
     if (!streamOnFlag) {
         return 0;
     }
 
     //for preview
+#ifdef ENABLE_PRIVIEW
     isp_buffer_info = malloc(sizeof(spmISP_BUFFER_INFO_S));
     if (isp_buffer_info) {
         memcpy(&isp_buffer_info->frameInfo, data, sizeof(FRAME_INFO_S));
         isp_buffer_info->frameId = frameId;
         List_Push(isp_out_list, (void*)isp_buffer_info);
     }
+#endif
 
 try_again:
     //for slice capture
@@ -541,7 +561,7 @@ try_again:
     } else {
         if (try_cnt == 0) {
             //release all CAP_FRAMEINFO_COPY frameinfo buffer to origin list
-            CLOG_DEBUG("manual release frameinfo buffer");
+            // CLOG_DEBUG("manual release frameinfo buffer");
             isp_cap_buffer_info = List_Pop(isp_capture_list);
             if (isp_cap_buffer_info) {
                 isp_cap_buffer_info->state = CAP_FRAMEINFO_CREATE;
@@ -571,8 +591,8 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
     static unsigned long long  usetime_sum = 0;
     static int count = 0;
 
-    CLOG_DEBUG("mppCpp.modId %d, mppCpp.devId %d, mppCpp.chnId %d, callbackBuf %p", mppCpp.modId, mppCpp.devId,
-               mppCpp.chnId, callbackBuf);
+    // CLOG_DEBUG("mppCpp.modId %d, mppCpp.devId %d, mppCpp.chnId %d, callbackBuf %p", mppCpp.modId, mppCpp.devId,
+    //            mppCpp.chnId, callbackBuf);
     if (!streamOnFlag) {
         return 0;
     }
@@ -630,6 +650,8 @@ static int32_t capture_cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_
                     // CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, num frameinfo:(%ld,%ld,%ld) ", frameCapId,
                     //     List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool),
                     //     isp_capture_list_num, List_GetSize(isp_capture_repeat_list), List_GetSize(isp_capture_origin_list));
+                    CLOG_INFO("cpp out frameid %d, num vi:%ld, raw:%ld, cpp:%ld, t:%lu", frameCapId,
+                        List_GetSize(vi_capture_list), List_GetSize(rawdump_capture_list), get_buffer_residue_num(cpp_out_buffer_capture_pool), cpp_out_buffer_capture_pool->buffers[i].timeStamp);
 					ret = (*gst_get_cam_buffer)((IMAGE_BUFFER_S*) &cpp_out_buffer_capture_pool->buffers[i], i);
 					if (ret)
 						return -EINVAL;
@@ -663,8 +685,8 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
     int ret = 0;
     char fileName[64], *suffix;
 
-    CLOG_DEBUG("mppCpp.modId %d, mppCpp.devId %d, mppCpp.chnId %d, callbackBuf %p", mppCpp.modId, mppCpp.devId,
-               mppCpp.chnId, callbackBuf);
+    // CLOG_DEBUG("mppCpp.modId %d, mppCpp.devId %d, mppCpp.chnId %d, callbackBuf %p", mppCpp.modId, mppCpp.devId,
+    //            mppCpp.chnId, callbackBuf);
     if (!streamOnFlag) {
         return 0;
     }
@@ -722,28 +744,48 @@ static int32_t vi_rawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_r
 {
     IMAGE_BUFFER_S* buffer = vi_rawdump_buffer->buffer;
     uint32_t frameId = vi_rawdump_buffer->frameId;
+    IMAGE_BUFFER_S* rawdump_buffer;
     char fileName[128];
     int pipelineId = nChn - VIU_MAX_CHN_NUM;
-    int i = 0;
+    int queue_cnt = 0, i = 0;
 
     if (nChn >= (VIU_MAX_CHN_NUM + VIU_MAX_RAWCHN_NUM)) {
         CLOG_ERROR("invalid chnId %d", nChn);
         return -1;
     }
-    CLOG_DEBUG("VI chn %d rawdump buffer frameId %d, buffer %p", nChn, frameId, buffer);
+    // CLOG_DEBUG("VI chn %d rawdump buffer frameId %d, buffer %p", nChn, frameId, buffer);
 
     for (i = 0; i < BUFFER_POOL_MAX_SIZE; i++) {
         if (buffer->planes[0].virAddr == vi_rawdump_buffer_capture_pool->buffers[i].planes[0].virAddr) {
-            vi_rawdump_buffer_capture_pool->buffers[i].frameId = frameId;
-            List_Push(rawdump_capture_list, (void*)&vi_rawdump_buffer_capture_pool->buffers[i]);
-
-            condition_post(&rawProcessProcThread.cond);
             break;
         }
     }
 
     if (i == BUFFER_POOL_MAX_SIZE) {
         CLOG_ERROR("can't find valid vi rawdump capture buffer");
+    } else {
+        // queue empty rawdump buffer
+        while (1) {
+            rawdump_buffer = List_Pop(rawdump_capture_origin_list);
+            if (rawdump_buffer) {
+                viisp_vi_queueBuffer(2, rawdump_buffer);
+                queue_cnt++;
+            } else {
+                if (queue_cnt)
+                    break;
+                rawdump_buffer = List_Pop(rawdump_capture_list);
+                if (rawdump_buffer) {
+                    viisp_vi_queueBuffer(2, rawdump_buffer);
+                } else {
+                    CLOG_WARNING("no rawdump_buffer");
+                }
+                break;
+            }
+        }
+        //push filled rawdump buffer
+        vi_rawdump_buffer_capture_pool->buffers[i].frameId = frameId;
+        List_Push(rawdump_capture_list, (void*)&vi_rawdump_buffer_capture_pool->buffers[i]);
+        condition_post(&rawProcessProcThread.cond);
     }
 
     return 0;
@@ -765,10 +807,11 @@ static int test_buffer_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_inf
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         frameinfo_buffer_alloc(&frameInfoBuf[i]);
     }
-
+#ifdef ENABLE_PRIVIEW
     cpp_out_buffer_pool =
         create_buffer_pool(img_info.width, img_info.height, img_info.format, "cpp channel0 out buffer");
     buffer_pool_alloc(cpp_out_buffer_pool, MAX_BUFFER_NUM);
+#endif
 
     return 0;
 }
@@ -785,11 +828,12 @@ static int test_buffer_prepare(int pipelineId, int firmwareId)
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         viisp_isp_queueBuffer(firmwareId, &frameInfoBuf[i]);
     }
-
+#ifdef ENABLE_PRIVIEW
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         IMAGE_BUFFER_S* buffer = buffer_pool_get_buffer(cpp_out_buffer_pool);
         List_Push(cpp_out_list, (void*)buffer);
     }
+#endif
 
     return 0;
 }
@@ -803,10 +847,12 @@ static int test_buffer_reset(int pipelineId)
         buffer_pool_put_buffer(vi_out_buffer_pool, &vi_out_buffer_pool->buffers[i]);
     }
 
+#ifdef ENABLE_PRIVIEW
     List_Clear(cpp_out_buffer_pool->buf_list);
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         buffer_pool_put_buffer(cpp_out_buffer_pool, &cpp_out_buffer_pool->buffers[i]);
     }
+#endif
 
     return 0;
 }
@@ -847,8 +893,10 @@ static int test_buffer_deInit()
     for (i = 0; i < MAX_BUFFER_NUM; i++) {
         frameinfo_buffer_free(&frameInfoBuf[i]);
     }
+#ifdef ENABLE_PRIVIEW
     buffer_pool_free(cpp_out_buffer_pool);
     destroy_buffer_pool(cpp_out_buffer_pool);
+#endif
 
     return 0;
 }
@@ -864,6 +912,7 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
     rawdump_capture_list = List_Create(0);
     vi_capture_list = List_Create(0);
     rawdump_capture_back_list = List_Create(0);
+    rawdump_capture_origin_list = List_Create(0);
     isp_capture_list = List_Create(0);
     isp_capture_repeat_list = List_Create(0);
     isp_capture_origin_list = List_Create(0);
@@ -914,9 +963,12 @@ static int test_buffer_capture_init(IMAGE_INFO_S img_info, SENSOR_MODULE_INFO se
 
 static int test_buffer_capture_deInit()
 {
-    release_unused_frameinfo_buffer(isp_capture_list);
-    release_unused_frameinfo_buffer(isp_capture_repeat_list);
-    release_unused_frameinfo_buffer(isp_capture_origin_list);
+    int free_cnt = 0;
+
+    free_cnt = release_unused_frameinfo_buffer(isp_capture_list);
+    free_cnt += release_unused_frameinfo_buffer(isp_capture_repeat_list);
+    free_cnt += release_unused_frameinfo_buffer(isp_capture_origin_list);
+    CLOG_INFO("capture list free_cnt is %d", free_cnt);
 
     List_Destroy(isp_capture_list);
     List_Destroy(isp_capture_repeat_list);
@@ -924,6 +976,7 @@ static int test_buffer_capture_deInit()
     List_Destroy(rawdump_capture_list);
     List_Destroy(vi_capture_list);
     List_Destroy(rawdump_capture_back_list);
+    List_Destroy(rawdump_capture_origin_list);
 
     buffer_pool_free(vi_out_buffer_capture_pool);
     destroy_buffer_pool(vi_out_buffer_capture_pool);
@@ -962,6 +1015,9 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
 
     CLOG_INFO("test start");
 
+    if (!config)
+        return -1;
+
     atomic_store(&flag_tirg, 1);
     viChn0Id = pipeline0Id;
     viChn1Id = pipeline1Id;
@@ -995,7 +1051,9 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
     viisp_set_vi_callback(viChn1Id, vi_buffer_callback);
 
     // cpp init
+#ifdef ENABLE_PRIVIEW
     cpp_init(pipeline0Id, img0_out_info, cpp_buffer_callback);
+#endif
     cpp_init(pipeline1Id, img1_out_info, capture_cpp_buffer_callback);
 
     // buffer init
@@ -1003,12 +1061,13 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
     test_buffer_capture_init(img1_out_info, sensor_info, para->gst_cam_buf_prepare, para->gst_cam_buf_prepare_data);
 
     // thread init
+#ifdef ENABLE_PRIVIEW
     strcpy(pipelineProcThread.threadName, "previewFunc");
     pipelineProcThread.threadProcessFunc = previewThreadFunc;
     pipelineProcThread.pipelineId = pipeline0Id;
     pipelineProcThread.firmwareId = firmwareId;
     ProcThreadInit(&pipelineProcThread);
-
+#endif
     strcpy(rawProcessProcThread.threadName, "rawProcessFunc");
     rawProcessProcThread.threadProcessFunc = rawProcessThreadFunc;
     rawProcessProcThread.pipelineId = pipeline1Id;
@@ -1028,19 +1087,19 @@ int slice_pipeline_start(struct gstParam *para, struct testConfig *config)
 
     cpp_start(pipeline1Id);
     viisp_vi_offline_streamOn(pipeline1Id);
-    for (i = 0; i < MAX_BUFFER_NUM; i++) {
-        rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
-        viisp_vi_queueBuffer(2, rawdump_buffer);
-    }
-    CLOG_INFO("queue rawdump_buffer all");
-
     test_buffer_prepare(pipeline0Id, firmwareId);
+#ifdef ENABLE_PRIVIEW
 	cpp_start(pipeline0Id);
+#endif
     viisp_vi_online_streamOn(pipeline0Id);
     viisp_isp_streamOn(firmwareId);
     testSensorStart(sensorHandle);
     streamOnFlag = 1;
 
+    for (i = 0; i < MAX_BUFFER_NUM; i++) {
+        rawdump_buffer = buffer_pool_get_buffer(vi_rawdump_buffer_capture_pool);
+        viisp_vi_queueBuffer(2, rawdump_buffer);
+    }
     CLOG_INFO("sensor stream on");
 
     para->sensorHandle = sensorHandle;
@@ -1067,17 +1126,21 @@ int slice_pipeline_stop(struct gstParam *para)
     viisp_vi_online_streamOff(para->pipeline0Id);
     testSensorStop(para->sensorHandle);
     viisp_isp_streamOff(para->firmwareId);
+#ifdef ENABLE_PRIVIEW
     cpp_stop(para->pipeline0Id);
+#endif
     test_buffer_reset(para->pipeline0Id);
     ProcThreadDeinit(&cppProcessProcThread);
     ProcThreadDeinit(&rawProcessProcThread);
+#ifdef ENABLE_PRIVIEW
     ProcThreadDeinit(&pipelineProcThread);
-
+#endif
     viisp_isp_deinit(para->firmwareId, para->sensorInfoId);
     viisp_vi_deInit();
     testSensorDeInit(para->sensorHandle);
+#ifdef ENABLE_PRIVIEW
     cpp_deInit(para->pipeline0Id);
-
+#endif
     test_buffer_capture_deInit();
     test_buffer_deInit();
 

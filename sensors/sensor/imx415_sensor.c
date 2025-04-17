@@ -51,14 +51,6 @@ static struct regval_tab color_bar_regs[] = {
 #define IMX415_AGAIN_L      (0x3090)
 #define IMX415_AGAIN_H      (0x3091)
 
-// #define IMX415_DGAIN_GR_H   (0x020E)
-// #define IMX415_DGAIN_GR_L   (0x020F)
-// #define IMX415_DGAIN_R_H    (0x0210)
-// #define IMX415_DGAIN_R_L    (0x0211)
-// #define IMX415_DGAIN_B_H    (0x0212)
-// #define IMX415_DGAIN_B_L    (0x0213)
-// #define IMX415_DGAIN_GB_H   (0x0214)
-// #define IMX415_DGAIN_GB_L   (0x0215)
 #define IMX415_GROUP_ACCESS (0x3001)
 
 /*******************************************************************/
@@ -302,23 +294,6 @@ static int imx415_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_VTS_ADDR_H;  // VTS
         sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 0;
         sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX415_VTS_ADDR_H16;  // VTS
-        // sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = IMX415_DGAIN_GR_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = IMX415_DGAIN_GR_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = IMX415_DGAIN_R_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = IMX415_DGAIN_R_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[9].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[9].u32RegAddr = IMX415_DGAIN_B_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[10].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[10].u32RegAddr = IMX415_DGAIN_B_H;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[11].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[11].u32RegAddr = IMX415_DGAIN_GB_L;  // digital gain
-        // sensor_context->sensorRegs[0].astI2cData[12].u8DelayFrmNum = 2;
-        // sensor_context->sensorRegs[0].astI2cData[12].u32RegAddr = IMX415_DGAIN_GB_L;  // digital gain
-
         sensor_context->syncInit = true;
     } else {
         for (i = 0; i < (sensor_context->sensorRegs[0].u32RegNum); i++) {
@@ -761,10 +736,12 @@ static int imx415_power_on(SENSOR_CONTEXT_S* sensor_context)
 }
 
 /*******************************************************************/
-static int imx415_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int imx415_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -788,6 +765,31 @@ static int imx415_init(void** pHandle, int sns_id, uint8_t sns_addr)
     return 0;
 }
 
+static int imx415_power_off(SENSOR_CONTEXT_S* sensor_context)
+{
+    SENSORS_CHECK_PARA_POINTER(sensor_context);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+
+    sensor_set_mclk_enable(sensor_context->devId, 0);
+
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1200000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AFVDD, 0);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 0);
+
+    // usleep(100);
+
+    CLOG_INFO("finish power off");
+
+    return 0;
+}
+
 static int imx415_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -803,7 +805,8 @@ static int imx415_deinit(void* handle)
         sensor_context->stream_on_flag = 0;
     }
 
-    sensor_hw_reset(sensor_context->devId);
+    // sensor_hw_reset(sensor_context->devId);
+    imx415_power_off(sensor_context);
     sensor_hw_exit(sensor_context->devId);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
@@ -828,12 +831,17 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
 
     pthread_mutex_lock(&sensor_context->apiLock);
     if (sensor_context->stream_on_flag == 1) {
-        CLOG_ERROR("%s: sensor global config must be done before stream on", __FUNCTION__);
+        CLOG_ERROR("sensor global config must be done before stream on");
         ret = -EPERM;
         goto out;
     }
     memcpy(&sensor_context->work_info, work_info, sizeof(SENSOR_WORK_INFO_S));
     memset(&sensor_context->init_3a_attr, 0x00, sizeof(SENSOR_INIT_ATTR_S));
+
+    if (sensor_context->work_info.mclk == 27000000 || sensor_context->work_info.mclk == 24000000) {
+        sensor_set_mclk_rate(sensor_context->devId, sensor_context->work_info.mclk);
+        CLOG_INFO("change imx415 mclk to %dhz", sensor_context->work_info.mclk);
+    }
 
     sensor_context->initVTS = sensor_context->work_info.vts;
     sensor_context->initFps = sensor_context->work_info.f32maxFps;
@@ -846,68 +854,11 @@ static int imx415_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memset(sensor_context->sensorRegs, 0, 2 * sizeof(ISP_SENSOR_REGS_INFO_S));
     sensor_context->syncInit = 0;
 
-    // ret = imx415_write_burst_register(handle, stream_soft_reset_regs, ARRAY_SIZE(stream_soft_reset_regs));
-    // if (ret) {
-    //     goto out;
-    // }
-    usleep(5000);
     ret = imx415_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
     if (ret) {
         goto out;
     }
-    // if(work_info->test_pattern_mode == CC_SENSOR_TEST_PATTERN_COLOR_BARS){
-    //     ret = imx415_write_burst_register(handle, color_bar_regs, ARRAY_SIZE(color_bar_regs));
-    // }
-
-#if 0	//read sensor reg setting
-
-    fprintf(stderr, "-----------------start read sensor reg----------------\n");
-    int i;
-    struct regval_tab* sensor_table = NULL;
-
-    sensor_table = (struct regval_tab*)calloc(sensor_context->work_info.setting_table_size, sizeof(struct regval_tab));
-    if (NULL == sensor_table) {
-        CLOG_ERROR("sensor_table malloc memory failed!");
-        ret = -ENOMEM;
-        goto out;
-    }
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        sensor_table[i].reg = sensor_context->work_info.setting_table[i].reg;
-        sensor_table[i].val = 0;
-    }
-
-    struct cam_burst_i2c_data reg_table_data;
-    reg_table_data.addr = sensor_context->i2c_addr;
-    reg_table_data.reg_len = imx415_reg_addr_byte;
-    reg_table_data.val_len = imx415_reg_data_byte;
-    reg_table_data.tab = sensor_table;
-    reg_table_data.num = sensor_context->work_info.setting_table_size;
-    ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
-    if (ret) {
-        CLOG_INFO("read sensor_table register failed: %s\n", strerror(errno));
-        goto out;
-    }
-
-    for (i = 0; i < sensor_context->work_info.setting_table_size; i++) {
-        if ((sensor_table[i].reg != sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val != sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) != (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else if ((sensor_table[i].reg == sensor_context->work_info.setting_table[i].reg)
-            || (sensor_table[i].val == sensor_context->work_info.setting_table[i].val)) {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) == (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        } else {
-            fprintf(stderr, "read sensor (0x%04x, 0x%04x) ?? (0x%04x, 0x%04x)\n", 
-                sensor_table[i].reg, sensor_table[i].val,sensor_context->work_info.setting_table[i].reg,sensor_context->work_info.setting_table[i].val);
-        }
-    }
-	free(sensor_table);
-
-	fprintf(stderr, "-----------------finish read sensor reg----------------\n");
-
-#endif
 
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);

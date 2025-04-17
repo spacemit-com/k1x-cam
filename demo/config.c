@@ -7,12 +7,42 @@
 #include <sys/stat.h>
 #include "config.h"
 #include "cam_log.h"
+#include "board_option.h"
 
 #include "cjson.h"
 #define SAVE_FILE_PATH0 "/usr/share/camera_json/"
 #define SAVE_FILE_PATH1 "/usr/share/"
 #define SAVE_FILE_PATH2 "/tmp/"
 
+int checkSpacemitBoard(void)
+{
+    FILE *stream;
+    int ret = BOARD_DEFAULT, i;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    stream = popen ("cat /sys/firmware/devicetree/base/model", "r");
+    if ((read = getline (&line, &len, stream)) != -1) {
+        for (i = 0; i < BOARD_MAX; i++) {
+            if (strstr (line, "MUSE-Pi2")) {
+                ret = BOARD_MUSE_PI2;
+                printf ("the borad is MUSE-Pi2: %d, max board: %d\n", ret, BOARD_MAX);
+                break;
+            } else if (strstr (line, "MUSE-Pi-Pro")) {
+                ret = BOARD_MUSE_PI2;
+                printf ("the borad is MUSE-Pi-Pro: %d, max board: %d\n", ret, BOARD_MAX);
+                break;
+            }
+        }
+    }
+    pclose (stream);
+
+    if (ret == BOARD_DEFAULT)
+        printf ("the borad is default: %d, max board: %d\n", ret, BOARD_MAX);
+
+    return ret;
+}
 static int getCppNodeConfig (struct testConfig *config, struct cJSON *root)
 {
     struct cJSON *item = NULL, *child = NULL, *grandc = NULL;
@@ -519,6 +549,27 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
         config->autoDetect = cjson_get_int(item) ? 1 : 0;
     }
 
+    item = cJSON_GetObjectItem(root, "gpu_render");
+    if (!item) {
+        config->gpuRender = 0;
+    } else {
+        config->gpuRender = cjson_get_int(item) ? 1 : 0;
+    }
+
+    if (config->gpuRender) {
+        item = cJSON_GetObjectItem(root, "render_width");
+        if (!item) {
+            config->renderW = 1280;
+        } else {
+            config->renderW = cjson_get_int(item) > 1920 ? 1920 : cjson_get_int(item);
+        }
+        item = cJSON_GetObjectItem(root, "render_height");
+        if (!item) {
+            config->renderH = 720;
+        } else {
+            config->renderH = cjson_get_int(item) > 1080 ? 1080 : cjson_get_int(item);
+        }
+    }
     ret = getCppNodeConfig (config, root);
     if (ret) {
         CLOG_ERROR("cpp_node parse error");

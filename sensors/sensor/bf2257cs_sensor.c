@@ -593,10 +593,12 @@ static int bf2257cs_power_off(SENSOR_CONTEXT_S* sensor_context)
     return 0;
 }
 /*******************************************************************/
-static int bf2257cs_init(void** pHandle, int sns_id, uint8_t sns_addr)
+static int bf2257cs_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
+    int sns_id = snr_custom.dev_id;
+    uint8_t sns_addr = snr_custom.i2c_addr;
 
     SENSORS_CHECK_PARA_POINTER(pHandle);
 
@@ -725,12 +727,12 @@ static int bf2257cs_stream_on(void* handle)
         bf2257cs_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
     }
-
-    // usleep(5000); // delay 50ms for sensor stable
+    bf2257cs_write_register(handle, 0x00, 0x0d);
     ret = bf2257cs_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(10*1000);
     sensor_context->stream_on_flag = 1;
     pthread_mutex_unlock(&sensor_context->apiLock);
+
 
     return ret;
 }

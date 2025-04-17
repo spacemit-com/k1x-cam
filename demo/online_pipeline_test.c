@@ -23,7 +23,13 @@
 #include "sensor_common.h"
 #include "viisp_common.h"
 #include "tuning_server.h"
+#include "gpu_render.h"
 
+static struct Display display = {0};
+static struct Window window = {0};
+
+static int is_gpu_render = false;
+/****************************************************************/
 #define MAX_BUFFER_RAWDUMP_NUM 5
 #define MAX_BUFFER_NUM   4
 #define MAX_PIPELINE_NUM 2
@@ -135,6 +141,7 @@ static int dumpFrame = AUTO_FRAME_NUM;
 static int testFrame = 2 * AUTO_FRAME_NUM;
 static int testAutoRunFlag[MAX_PIPELINE_NUM] = {0};
 static struct condition testAutoRunCond[MAX_PIPELINE_NUM];
+static struct condition testDrawCond;
 static int showFps = 0;
 /****************************************************************/
 static uint64_t get_timestamp(void)
@@ -490,8 +497,11 @@ static int32_t vi_buffer_callback(uint32_t nChn, VI_IMAGE_BUFFER_S* vi_buffer)
     condition_post(&pipelineProcThread[pipelineId].cond);
 
     if (testAutoRunFlag[pipelineId]) {
-        if (frameId == testFrame)
+        if (frameId == testFrame) {
             condition_post(&testAutoRunCond[pipelineId]);
+            streamOnFlags[pipelineId] = 0;
+            condition_post(&testDrawCond);
+        }
         if (frameId == dumpFrame) {
             outputDumpFlag[pipelineId] = 1;
             buffer = buffer_pool_get_buffer(vi_rawdump_buffer_pool[pipelineId]);
@@ -611,6 +621,13 @@ static int32_t cpp_buffer_callback(MPP_CHN_S mppCpp, const IMAGE_BUFFER_S* callb
             }
             if (i == BUFFER_POOL_MAX_SIZE) {
                 CLOG_ERROR("can't find valid vi out buffer");
+            } else {
+                if (is_gpu_render) {
+                    UserData *userData = window.userData;
+                    userData->current_texture_index = i;
+                    condition_post(&testDrawCond);
+                    // gl_window_draw(&window, NULL, 0);
+                }
             }
             List_Push(cpp_out_list[mppCpp.devId], (void*)&cpp_out_buffer_pool[mppCpp.devId]->buffers[i]);
             break;
@@ -967,6 +984,7 @@ static int32_t vi_rawdump_onlyrawdump_buffer_callback(uint32_t nChn, VI_IMAGE_BU
 static int test_buffer_init(int pipelineId, int firmwareId, IMAGE_INFO_S img_info, SENSOR_MODULE_INFO sensor_info)
 {
     int i = 0;
+    IMAGE_BUFFER_S *buffers;
 
     // buffer list init
     vi_out_list[pipelineId] = List_Create(0);
@@ -990,6 +1008,17 @@ static int test_buffer_init(int pipelineId, int firmwareId, IMAGE_INFO_S img_inf
         create_buffer_pool(sensor_info.sensor_cfg->width, sensor_info.sensor_cfg->height,
                            toPixelFormatType(sensor_info.sensor_cfg->bitDepth), "vi rawdump channel0 out buffer");
     buffer_pool_alloc(vi_rawdump_buffer_pool[pipelineId], 1);
+
+    if (is_gpu_render) {
+        UserData *userData = window.userData;
+        userData->textures = malloc(MAX_BUFFER_NUM * sizeof(GLuint)); // Allocate space for 2 textures
+        userData->current_texture_index = 0;
+
+        for (i = 0; i < MAX_BUFFER_NUM; i++) {
+            buffers = &cpp_out_buffer_pool[pipelineId]->buffers[i];
+            userData->textures[i] = create_texture_dma(&display, buffers->planes[0].width, buffers->planes[0].height, buffers->m.fd);
+        }
+    }
 
     return 0;
 }
@@ -1385,15 +1414,15 @@ static int test_buffer_only_cpp_deInit(int pipelineId)
     return 0;
 }
 
-int auto_detect_camera(char *sensors_name, int *width, int *height, int devId)
+int auto_detect_camera(char *sensors_name, int *width, int *height, int devId, int boardId)
 {
     int ret = 0;
 
-    CLOG_INFO("auto detect sensor ===================== start ");
+    CLOG_INFO("auto detect sensor ===================== start %d", boardId);
 
-    ret = SPM_SENSORS_MODULE_Detect_Auto(sensors_name, width, height, devId);
+    ret = SPM_SENSORS_MODULE_Detect_Auto(sensors_name, width, height, devId, boardId);
     if (ret) {
-        CLOG_ERROR("no sensor in csi%d", devId);
+        CLOG_ERROR("no sensor in csi%d in board %d", devId, boardId);
         CLOG_INFO("auto detect sensor ===================== finish ");
         return ret;
     }
@@ -1422,6 +1451,32 @@ int single_pipeline_online_test(struct testConfig *config)
     if (!config)
         return -1;
 
+    is_gpu_render = config->gpuRender;
+    if (is_gpu_render) {
+        memset (&window, 0, sizeof(struct Window));
+        memset (&display, 0, sizeof(struct Display));
+        window.display = &display;
+        display.window = &window;
+        window.geometry.width = config->renderW;
+        window.geometry.height = config->renderH;
+        window.window_size = window.geometry;
+        window.buffer_size = 0;
+        window.frame_sync = 1;
+        window.delay = 0;
+        window.userData = malloc(sizeof(UserData));
+
+        if (create_window(&window, &display, ret) == -1) {
+            CLOG_ERROR("create window faild!");
+            destroy_window(&window, &display);
+            gl_window_shutdown(&window);
+            return -1;
+        }
+
+        if (!gl_window_init(&window))	{
+            CLOG_ERROR("init openGL faild!");
+            return -1;
+        }
+    }
     // sensor init
     ret = testSensorInit(&sensorHandle, config->ispFeConfig[0].sensorName,
                          config->ispFeConfig[0].sensorId, config->ispFeConfig[0].sensorWorkMode,
@@ -1492,6 +1547,7 @@ int single_pipeline_online_test(struct testConfig *config)
 
         testAutoRunFlag[pipelineId] = 1;
         condition_init(&testAutoRunCond[pipelineId]);
+        condition_init(&testDrawCond);
 
         test_buffer_prepare(pipelineId, firmwareId);
         cpp_load_fw_settingfile(pipelineId, SettingFile);
@@ -1502,8 +1558,15 @@ int single_pipeline_online_test(struct testConfig *config)
         testSensorStart(sensorHandle);
         streamOnFlags[pipelineId] = 1;
         CLOG_INFO("sensor stream on");
-        condition_wait(&testAutoRunCond[pipelineId]);
 
+        if (is_gpu_render) {
+            while (streamOnFlags[pipelineId]) {
+                condition_wait(&testDrawCond);
+                gl_window_draw(&window);
+            }
+        } else {
+            condition_wait(&testAutoRunCond[pipelineId]);
+        }
         streamOnFlags[pipelineId] = 0;
         viisp_vi_online_streamOff(pipelineId);
         testSensorStop(sensorHandle);
@@ -1573,7 +1636,11 @@ int single_pipeline_online_test(struct testConfig *config)
     cpp_deInit(pipelineId);
 
     testSensorDeInit(sensorHandle);
-
+    if (is_gpu_render) {
+        condition_deinit(&testDrawCond);
+        destroy_window(&window, &display);
+        gl_window_shutdown(&window);
+    }
     CLOG_INFO("test end");
 
     return ret;
