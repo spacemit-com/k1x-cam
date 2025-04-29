@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <stdatomic.h>
+#include <fcntl.h>
 
 #define MAX_BUFFER_RAWDUMP_NUM 5
 #define MAX_BUFFER_NUM   4
@@ -84,6 +85,9 @@ enum V4L2_PIPE_SEQ_ID {
 struct v4l2_vinit {
 	int 			ret;
 };
+struct v4l2_vdeinit {
+	int 			ret;
+};
 struct v4l2_vformat {
 	int 			ret;
 	int 			v4l2_buf_type;
@@ -104,6 +108,10 @@ struct v4l2_vbuffer {
 };
 struct v4l2_vstream {
 	int 			ret;
+    int             reserved1;
+	unsigned int	reserved2;
+	unsigned int	reserved3;
+	int 			reserved4;
 };
 struct v4l2_vpoll {
 	int 			ret;
@@ -118,6 +126,7 @@ struct vcam_header {
 	unsigned int	user_pid;
 
 	struct v4l2_vinit vinit;
+	struct v4l2_vdeinit vdeinit;
 	struct v4l2_vformat vfmt;
 	struct v4l2_vrequestbuffers vreq_buf;
 	struct v4l2_vbuffer vbuf;
@@ -173,7 +182,7 @@ static int image_buffer_save(const IMAGE_BUFFER_S* imgBuf, char* fileName)
 {
     FILE* fp;
 
-    fp = fopen(fileName, "w+");
+    fp = fopen(fileName, "ab");
     if (!fp) {
         printf("%s: %s open failed\n", __func__, fileName);
         return -1;
@@ -181,7 +190,7 @@ static int image_buffer_save(const IMAGE_BUFFER_S* imgBuf, char* fileName)
     for (uint32_t i = 0; i < imgBuf->numPlanes; i++)
         fwrite(imgBuf->planes[i].virAddr, imgBuf->planes[i].length, 1, fp);
     fclose(fp);
-    CLOG_INFO("save img fileName %s", fileName);
+    // CLOG_INFO("save img fileName %s", fileName);
 
     return 0;
 }
@@ -1005,14 +1014,14 @@ static int netlink_recv(void *data, unsigned int len, unsigned int need_seq)
     struct nlmsghdr *hdr = (struct nlmsghdr *)data;
     //verify kernel pos
     if (streamOnFlags[0] == 0 && hdr->nlmsg_seq != need_seq) {
-        CLOG_WARNING("recv message dismatch seq %d != %d", hdr->nlmsg_seq, need_seq);
-        return hdr->nlmsg_seq;
+        CLOG_ERROR("recv message dismatch seq %d != %d", hdr->nlmsg_seq, need_seq);
+        return -hdr->nlmsg_seq;
     } else if (streamOnFlags[0] == 1 && hdr->nlmsg_seq != need_seq) {
         if (hdr->nlmsg_seq == START_POLL || hdr->nlmsg_seq == START_DQBUF || hdr->nlmsg_seq == START_QBUF) {
            return hdr->nlmsg_seq;
         } else {
             CLOG_WARNING("recv message dismatch seq %d != %d", hdr->nlmsg_seq, need_seq);
-            return 999;
+            return hdr->nlmsg_seq;
         }
     }
 
@@ -1055,6 +1064,27 @@ static int netlink_send(void *data, unsigned int len, unsigned int seq)
 
     return ret;
 }
+static IMAGE_BUFFER_S* pop_item_return(LIST_HANDLE buffer_list, uint32_t cur_id)
+{
+    IMAGE_BUFFER_S* buffer_item_tmp = NULL;
+    IMAGE_BUFFER_S* ret_info = NULL;
+
+    List_Lock(buffer_list);
+    buffer_item_tmp = List_GetBeginItem(buffer_list);
+
+    while (buffer_item_tmp) {
+        if (buffer_item_tmp->index == cur_id)
+            break;
+        buffer_item_tmp = List_GetNextItem(buffer_list, buffer_item_tmp);
+    }
+    ret_info = buffer_item_tmp;
+
+    List_Unlock(buffer_list);
+    if (ret_info)
+        List_EraseByItem(buffer_list, ret_info);
+
+    return ret_info;
+}
 
 /************************************************************************************************/
 int v4l2_single_online_test(struct testConfig *config)
@@ -1069,7 +1099,10 @@ int v4l2_single_online_test(struct testConfig *config)
     IMAGE_INFO_S img_info = {};
     struct tuning_objs_config tuning_cfg = {0};
     recv_msg *info;
+    int32_t fd_debug = -1;
+    FILE *fb_yuv = NULL;
     char SettingFile[128] = "/usr/share/camera_json/sensor_rear_primary_cpp_preview_setting.data";
+    static double viT1[2] = {0};
 
     CLOG_INFO("[netlink] init %d", getpid());
     netlink_init();
@@ -1153,6 +1186,12 @@ int v4l2_single_online_test(struct testConfig *config)
         struct nlmsghdr hdr;
         struct v4l2_vbuffer data;
     } recv_vquery_buf;
+#if 0
+    struct {
+        struct nlmsghdr hdr;
+        struct v4l2_vbuffer data;
+    } recv_vqbuf;
+#endif
     for (i = 0; i < recv_vreq_buf.data.count; i++) {
         CLOG_INFO("[netlink] wait kernel query buffer");
 
@@ -1165,6 +1204,17 @@ int v4l2_single_online_test(struct testConfig *config)
         snd_header.vbuf.ret = 0;
         snd_header.vbuf.m_fd = fd;
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QUERYBUF);
+
+#if 0
+        CLOG_INFO("[netlink] wait kernel queue buffer");
+        ret = netlink_recv(&recv_vqbuf, sizeof(recv_vqbuf), START_QBUF);
+        if (ret < 0) {
+            goto wait_qbuf_fail;
+        }
+
+        snd_header.vbuf.ret = 0;
+        netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
+#endif
     }
 
     strcpy(pipelineProcThread[pipelineId].threadName, "pipeline0Func");
@@ -1206,9 +1256,10 @@ int v4l2_single_online_test(struct testConfig *config)
         netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
     }
 
+
     test_buffer_prepare(pipelineId, firmwareId);
 
-    CLOG_INFO("[netlink] wait kernel stream on, req buf %d", recv_vreq_buf.data.count);
+    CLOG_INFO("[netlink] wait kernel stream on, req buf %d, save yuv:%d", recv_vreq_buf.data.count, config->save_yuv);
     struct {
         struct nlmsghdr hdr;
         struct v4l2_vstream data;
@@ -1229,6 +1280,19 @@ int v4l2_single_online_test(struct testConfig *config)
     snd_header.vstream.ret = 0;
     netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMON);
 
+    if (config->save_yuv) {
+        const char *path = "/sys/module/vcam_dbg/parameters/debug_mdl";
+        fd_debug = open(path, O_RDONLY);
+        if (fd_debug < 0) {
+            CLOG_ERROR("open debug_mdl fail, errno = %d reason = %s \n", errno, strerror(errno));
+        } else {
+            CLOG_INFO("open debug_mdl success");
+        }
+    }
+    char debug_val[8];
+    static int32_t dump_num = 0;
+    static int32_t dump_mode = 0;
+    int64_t len = 0;
     IMAGE_BUFFER_S* doneBuf = NULL;
     IMAGE_BUFFER_S* dqBuf = NULL;
     IMAGE_BUFFER_S* qBuf = NULL;
@@ -1250,6 +1314,10 @@ int v4l2_single_online_test(struct testConfig *config)
         struct nlmsghdr hdr;
         struct v4l2_vbuffer data;
     } recv_vdata;
+    struct {
+        struct nlmsghdr hdr;
+        struct v4l2_vdeinit data;
+    } recv_vdeinit;
     while (1) {
         CLOG_INFO("[netlink] wait kernel event data");
 
@@ -1295,25 +1363,55 @@ int v4l2_single_online_test(struct testConfig *config)
                 snd_header.vbuf.m_fd = dqBuf->m.fd;
                 snd_header.vbuf.ret = 0;
 
+                if (fd_debug > 0 && dump_num == 0) {
+                    memset (debug_val, 0, sizeof(debug_val));
+                    lseek (fd_debug, 0, SEEK_SET);
+                    len = read (fd_debug, debug_val, 8);
+                    if (len < 0 || len >= 8) {
+                        CLOG_ERROR("read debug_mdl node fail, len:%ld, errno = %d reason = %s",
+                            len, errno, strerror(errno));
+                    } else {
+                        debug_val[len] = '\0';
+                        dump_num = atoi(debug_val) / 10;
+                        dump_num = dump_num > 200 ?  200 : dump_num;
+                        dump_mode = atoi(debug_val) % 10;
+                        if (dump_mode == 3 || dump_mode == 4)
+                            dump_mode = 4;
+                        else
+                            dump_num = 0;
+                        CLOG_INFO("dump_mode is: %d, dump_num is: %d",
+                            dump_mode, dump_num);
+                    }
+                }
+                if (dump_mode == 4 && dump_num > 0) {
+                    image_buffer_save(dqBuf, "/data/cam_test_yuv.bin");
+                    dump_num--;
+                }
+
                 netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_DQBUF);
                 List_Push(v4l2_qbuf_list[pipelineId], (void *)dqBuf);
                 break;
             case START_QBUF:
-                qBuf = List_Pop(v4l2_qbuf_list[pipelineId]); 
+                // qBuf = List_Pop(v4l2_qbuf_list[pipelineId]); 
+                qBuf = pop_item_return(v4l2_qbuf_list[pipelineId], recv_vdata.data.index);
                 if (qBuf == NULL) {
                     CLOG_ERROR("error! no buffer");
                     fflush(stdout);
                     fflush(stderr);
                     goto loop_fail;
                 }
-                if (recv_vdata.data.index != qBuf->index)
-                    CLOG_ERROR("[netlink] handle qbuf, (%d, %d)", recv_vdata.data.index, qBuf->index);
-                else
+
+                if (recv_vdata.data.index != qBuf->index) {
+                    CLOG_ERROR("[netlink] error!! never go this, check! (%d, %d)", recv_vdata.data.index, qBuf->index);
+                } else
                     CLOG_INFO("[netlink] handle qbuf, (%d, %d)", recv_vdata.data.index, qBuf->index);
                 List_Push(cpp_origin_list[pipelineId], (void *)qBuf);
                 snd_header.vbuf.ret = 0;
                 netlink_send(&snd_header.vbuf, sizeof(struct v4l2_vbuffer), FINISH_QBUF);
                 break;
+            case START_STREAMOFF:
+                CLOG_INFO("[netlink] handle streamoff");
+                goto loop_exit;
             default:
                 CLOG_ERROR("unknown netlink type %d", recv_vdata.hdr.nlmsg_type);
                 goto loop_fail;
@@ -1322,15 +1420,29 @@ int v4l2_single_online_test(struct testConfig *config)
 
 loop_exit:
 loop_fail:
+    viT1[0] = (double)get_timestamp();
+    snd_header.vstream.ret = 0;
     streamOnFlags[pipelineId] = 0;
     viisp_vi_online_streamOff(pipelineId);
     testSensorStop(sensorHandle);
     viisp_isp_streamOff(firmwareId);
     cpp_stop(pipelineId);
-    snd_header.vstream.ret = 0;
-    netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMOFF);
-
+    viT1[1] = (double)get_timestamp();
+    if (ret > 0) 
+        netlink_send(&snd_header.vstream, sizeof(struct v4l2_vstream), FINISH_STREAMOFF);
+    CLOG_INFO("[netlink] stream off use time: %llu us", (unsigned long long)(viT1[1] - viT1[0]));
+    if (ret > 0) {
+        ret = netlink_recv(&recv_vdeinit, sizeof(recv_vdeinit), START_CLOSE);
+        if (ret < 0) {
+            CLOG_WARNING("recv data to close failed, ret=%d", ret);
+        } else if (ret == START_CLOSE) {
+            CLOG_INFO("[netlink] finish close");
+        }
+    }
+    viT1[1] = (double)get_timestamp();
 wait_streamon_fail:
+    if (fb_yuv)
+        fclose(fb_yuv);
     test_buffer_reset(pipelineId);
     ProcThreadDeinit(&pipelineProcThread[pipelineId]);
 wait_qbuf_fail:
@@ -1342,6 +1454,11 @@ wait_req_buf_fail:
     cpp_deInit(pipelineId);
     testSensorDeInit(sensorHandle);
 wait_set_fmt_fail:
+    viT1[0] = (double)get_timestamp();
+    CLOG_INFO("[netlink] close use time: %llu us", (unsigned long long)(viT1[0] - viT1[1]));
+
+    snd_header.vdeinit.ret = 0;
+    netlink_send(&snd_header.vdeinit, sizeof(struct v4l2_vdeinit), FINISH_CLOSE);
     close(skfd);
 
     return ret;
