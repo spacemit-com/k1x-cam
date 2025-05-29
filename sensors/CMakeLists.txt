@@ -16,6 +16,7 @@ foreach(subdir IN ITEMS ${flash_subdirs} ${sensor_subdurs} ${lens_subdirs} ${mod
 	aux_source_directory(${subdir}/ SRC_FILE)
 endforeach()
 
+add_compile_options(-Wno-implicit-function-declaration)
 add_library(cam_sensors SHARED ${SRC_FILE})
 target_include_directories(cam_sensors BEFORE PRIVATE ./
 		PUBLIC include ../libs/include)
