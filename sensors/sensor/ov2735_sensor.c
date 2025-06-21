@@ -472,13 +472,13 @@ static int ov2735_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
                                                                        : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
-    if (expLine > (sensor_context->initVTS - OV2735_VTS_ADJUST))
-        sensor_context->vts[0] = expLine + OV2735_VTS_ADJUST;
-    else
-        sensor_context->vts[0] = sensor_context->initVTS;
+    // if (expLine > (sensor_context->initVTS - OV2735_VTS_ADJUST))
+    //     sensor_context->vts[0] = expLine + OV2735_VTS_ADJUST;
+    // else
+    //     sensor_context->vts[0] = sensor_context->initVTS;
 
-    sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+    // sensor_context->sensorRegs[0].astI2cData[3].u32Data = LOW_8BITS(sensor_context->vts[0]);
+    // sensor_context->sensorRegs[0].astI2cData[4].u32Data = HIGH_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(expLine);
     sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(expLine);
 
@@ -486,6 +486,7 @@ static int ov2735_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
     pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
     pthread_mutex_unlock(&sensor_context->apiLock);
+	// printf("exp ttime: %d us, L:%d\n", u32ExpoTime, expLine);
 
     return 0;
 }
@@ -514,6 +515,7 @@ static int ov2735_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     *pAgainVal = AGain_Reg << 4;  // Q4 -> Q8
     *pDgainVal = 4096;
     pthread_mutex_unlock(&sensor_context->apiLock);
+// printf("again: %x, AGain_Reg: %x\n", *pAgainVal, AGain_Reg);
 
     return ret;
 }
