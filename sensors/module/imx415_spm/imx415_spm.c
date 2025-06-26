@@ -95,19 +95,6 @@ static int imx415_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].work_mode = IMX415_SPM_3864x2192_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &imx415_spm_setting;
             } break;
-            case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {  //rawdump error!!
-                sensor_capability->snr_config[i].width = 3864;
-                sensor_capability->snr_config[i].height = 2192;
-                sensor_capability->snr_config[i].bitDepth = 12;
-                sensor_capability->snr_config[i].maxFps = 30;
-                sensor_capability->snr_config[i].minFps = 15;
-                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
-                sensor_capability->snr_config[i].lane_num = 4;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
-                sensor_capability->snr_config[i].supportPDAF = 0;
-                sensor_capability->snr_config[i].work_mode = IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE;
-                sensor_capability->snr_config[i].setting = &imx415_spm_setting;
-            } break;
             case IMX415_SPM_2568x1440_10bit_LINEAR_30_4LANE: {
                 sensor_capability->snr_config[i].width = 2568;
                 sensor_capability->snr_config[i].height = 1440;
@@ -132,6 +119,19 @@ static int imx415_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = IMX415_SPM_3840x2160_10bit_LINEAR_30_4LANE;
+                sensor_capability->snr_config[i].setting = &imx415_spm_setting;
+            } break;
+            case IMX415_SPM_1920x1080_10bit_LINEAR_112_4LANE: {
+                sensor_capability->snr_config[i].width = 1920;
+                sensor_capability->snr_config[i].height = 1080;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 112;
+                sensor_capability->snr_config[i].minFps = 30;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GBRG;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = IMX415_SPM_1920x1080_10bit_LINEAR_112_4LANE;
                 sensor_capability->snr_config[i].setting = &imx415_spm_setting;
             } break;
             default: {
@@ -166,19 +166,6 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->mipi_clock = 891;  // Mhz
             snr_info->mclk = 37125000;  // hz
         } break;
-        case IMX415_SPM_3864x2192_12bit_LINEAR_30_4LANE: {  //rawdump error!!
-            snr_info->linetime = IMX415_LINETIME_8M30F_12bit_LINEAR;  // ns
-            snr_info->vts = IMX415_VMAX_8M30F_12bit_LINEAR;
-            snr_info->f32maxFps = 30;
-            snr_info->exp_time[0] = 0x08CA * snr_info->linetime / 1000;
-            snr_info->again[0] = 1 * 0x100;   // Q8 format
-            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
-            snr_info->image_mode = SENSOR_LINEAR_MODE;
-            snr_info->setting_table = imx415_spm_3864x2192_12bit_30fps_tab;
-            snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_3864x2192_12bit_30fps_tab);
-            snr_info->mipi_clock = 891;  // Mhz
-            snr_info->mclk = 37125000;  // hz
-        } break;
         case IMX415_SPM_2568x1440_10bit_LINEAR_30_4LANE: {
             snr_info->linetime = IMX415_LINETIME_3M30F_10bit_LINEAR;  // ns
             snr_info->vts = IMX415_VMAX_3M30F_10bit_LINEAR;
@@ -204,6 +191,20 @@ static int imx415_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
             snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_3840x2160_10bit_30fps_tab);
             snr_info->mipi_clock = 891;  // Mhz
             snr_info->mclk = 24000000;  // hz
+        } break;
+        case IMX415_SPM_1920x1080_10bit_LINEAR_112_4LANE: {
+            snr_info->linetime = 7201;  // ns
+            snr_info->vts = 1232;
+            snr_info->f32maxFps = 112;
+            snr_info->exp_time[0] = 1232 * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = imx415_spm_1920x1080_10bit_112fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(imx415_spm_1920x1080_10bit_112fps_tab);
+            snr_info->mipi_clock = 1485;  // Mhz
+            snr_info->mclk = 37125000;  // hz
+            // snr_info->mclk = 27000000;  // hz
         } break;
         default: {
             CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,

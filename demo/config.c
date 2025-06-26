@@ -33,6 +33,10 @@ int checkSpacemitBoard(void)
                 ret = BOARD_MUSE_PI2;
                 printf ("the borad is MUSE-Pi-Pro: %d, max board: %d\n", ret, BOARD_MAX);
                 break;
+            } else if (strstr (line, "RV4B")) {
+                ret = BOARD_MUSE_PI2;
+                printf ("the borad is RV4B: %d, max board: %d\n", ret, BOARD_MAX);
+                break;
             }
         }
     }
@@ -221,7 +225,7 @@ static int getIspNodeConfig (struct testConfig *config, struct cJSON *root)
             config->ispFeConfig[idx].workMode = ISP_WORKMODE_SLICE_CAPTURE;
         } else {
             CLOG_ERROR("invalid isp work mode, valid modes: online, rawdump, offline_preview, offline_capture, ccic, slice_capture");
-            ret -1;
+            ret = -1;
             goto out;
         }
 
@@ -555,7 +559,12 @@ int getTestConfig(struct testConfig *config, char *jsonfile)
     } else {
         config->gpuRender = cjson_get_int(item) ? 1 : 0;
     }
-
+    item = cJSON_GetObjectItem(root, "save_yuv");
+    if (!item) {
+        config->save_yuv = 0;
+    } else {
+        config->save_yuv = cjson_get_int(item) ? 1 : 0;
+    }
     if (config->gpuRender) {
         item = cJSON_GetObjectItem(root, "render_width");
         if (!item) {

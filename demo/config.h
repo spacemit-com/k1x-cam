@@ -92,6 +92,7 @@ struct testConfig {
     int flashEnable;
     int auxDevice;  //0
     int boardId;
+	int save_yuv;
 
     struct cppTestConfig cppConfig[2];
     struct isFeTestConfig ispFeConfig[2];
