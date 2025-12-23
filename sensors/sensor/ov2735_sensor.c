@@ -609,15 +609,23 @@ static int ov2735_get_awblib_default_settings(void* snsHandle, uint32_t u32Chane
 static int ov2735_power_on(SENSOR_CONTEXT_S* sensor_context)
 {
     SENSORS_CHECK_PARA_POINTER(sensor_context);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
+    usleep(1200);
 
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_DVDDEN, 1);
-    usleep(20000);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DVDD, 1);
+    sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_AVDD, 2800000);
+    sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_AVDD, 1);
+    usleep(6000);
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
     sensor_set_mclk_enable(sensor_context->devId, 1);
     sensor_set_mclk_rate(sensor_context->devId, 24000000);
     usleep(20000);
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
-    usleep(10000);
-    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 1);
+
+    sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 1);
     usleep(15000);
 
     CLOG_INFO("finish power on 11");
