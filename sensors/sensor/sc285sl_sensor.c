@@ -416,7 +416,7 @@ static int sc285sl_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId,
 	pstSensorVtsInfo->snsVts = sensor_context->vts[0];
 	pstSensorVtsInfo->snsFps = sensor_context->initFps * sensor_context->initVTS / sensor_context->vts[0];
 	pthread_mutex_unlock(&sensor_context->apiLock);
-
+	// printf("exp ttime: %d us, L:%d, vts:%d\n", u32ExpoTime, expLine, sensor_context->vts[0]);
 	return 0;
 }
 
@@ -434,25 +434,49 @@ static int sc285sl_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uin
 	SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
 	pthread_mutex_lock(&sensor_context->apiLock);
-	AGain_Val = (*pAgainVal >> 2);  // Q12 -> Q10
+	/* pAgainVal from caller is Q8 (256 = 1x). Convert to Q10 for mapping (<<2). */
+	AGain_Val = (*pAgainVal >> 2);  // Q8 -> Q10
 
-	/* Simple mapping — keep same logic as sc533hai for compatibility; adjust if datasheet prescribes different mapping */
-	if (AGain_Val <= 0x80) {
-		step = (AGain_Val - 0x40) * 32 / 0x40;
+	/* Mapping adapted from sc533hai: map Q10 AGain_Val to coarse/fine registers.
+	 * Ranges and register encodings follow the same piecewise scheme.
+	 */
+	if (AGain_Val <= 0x80) { /* 1.000~2.000x (ANA GAIN=0x00) */
+		step = (AGain_Val - 0x40) * 32 / 0x40; /* 0x40(Q10)=1.0x,0x80(Q10)=2.0x -> 0x20~0x3F */
 		AGain_Reg = 0x00;
 		AGain_Reg_Fine = 0x20 + step;
-	} else {
-		/* fallback coarse mapping */
+	} else if (AGain_Val <= 0x100) { /* 2.660~5.237x (ANA GAIN=0x80, DCG enabled) */
+		step = (AGain_Val - 0x80) * 32 / 0x80; /* 0x80(Q10)=2.66x,0x100(Q10)=5.237x */
 		AGain_Reg = 0x80;
-		AGain_Reg_Fine = 0x20;
+		AGain_Reg_Fine = 0x20 + step;
+	} else if (AGain_Val <= 0x180) { /* 5.320~8.313x (ANA GAIN=0x81) */
+		step = (AGain_Val - 0x100) * 32 / 0x80; /* 0x100(Q10)=5.32x,0x180(Q10)=8.313x */
+		AGain_Reg = 0x81;
+		AGain_Reg_Fine = 0x20 + step;
+	} else if (AGain_Val <= 0x280) { /* 8.567~18.567x (ANA GAIN=0x83) */
+		step = (AGain_Val - 0x180) * 32 / 0x100; /* 0x180(Q10)=8.313x,0x280(Q10)=18.567x */
+		AGain_Reg = 0x83;
+		AGain_Reg_Fine = 0x20 + step;
+	} else if (AGain_Val <= 0x480) { /* 18.567~41.895x (ANA GAIN=0x87) */
+		step = (AGain_Val - 0x280) * 32 / 0x200; /* 0x280(Q10)=18.567x,0x480(Q10)=41.895x */
+		AGain_Reg = 0x87;
+		AGain_Reg_Fine = 0x20 + step;
+	} else { /* 42.560~max (ANA GAIN=0x8f, max analog gain) */
+		step = (AGain_Val - 0x480) * 32 / 0x400; /* 0x480(Q10)=42.56x,0x880(Q10)=~83.79x */
+		AGain_Reg = 0x8f;
+		AGain_Reg_Fine = 0x20 + (step > 31 ? 31 : step);
 	}
 
 	sensor_context->sensorRegs[0].astI2cData[3].u32Data = AGain_Reg;
 	sensor_context->sensorRegs[0].astI2cData[4].u32Data = AGain_Reg_Fine;
 
-	*pAgainVal = AGain_Val << 2;
+	/* return AGain in Q12 (same convention as sc533hai) and set dgain to 1x (Q12) */
+	*pAgainVal = AGain_Val << 2; /* Q10 -> Q12 */
 	*pDgainVal = 4096;
-	pthread_mutex_unlock(&sensor_context->apiLock);
+
+        // printf("pAgainVal: %d  AGain_Reg: %x, AGain_Reg_Fine: %x\n", *pAgainVal,
+        //        AGain_Reg, AGain_Reg_Fine);
+
+        pthread_mutex_unlock(&sensor_context->apiLock);
 	return ret;
 }
 
