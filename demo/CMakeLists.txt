@@ -110,3 +110,11 @@ CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pkgconfig/k1x-cam.pc.cmake"
 install(FILES "${CMAKE_BINARY_DIR}/k1x-cam.pc"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
 
+# Install camera JSON configuration files
+install(FILES
+        cfgs/files/csi1_camera_detect.json
+        cfgs/files/csi2_camera_detect.json
+        cfgs/files/csi3_camera_detect.json
+        DESTINATION "/usr/share/camera_json/"
+        )
+
