@@ -214,23 +214,23 @@
     /* @m_pCMC0  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for low color temperature */
     {
-        {4714, -415, -203},
-        {-1604, 4800, 900},
-        {1052, -4634, 7678}
+        {5142, -1083, 37},
+        {-464, 4199, 361},
+        {1847, -3817, 6066}
     },
     /* @m_pCMC1  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for mid color temperature */
     {
-        {4896, -682, -118},
-        {-1271, 5010, 357},
-        {707, -3302, 6691}
+        {5266, -1277, 107},
+        {-115, 4252, -41},
+        {1640, -2820, 5276}
     },
     /* @m_pCMC2  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for high color temperature */
     {
-        {5188, -1062, -30},
-        {-908, 5036, -32},
-        {546, -2766, 6316}
+        {5539, -1641, 198},
+        {263, 4167, -334},
+        {1568, -2467, 4995}
     },
     /* @m_pCMCManual  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for manual mode */
@@ -1408,9 +1408,9 @@
     /* @m_pCTMatrixLow  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix low */
     {
-        {1.598967, -0.465799, -0.639546},
-        {-0.437035, 1.656209, -0.233981},
-        {-0.048603, 0.375412, 0.465084}
+        {1.366474, -0.330137, -0.370356},
+        {-0.094302, 1.273487, -0.212915},
+        {-0.047854, 0.213361, 0.378352}
     },
     /* @m_pCTMatrixHigh  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix high */
@@ -3043,14 +3043,14 @@
     /* @m_pRoiBound  Size: 16x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary : x_high x_low y_high y_low */
     {
-        {560, 387, 424, 286},
-        {501, 358, 567, 424},
-        {371, 311, 819, 567},
-        {311, 255, 819, 567},
-        {315, 254, 1056, 819},
-        {254, 209, 1056, 819},
-        {294, 246, 1179, 1056},
-        {246, 198, 1179, 1056},
+        {302, 191, 262, 171},
+        {319, 216, 378, 262},
+        {299, 246, 628, 378},
+        {246, 196, 628, 378},
+        {299, 241, 945, 628},
+        {241, 198, 945, 628},
+        {293, 246, 1179, 945},
+        {246, 198, 1179, 945},
         {326, 229, 1645, 1179},
         {326, 229, 1645, 1179},
         {0, 0, 0, 0},
@@ -3062,7 +3062,7 @@
     },
     /* @m_pRoiBoundG  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary of G: x_high x_low y_high y_low */
-    {186, 84, 1086, 588},
+    {168, 68, 1003, 397},
     /* @m_pRoiLumLutHigh  Size: 16x11  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* high threshold for lum of each exposure level */
     {
@@ -3140,10 +3140,10 @@
     0,
     /* @m_nRoiCtHigh  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary */
-    1198,
+    1142,
     /* @m_nRoiCtLow  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary */
-    431,
+    723,
     /* @m_nRoiXMax  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary */
     560,
@@ -3152,19 +3152,19 @@
     198,
     /* @m_pRoiCtHighAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary in different lum */
-    {983, 983, 1057, 1100, 1100, 1210, 1210, 1210, 1210, 1210, 1210},
+    {831, 831, 947, 1034, 1034, 1210, 1210, 1210, 1210, 1210, 1210},
     /* @m_pRoiCtLowAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary in different lum */
-    {949, 949, 949, 949, 949, 369, 369, 369, 369, 369, 369},
+    {784, 784, 784, 784, 784, 227, 227, 227, 227, 227, 227},
     /* @m_pRoiCtLow2Auto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* 2nd color temperature low boundary in different lum */
-    {949, 949, 949, 949, 949, 369, 369, 369, 369, 369, 369},
+    {784, 784, 784, 784, 784, 227, 227, 227, 227, 227, 227},
     /* @m_pRoiXMaxAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary in different lum */
-    {560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560},
+    {326, 326, 326, 326, 326, 326, 326, 326, 326, 326, 326},
     /* @m_pRoiXMinAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary in different lum */
-    {198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198},
+    {191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191},
     /* @m_pAWBGainLimit  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit of AWB Gain [low, high, x_min, x_max] */
     {0, 4095, 0, 4095},
@@ -3173,7 +3173,7 @@
     105,
     /* @m_pAWBCTShiftThr  Size: 1x2  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit for ct shift */
-    {665, 770},
+    {471, 576},
     /* @m_bGreenShiftEn  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* green shift enable */
     1,
@@ -3188,7 +3188,7 @@
     {120, 20},
     /* @m_pOutdoorGain  Size: 1x3  BitWidth: 32_u  Range~[0, 65536]  Type: firmware */
     /* outdoor gain */
-    {8450, 4096, 7732},
+    {8303, 4096, 7877},
     /* @m_nValidNum  Size: 1x1  BitWidth: 32_u  Range~[0, 768]  Type: firmware */
     /* valid threshold for ROI Sum */
     4,
