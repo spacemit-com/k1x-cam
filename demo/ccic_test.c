@@ -248,7 +248,7 @@ int only_ccic_test(struct testConfig *config)
     // config ccic
     ASR_CCIC_Init();
 
-    int raw_width = sensor_info0.sensor_cfg[work_mode_id].width;
+    int raw_width = sensor_info0.sensor_cfg[work_mode_id].width*2;
     int raw_height = sensor_info0.sensor_cfg[work_mode_id].height;
     int raw_format = PIXEL_FORMAT_RAW;
 
@@ -277,8 +277,8 @@ int only_ccic_test(struct testConfig *config)
     ccDevAttr0.mode = g_vc_mode_0;
     ccDevAttr0.main_vc = 0;
     ccDevAttr0.sub_vc = 0;
-    ccDevAttr0.main_dt = 0x2b;
-    ccDevAttr0.sub_dt = 0x2b;
+    ccDevAttr0.main_dt = 0x1e;
+    ccDevAttr0.sub_dt = 0x1e;
     CLOG_INFO("ccic_test  ccDevAttr0.mode :%d\n", ccDevAttr0.mode);
     ret = ASR_CCIC_SetDevAttr(ccic_id, &ccDevAttr0);
     if (ret) {
@@ -292,7 +292,7 @@ int only_ccic_test(struct testConfig *config)
     }
 
     CCU_GET_CCIC_MAIN_CHN(ccic_id, mainChn0);
-    ccChnAttr0.enPixFormat = CAM_CCIC_PIXEL_FORMAT_RGB_BAYER_10BPP;
+    ccChnAttr0.enPixFormat = CAM_CCIC_PIXEL_FORMAT_YUYV_PACKAGE_422;
     ccChnAttr0.width = sensor_info0.sensor_cfg[work_mode_id].width;
     ccChnAttr0.height = sensor_info0.sensor_cfg[work_mode_id].height;
     CLOG_INFO("ccic_test  main ccDevAttr0.size  %d x %d\n", ccChnAttr0.width, ccChnAttr0.height);

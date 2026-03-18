@@ -58,6 +58,7 @@ uint32_t get_buffer_size(IMAGE_BUFFER_S *bufInfo, uint32_t align)
             buffer_size += planes[1].length;
             break;
         case PIXEL_FORMAT_RAW:
+	case PIXEL_FORMAT_RAW_8BPP:
             bufInfo->numPlanes = 1;
             planes[0].width = bufInfo->size.width * 2;
             planes[0].height = bufInfo->size.height;
