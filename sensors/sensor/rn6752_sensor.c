@@ -32,8 +32,8 @@ static struct regval_tab stream_off_regs[] = {
 };
 
 static struct regval_tab stream_soft_reset_regs[] = {
-    {PAGE_SELECT_REG, PAGE_ZERO},
-    {0x81, 0x00},  /* reset video decoder */
+    // {PAGE_SELECT_REG, PAGE_ZERO},
+    // {0x81, 0x00},  /* reset video decoder */
 };
 
 static struct regval_tab color_bar_regs[] = {

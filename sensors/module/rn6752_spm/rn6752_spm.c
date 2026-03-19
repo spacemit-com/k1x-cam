@@ -155,7 +155,7 @@ static int rn6752_spm_get_sensor_work_info(int32_t work_mode,
     snr_info->image_mode = SENSOR_LINEAR_MODE;
     snr_info->setting_table = rn6752_spm_1080p25_4lane_tab;
     snr_info->setting_table_size = ARRAY_SIZE(rn6752_spm_1080p25_4lane_tab);
-    snr_info->mipi_clock = 648; /* MHz - for 1080p25 4-lane UYVY */
+    snr_info->mipi_clock = 800; /* MHz - for 1080p25 4-lane UYVY */
   } break;
   case RN6752_SPM_1280x720_8bit_LINEAR_25_4LANE: {
     snr_info->linetime = RN6752_LINETIME_720P25_8bit_LINEAR;
