@@ -92,8 +92,8 @@ rn6752_spm_get_sensor_capbility(int32_t capArraySize,
       sensor_capability->snr_config[i].width = 1920;
       sensor_capability->snr_config[i].height = 1080;
       sensor_capability->snr_config[i].bitDepth = 8;
-      sensor_capability->snr_config[i].maxFps = 25;
-      sensor_capability->snr_config[i].minFps = 25;
+      sensor_capability->snr_config[i].maxFps = 30;
+      sensor_capability->snr_config[i].minFps = 15;
       sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
       sensor_capability->snr_config[i].lane_num = 4;
       sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
@@ -107,7 +107,7 @@ rn6752_spm_get_sensor_capbility(int32_t capArraySize,
       sensor_capability->snr_config[i].height = 720;
       sensor_capability->snr_config[i].bitDepth = 8;
       sensor_capability->snr_config[i].maxFps = 25;
-      sensor_capability->snr_config[i].minFps = 25;
+      sensor_capability->snr_config[i].minFps = 10;
       sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
       sensor_capability->snr_config[i].lane_num = 4;
       sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
@@ -121,7 +121,7 @@ rn6752_spm_get_sensor_capbility(int32_t capArraySize,
       sensor_capability->snr_config[i].height = 720;
       sensor_capability->snr_config[i].bitDepth = 8;
       sensor_capability->snr_config[i].maxFps = 30;
-      sensor_capability->snr_config[i].minFps = 30;
+      sensor_capability->snr_config[i].minFps = 15;
       sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
       sensor_capability->snr_config[i].lane_num = 4;
       sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;

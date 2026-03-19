@@ -22,16 +22,13 @@ extern "C" {
  * Output: UYVY 8-bit via MIPI CSI-2
  */
 struct regval_tab rn6752_spm_1080p25_4lane_tab[] = {
-    /* Video decoder control */
     {0x81, 0x01},  /* turn on video decoder */
     {0xDF, 0xFE},  /* enable HD format */
     {0xF0, 0xC0},
     {0xA3, 0x04},
     {0x88, 0x40},  /* disable SCLK0B out */
     {0xF6, 0x40},  /* disable SCLK3A out */
-
-    /* Channel 0 configuration */
-    {0xFF, 0x00},  /* select ch0 */
+    {0xFF, 0x00},  /* ch0 */
     {0x33, 0x10},
     {0x4A, 0x08},
     {0x00, 0x80},  /* internal use */
@@ -71,14 +68,12 @@ struct regval_tab rn6752_spm_1080p25_4lane_tab[] = {
     {0x97, 0xE1},
     {0x8D, 0x31},
     {0x8E, 0x00},
-
-    /* MIPI CSI-2 configuration */
-    {0xFF, 0x09},  /* mipi tx1 page */
+    {0xFF, 0x09},  /* mipi tx1 */
     {0x00, 0x03},  /* enable bias */
-    {0xFF, 0x08},  /* mipi csi1 page */
+    {0xFF, 0x08},  /* mipi csi1 */
     {0x04, 0x03},  /* csi1 and tx1 reset */
     {0x6C, 0x11},  /* disable ch output; turn on ch0 */
-    {0x06, 0x7C},  /* 4 lanes */
+    {0x06, 0x7C},
     {0x21, 0x01},  /* enable hs clock */
     {0x34, 0x06},
     {0x35, 0x0B},
@@ -87,9 +82,8 @@ struct regval_tab rn6752_spm_1080p25_4lane_tab[] = {
     {0x6C, 0x01},  /* enable ch output */
     {0x04, 0x00},  /* csi1 and tx1 reset finish */
     {0x07, 0x05},  /* non-continuous clock */
-
-    {0xFF, 0x0A},  /* mipi csi3 page */
-    {0x6C, 0x10},  /* disable ch output; turn off ch0~3 */
+    {0xFF, 0x0A},  /* mipi csi3 */
+    {0x6C, 0x10},  /* disab*/
 };
 
 /*

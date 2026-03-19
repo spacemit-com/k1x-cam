@@ -22,11 +22,13 @@ static const unsigned int rn6752_reg_addr_byte = I2C_8BIT; /*byte width of the s
 static const unsigned int rn6752_reg_data_byte = I2C_8BIT;  /*byte width of sensor register data*/
 
 static struct regval_tab stream_on_regs[] = {
-    {0x81, 0x01},  /* turn on video decoder */
+	{0xff, 0x08},
+	{0x6c, 0x01},
 };
 
 static struct regval_tab stream_off_regs[] = {
-    {0x81, 0x00},  /* turn off video decoder */
+	{0xff, 0x08},
+	{0x6c, 0x00},
 };
 
 static struct regval_tab stream_soft_reset_regs[] = {
