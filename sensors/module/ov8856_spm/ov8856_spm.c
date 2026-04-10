@@ -11,8 +11,8 @@
 
 #include "ov8856_spm_setting.h"
 
-static const uint8_t module_i2c_addr = 0x36; /* I2C Address 7-bit, SID LOW */
-//static const uint8_t module_i2c_addr = 0x10; /* I2C Address 7-bit, SID HIGH */
+// static const uint8_t module_i2c_addr = 0x36; /* I2C Address 7-bit, SID LOW */
+static const uint8_t module_i2c_addr = 0x10; /* I2C Address 7-bit, SID HIGH */
 
 struct regval_tab ov8856_spm_vendor_id[] = {
     {0x3004, 0x6c},
@@ -83,17 +83,30 @@ static int ov8856_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
     sensor_capability->snr_config_num = OV8856_SPM_WORK_MODE_SIZE;
     for (i = 0; i < OV8856_SPM_WORK_MODE_SIZE; i++) {
         switch (i) {
-            case OV8856_SPM_2560x1440_10bit_LINEAR_30_4LANE: {
-                sensor_capability->snr_config[i].width = 2560;
-                sensor_capability->snr_config[i].height = 1440;
+            case OV8856_SPM_3280x2464_10bit_LINEAR_15_4LANE: {
+                sensor_capability->snr_config[i].width = 3280;
+                sensor_capability->snr_config[i].height = 2464;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 15;
+                sensor_capability->snr_config[i].minFps = 5;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = OV8856_SPM_3280x2464_10bit_LINEAR_15_4LANE;
+                sensor_capability->snr_config[i].setting = &ov8856_spm_setting;
+            } break;
+	    case OV8856_SPM_1640x1232_10bit_LINEAR_30_4LANE: {
+                sensor_capability->snr_config[i].width = 1640;
+                sensor_capability->snr_config[i].height = 1232;
                 sensor_capability->snr_config[i].bitDepth = 10;
                 sensor_capability->snr_config[i].maxFps = 30;
                 sensor_capability->snr_config[i].minFps = 25;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 4;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
                 sensor_capability->snr_config[i].supportPDAF = 0;
-                sensor_capability->snr_config[i].work_mode = OV8856_SPM_2560x1440_10bit_LINEAR_30_4LANE;
+                sensor_capability->snr_config[i].work_mode = OV8856_SPM_1640x1232_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &ov8856_spm_setting;
             } break;
             default: {
@@ -115,17 +128,29 @@ static int ov8856_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S
     // snr_info->id_table_size = ARRAY_SIZE(ov8856_spm_vendor_id);
 
     switch (work_mode) {
-        case OV8856_SPM_2560x1440_10bit_LINEAR_30_4LANE: {
-            snr_info->linetime = OV8856_LINETIME_2K30_10bit_LINEAR;  // ns
-            snr_info->vts = OV8856_VMAX_2K30_10bit_LINEAR;
-            snr_info->f32maxFps = 30;
-            snr_info->exp_time[0] = 2482 * snr_info->linetime / 1000;
+        case OV8856_SPM_3280x2464_10bit_LINEAR_15_4LANE: {
+            snr_info->linetime = OV8856_LINETIME_2K15_10bit_LINEAR;  // ns
+            snr_info->vts = OV8856_VMAX_2K15_10bit_LINEAR;
+            snr_info->f32maxFps = 15;
+            snr_info->exp_time[0] = (2488 - 6) * snr_info->linetime / 1000;
             snr_info->again[0] = 1 * 0x100;   // Q8 format
             snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
             snr_info->image_mode = SENSOR_LINEAR_MODE;
-            snr_info->setting_table = ov8856_spm_2560x1440_10bit_30fps_tab;
-            snr_info->setting_table_size = ARRAY_SIZE(ov8856_spm_2560x1440_10bit_30fps_tab);
+            snr_info->setting_table = ov8856_spm_3280x2464_10bit_15fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov8856_spm_3280x2464_10bit_15fps_tab);
             snr_info->mipi_clock = 360;  // Mhz
+        } break;
+        case OV8856_SPM_1640x1232_10bit_LINEAR_30_4LANE: {
+            snr_info->linetime = OV8856_LINETIME_1K30_10bit_LINEAR;  // ns
+            snr_info->vts = OV8856_VMAX_1K30_10bit_LINEAR;
+            snr_info->f32maxFps = 30;
+            snr_info->exp_time[0] = (1256 - 6) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = ov8856_spm_1640x1232_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov8856_spm_1640x1232_10bit_30fps_tab);
+            snr_info->mipi_clock = 264;  // Mhz
         } break;
         default: {
             CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,
@@ -164,29 +189,12 @@ static int ov8856_spm_get_sensor_vendor_id(SENSOR_VENDOR_ID_S* vendor_id)
     return 0;
 }
 
-static int readenv_atoi(char *env) {
-  char *p;
-  //getenv???gcc?????,?stdlib.h??????
-  if (( p = getenv(env) ))
-  	return (atoi(p));
-  else
-	return(0);
-}
+
 static int ov8856_spm_get_sensor_i2c_addr(uint8_t* i2c_addr)
 {
     SENSORS_CHECK_PARA_POINTER(i2c_addr);
-
-	int addr = readenv_atoi("I2C_ADDRESS");
-	printf("I2C_ADDRESS = %d\n",addr);
-
     *i2c_addr = module_i2c_addr;
 
-    if (addr != 0) {
-        *i2c_addr = addr;
-        printf("i2c_addr = 0x%x\n", addr);
-    }
-
-    // *i2c_addr = module_i2c_addr;
     return 0;
 }
 

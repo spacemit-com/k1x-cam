@@ -30,23 +30,22 @@ static struct regval_tab stream_soft_reset_regs[] = {
 };
 
 static struct regval_tab color_bar_regs[] = {
-    { 0x5080, 0x80},
+//     { 0x5080, 0x80},
 };
 
 #define OV8856_VTS_ADJUST     (6) /* vts - max_exposure*/
-#define OV8856_VTS_LINES_MAX  (0xffff)
-#define OV8856_EXPO_LINES_MIN (0x0008)
+#define OV8856_VTS_LINES_MAX  (0x7fff)
+#define OV8856_EXPO_LINES_MIN (6)
 
 #define OV8856_VTS_ADDR_H (0x380E)
 #define OV8856_VTS_ADDR_L (0x380F)
-#define OV8856_EXPO_H     (0x3510)
-#define OV8856_EXPO_M     (0x3511)
-#define OV8856_EXPO_L     (0x3512)
+#define OV8856_EXPO_H     (0x3500)
+#define OV8856_EXPO_M     (0x3501)
+#define OV8856_EXPO_L     (0x3502)
 #define OV8856_AGAIN_H    (0x3508)
 #define OV8856_AGAIN_L    (0x3509)
-#define OV8856_DGAIN_H    (0x350A)
-#define OV8856_DGAIN_M    (0x350B)
-#define OV8856_DGAIN_L    (0x350C)
+// #define OV8856_DGAIN_H    (0x350a)
+// #define OV8856_DGAIN_L    (0x350b)
 #define OV8856_GROUP_ACCESS (0x3208)
 
 /*******************************************************************/
@@ -101,7 +100,7 @@ static int ov8856_write_burst_register(void* handle, struct regval_tab* reg_tabl
     SENSORS_CHECK_PARA_POINTER(reg_table);
     sensor_context = (SENSOR_CONTEXT_S*)handle;
 
-#if 1
+#if 0
     reg_table_data.addr = sensor_context->i2c_addr;
     reg_table_data.reg_len = ov8856_reg_addr_byte;
     reg_table_data.val_len = ov8856_reg_data_byte;
@@ -265,7 +264,7 @@ static int ov8856_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
 
     pthread_mutex_lock(&sensor_context->apiLock);
     if (false == sensor_context->syncInit) {
-        sensor_context->sensorRegs[0].u8CfgDelayMax = 2;
+        sensor_context->sensorRegs[0].u8CfgDelayMax = 1;
         sensor_context->sensorRegs[0].u32RegNum = 10;
         sensor_context->sensorRegs[0].stSensorComBus.s8I2cDev = sensor_context->twsi_no;
 
@@ -277,26 +276,24 @@ static int ov8856_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* p
         }
 
 
-        sensor_context->sensorRegs[0].astI2cData[0].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[0].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[0].u32RegAddr = OV8856_EXPO_L;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[1].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[1].u32RegAddr = OV8856_EXPO_M;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[2].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[2].u32RegAddr = OV8856_EXPO_H;  // exposure time
-        sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[3].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[3].u32RegAddr = OV8856_AGAIN_L;  // analog gain
-        sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 2;
+        sensor_context->sensorRegs[0].astI2cData[4].u8DelayFrmNum = 1;
         sensor_context->sensorRegs[0].astI2cData[4].u32RegAddr = OV8856_AGAIN_H;  // analog gain
-        sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = OV8856_DGAIN_L;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = OV8856_DGAIN_M;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = OV8856_DGAIN_H;  // digital gain
-        sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = OV8856_VTS_ADDR_L;  // VTS
-        sensor_context->sensorRegs[0].astI2cData[9].u8DelayFrmNum = 2;
-        sensor_context->sensorRegs[0].astI2cData[9].u32RegAddr = OV8856_VTS_ADDR_H;  // VTS
+        // sensor_context->sensorRegs[0].astI2cData[5].u8DelayFrmNum = 2;
+        // sensor_context->sensorRegs[0].astI2cData[5].u32RegAddr = OV8856_DGAIN_L;  // digital gain
+        // sensor_context->sensorRegs[0].astI2cData[6].u8DelayFrmNum = 2;
+        // sensor_context->sensorRegs[0].astI2cData[6].u32RegAddr = OV8856_DGAIN_H;  // digital gain
+        sensor_context->sensorRegs[0].astI2cData[7].u8DelayFrmNum = 1;
+        sensor_context->sensorRegs[0].astI2cData[7].u32RegAddr = OV8856_VTS_ADDR_L;  // VTS
+        sensor_context->sensorRegs[0].astI2cData[8].u8DelayFrmNum = 1;
+        sensor_context->sensorRegs[0].astI2cData[8].u32RegAddr = OV8856_VTS_ADDR_H;  // VTS
 
         sensor_context->syncInit = true;
     } else {
@@ -340,15 +337,14 @@ static int ov8856_sensor_dump_info(void* snsHandle)
     ov8856_read_register(snsHandle, OV8856_AGAIN_H, &reg_val_h);
     ov8856_read_register(snsHandle, OV8856_AGAIN_L, &reg_val_l);
     again = ((reg_val_h & 0xf) << 7) | ((reg_val_l & 0x7e) >> 1);
-    ov8856_read_register(snsHandle, OV8856_DGAIN_H, &reg_val_h);
-    ov8856_read_register(snsHandle, OV8856_DGAIN_M, &reg_val_m);
-    ov8856_read_register(snsHandle, OV8856_DGAIN_L, &reg_val_l);
-    dgain = ((reg_val_h & 0x3) << 10) | (reg_val_m << 2) | ((reg_val_l & 0xc0) >> 6);
+//     ov8856_read_register(snsHandle, OV8856_DGAIN_H, &reg_val_h);
+//     ov8856_read_register(snsHandle, OV8856_DGAIN_L, &reg_val_l);
+//     dgain = ((reg_val_h & 0x7f) << 8) | reg_val_l;
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    CLOG_INFO("ov8856 regs(vts=%d,exptime=%d,again=0x%x,dain =0x%x),struct(initVTS=%d,initFps=%f,vts=%d,expline=%d)",
-        vts, exp_time, again, dgain, sensor_context->initVTS, sensor_context->initFps, sensor_context->vts[0],
-        sensor_context->hdrIntTime[0] * 1000 / sensor_context->lineTime);
+//     CLOG_INFO("ov8856 regs(vts=%d,exptime=%d,again=0x%x,dain =0x%x),struct(initVTS=%d,initFps=%f,vts=%d,expline=%d)",
+//         vts, exp_time, again, dgain, sensor_context->initVTS, sensor_context->initFps, sensor_context->vts[0],
+//         sensor_context->hdrIntTime[0] * 1000 / sensor_context->lineTime);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
     return ret;
@@ -384,8 +380,8 @@ static int ov8856_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, I
     pstSensorAeDft->initDGain = dgain;
     pstSensorAeDft->initTGain = pstSensorAeDft->initAnaGain * pstSensorAeDft->initDGain / 0x1000;
 
-    pstSensorAeDft->maxDelayCfg = 2;
-    pstSensorAeDft->minDelayCfg = 2;
+    pstSensorAeDft->maxDelayCfg = 1;
+    pstSensorAeDft->minDelayCfg = 1;
 
     /* uint : us */
     // pstSensorAeDft->maxExpTime = (pstSensorState->initVTS - OV8856_VTS_ADJUST) * sensor_context->lineTime / 1000;
@@ -462,6 +458,7 @@ static int ov8856_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     uint32_t expLine = 0;
+    uint32_t reg_expo = 0;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
@@ -479,11 +476,13 @@ static int ov8856_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, 
     else
         sensor_context->vts[0] = sensor_context->initVTS;
 
-    sensor_context->sensorRegs[0].astI2cData[8].u32Data = LOW_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[9].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine & 0xff0000) >> 16;
+    sensor_context->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+    reg_expo = expLine << 4; 
+
+    sensor_context->sensorRegs[0].astI2cData[0].u32Data = reg_expo & 0xFF;
+    sensor_context->sensorRegs[0].astI2cData[1].u32Data = (reg_expo >> 8) & 0xFF;
+    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (reg_expo >> 16) & 0x0F;
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
@@ -498,7 +497,8 @@ static int ov8856_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
     uint32_t AGain_Reg, DGain_Reg = 0;
-
+    uint32_t gain_isp;
+    uint32_t shift, coarse_reg, fine_reg, reg_val;
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     SENSORS_CHECK_PARA_POINTER(pAgainVal);
     SENSORS_CHECK_PARA_POINTER(pDgainVal);
@@ -506,24 +506,20 @@ static int ov8856_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    AGain_Reg = (*pAgainVal >> 1);  // Q8 -> Q7
-    if (AGain_Reg < 0x080)
-        AGain_Reg = 0x080;
-    if (AGain_Reg > 0x0F80)
-        AGain_Reg = 0x0F80;
-    DGain_Reg = (*pDgainVal >> 2);  // Q12 -> Q10
-    if (DGain_Reg < 0x400)
-        DGain_Reg = 0x400;
-    if (DGain_Reg > 0x0FE0)
-        DGain_Reg = 0x0FE0;
-    sensor_context->sensorRegs[0].astI2cData[3].u32Data = (AGain_Reg & 0x007f) << 1;     // bit[7:1] = Again[6:0]
-    sensor_context->sensorRegs[0].astI2cData[4].u32Data = ((AGain_Reg & 0x0780) >> 7);   // bit[3:0] = Again[10:7]
-    sensor_context->sensorRegs[0].astI2cData[5].u32Data = (DGain_Reg & 0x0003) << 6;     // bit[7:6] = Dgain[1:0]
-    sensor_context->sensorRegs[0].astI2cData[6].u32Data = (DGain_Reg & 0x03fc) >> 2;     // bit[7:0] = Dgain[9:2]
-    sensor_context->sensorRegs[0].astI2cData[7].u32Data = ((DGain_Reg & 0x0c00) >> 10);  // bit[1:0] = Dgain[11:10]
 
-    *pAgainVal = AGain_Reg << 1;  // Q7 -> Q8
-    *pDgainVal = DGain_Reg << 2;  // Q10 -> Q12
+    AGain_Reg = (*pAgainVal) >> 1;
+    if (AGain_Reg < 0x0080) {
+        AGain_Reg = 0x0080;
+    } else if (AGain_Reg > 0x07C0) {
+        AGain_Reg = 0x07C0;
+    }
+    sensor_context->sensorRegs[0].astI2cData[3].u32Data = (AGain_Reg & 0xFF);
+    sensor_context->sensorRegs[0].astI2cData[4].u32Data = ((AGain_Reg >> 8) & 0x1F);
+
+    *pAgainVal = AGain_Reg << 1;
+    *pDgainVal = 4096;
+
+    CLOG_INFO("pAgainVal: %d, AGain_Reg: %d\n", *pAgainVal, AGain_Reg);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
     return ret;
@@ -704,11 +700,6 @@ static int ov8856_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     memset(sensor_context->sensorRegs, 0, 2 * sizeof(ISP_SENSOR_REGS_INFO_S));
     sensor_context->syncInit = 0;
 
-    ret = ov8856_write_burst_register(handle, stream_soft_reset_regs, ARRAY_SIZE(stream_soft_reset_regs));
-    if (ret) {
-        goto out;
-    }
-    usleep(5000);
     ret = ov8856_write_burst_register(handle, sensor_context->work_info.setting_table,
                                        sensor_context->work_info.setting_table_size);
 
@@ -843,6 +834,7 @@ static int ov8856_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
     reg_table_data.val_len = ov8856_reg_data_byte;
     reg_table_data.tab = vendor_id_table;
     reg_table_data.num = vendor_id->id_table_size;
+//     CLOG_INFO("read i2c_addr: 0x%02x", reg_table_data.addr);
     ret = sensor_read_burst_register(sensor_context->devId, &reg_table_data);
     if (ret) {
         CLOG_INFO("read vendor id register failed: %s\n", strerror(errno));

@@ -163,18 +163,14 @@
 },
 
 //CWBGainFirmwareFilter
-{
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable wbc, 1-enable wbc */
-    1
-},
+    1,
 
 //CStretchFirmwareFilter
-{
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable stretch, 1-enable stretch */
-    0
-},
+    0,
 
 //CColorMatrixFirmwareFilter
 {
@@ -2111,11 +2107,9 @@
 //CCropFirmwareFilter
 
 //CBitDepthCompressionFirmwareFilter
-{
     /* @m_bEnableDithering  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable dithering, 1-enable dithering */
-    1
-},
+    1,
 
 //CFormatterFirmwareFilter
 {
