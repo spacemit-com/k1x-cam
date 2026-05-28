@@ -42,8 +42,8 @@ static struct regval_tab color_bar_regs[] = {
 #define OV13850_EXPO_H     (0x3500)
 #define OV13850_EXPO_M     (0x3501)
 #define OV13850_EXPO_L     (0x3502)
-#define OV13850_AGAIN_H    (0x3504)
-#define OV13850_AGAIN_L    (0x3505)
+#define OV13850_AGAIN_H    (0x350a)  // Gain register high byte
+#define OV13850_AGAIN_L    (0x350b)  // Gain register low byte
 // #define OV13850_DGAIN_H    (0x350A)
 // #define OV13850_DGAIN_M    (0x350B)
 // #define OV13850_DGAIN_L    (0x350C)
@@ -339,7 +339,7 @@ static int ov13850_sensor_dump_info(void* snsHandle)
     exp_time = (reg_val_h << 16) | (reg_val_m << 8) | reg_val_l;
     ov13850_read_register(snsHandle, OV13850_AGAIN_H, &reg_val_h);
     ov13850_read_register(snsHandle, OV13850_AGAIN_L, &reg_val_l);
-    again = ((reg_val_h & 0xf) << 7) | ((reg_val_l & 0x7e) >> 1);
+    again = ((reg_val_h & 0x07) << 8) | (reg_val_l & 0xff);
     // ov13850_read_register(snsHandle, OV13850_DGAIN_H, &reg_val_h);
     // ov13850_read_register(snsHandle, OV13850_DGAIN_M, &reg_val_m);
     // ov13850_read_register(snsHandle, OV13850_DGAIN_L, &reg_val_l);
@@ -481,9 +481,11 @@ static int ov13850_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId,
 
     sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
-    sensor_context->sensorRegs[0].astI2cData[0].u32Data = LOW_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[1].u32Data = HIGH_8BITS(expLine);
-    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine & 0xff0000) >> 16;
+    // Exposure value: 4 LSBs are fractional part, so shift left by 4
+    uint32_t expLine_shifted = expLine << 4;
+    sensor_context->sensorRegs[0].astI2cData[0].u32Data = expLine_shifted & 0xff;         // 0x3502: low byte
+    sensor_context->sensorRegs[0].astI2cData[1].u32Data = (expLine_shifted >> 8) & 0xff;  // 0x3501: mid byte
+    sensor_context->sensorRegs[0].astI2cData[2].u32Data = (expLine_shifted >> 16) & 0x0f; // 0x3500: high 4 bits
 
     pstSensorVtsInfo->snsLineTime = sensor_context->lineTime;
     pstSensorVtsInfo->snsVts = sensor_context->vts[0];
@@ -506,24 +508,27 @@ static int ov13850_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uin
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    AGain_Reg = (*pAgainVal >> 1);  // Q8 -> Q7
-    if (AGain_Reg < 0x080)
-        AGain_Reg = 0x080;
-    if (AGain_Reg > 0x0F80)
-        AGain_Reg = 0x0F80;
-    DGain_Reg = (*pDgainVal >> 2);  // Q12 -> Q10
-    if (DGain_Reg < 0x400)
-        DGain_Reg = 0x400;
-    if (DGain_Reg > 0x0FE0)
-        DGain_Reg = 0x0FE0;
-    sensor_context->sensorRegs[0].astI2cData[3].u32Data = (AGain_Reg & 0x007f) << 1;     // bit[7:1] = Again[6:0]
-    sensor_context->sensorRegs[0].astI2cData[4].u32Data = ((AGain_Reg & 0x0780) >> 7);   // bit[3:0] = Again[10:7]
+    // Input: *pAgainVal is in Q8 format (256 = 1x gain)
+    // OV13850 gain format: 0x10-0xf8 maps to 1x-15.5x
+    // Gain register value = real_gain * 16 (0x10 = 1x, 0x20 = 2x, 0xf8 = 15.5x)
+    AGain_Reg = (*pAgainVal >> 4);  // Q8 -> sensor format (divide by 16)
+    if (AGain_Reg < 0x10)
+        AGain_Reg = 0x10;  // Min gain 1x
+    if (AGain_Reg > 0xf8)
+        AGain_Reg = 0xf8;  // Max gain 15.5x
+ 
+    // Write to registers: 0x350a[2:0] = gain[10:8], 0x350b[7:0] = gain[7:0]
+    sensor_context->sensorRegs[0].astI2cData[3].u32Data = AGain_Reg & 0xff;           // 0x350b: low byte
+    sensor_context->sensorRegs[0].astI2cData[4].u32Data = (AGain_Reg >> 8) & 0x07;   // 0x350a: high 3 bits
+ 
+    // Digital gain not used
     // sensor_context->sensorRegs[0].astI2cData[5].u32Data = (DGain_Reg & 0x0003) << 6;     // bit[7:6] = Dgain[1:0]
     // sensor_context->sensorRegs[0].astI2cData[6].u32Data = (DGain_Reg & 0x03fc) >> 2;     // bit[7:0] = Dgain[9:2]
     // sensor_context->sensorRegs[0].astI2cData[7].u32Data = ((DGain_Reg & 0x0c00) >> 10);  // bit[1:0] = Dgain[11:10]
 
-    *pAgainVal = AGain_Reg << 1;  // Q7 -> Q8
-    *pDgainVal = 4096;  // Q10 -> Q12
+    *pAgainVal = AGain_Reg << 4;  // Convert back to Q8 format
+    *pDgainVal = 4096;  // Q12 format, 1x digital gain
+    //printf("ov13850_sensor_gain_update: AGain_Reg 0x%x, pAgainVal(Q8) %d, pDgainVal %d\n", AGain_Reg, *pAgainVal, *pDgainVal);
     pthread_mutex_unlock(&sensor_context->apiLock);
 
     return ret;
