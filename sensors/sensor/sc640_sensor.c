@@ -37,7 +37,7 @@ static const unsigned int sc640_reg_data_byte = I2C_8BIT;
 #define SC640_VID_REG_SIZE 2
 #define SC640_VID_SIZE 2
 
-static uint8_t sc640_stream_on_cmd[SC640_STREAM_ON_CMD_SIZE] = {
+static uint8_t sc640_stream_on_30hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
     /* Matches: i2ctransfer -y 0 w20@0x3c ... */
     0x1d, 0x00,
     0x10, 0x10, 0x46, 0x00,
@@ -45,6 +45,16 @@ static uint8_t sc640_stream_on_cmd[SC640_STREAM_ON_CMD_SIZE] = {
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0xb5, 0x9b,
+};
+
+static uint8_t sc640_stream_on_60hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
+    /* Matches: i2ctransfer -y 0 w20@0x3c ... */
+    0x1d, 0x00,
+    0x10, 0x10, 0x46, 0x00,
+    0x01, 0x03, 0x3c, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x32, 0x7c,
 };
 
 static uint8_t sc640_detect_vid_cmd[SC640_DETECT_CMD_SIZE] = {
@@ -607,7 +617,23 @@ static int sc640_stream_on(void* handle)
     pthread_mutex_lock(&sensor_context->apiLock);
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
     if (!ret) {
-        ret = sc640_i2c_write_raw(handle, sc640_stream_on_cmd, sizeof(sc640_stream_on_cmd));
+        uint8_t* stream_on_cmd;
+        uint32_t stream_on_size;
+
+        switch (sensor_context->work_info.work_mode) {
+            case SC640_SPM_640x512_8bit_LINEAR_30_2LANE:
+                stream_on_cmd = sc640_stream_on_30hz_cmd;
+                stream_on_size = sizeof(sc640_stream_on_30hz_cmd);
+                break;
+            case SC640_SPM_640x512_8bit_LINEAR_60_2LANE:
+            default:
+                stream_on_cmd = sc640_stream_on_60hz_cmd;
+                stream_on_size = sizeof(sc640_stream_on_60hz_cmd);
+                break;
+        }
+        CLOG_INFO("sc640 stream on, work_mode %d, %s", sensor_context->work_info.work_mode,
+                  (stream_on_cmd == sc640_stream_on_30hz_cmd) ? "30hz" : "60hz");
+        ret = sc640_i2c_write_raw(handle, stream_on_cmd, stream_on_size);
     }
     if (!ret) {
         sensor_context->stream_on_flag = 1;

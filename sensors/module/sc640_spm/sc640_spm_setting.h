@@ -15,7 +15,7 @@
 extern "C" {
 #endif /* extern "C" */
 
-struct regval_tab sc640_spm_640x512_8bit_30fps_tab[] = {
+struct regval_tab sc640_spm_640x512_8bit_60fps_tab[] = {
     // {0xFFFF, 0x0000},
 };
 
