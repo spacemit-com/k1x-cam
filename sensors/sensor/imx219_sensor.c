@@ -754,7 +754,7 @@ static int imx219_stream_on(void* handle)
     pthread_mutex_lock(&sensor_context->apiLock);
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
     if (ret)
-        return ret;
+        goto out;
     for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
         imx219_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
                                sensor_context->sensorRegs[0].astI2cData[i].u32Data);
@@ -809,6 +809,7 @@ static int imx219_stream_on(void* handle)
     CLOG_INFO("finish stream on");
 
     sensor_context->stream_on_flag = 1;
+out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }

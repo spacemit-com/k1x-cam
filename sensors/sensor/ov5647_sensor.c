@@ -798,8 +798,9 @@ static int ov5647_stream_on(void* handle)
 
     pthread_mutex_lock(&sensor_context->apiLock);
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
+
     if (ret)
-        return ret;
+        goto out;
 
 #ifdef CLOCK_NCONT
     val |= 0x30;    //MIPI_CTRL00_CLOCK_LANE_GATE | MIPI_CTRL00_LINE_SYNC_ENABLE
@@ -815,9 +816,10 @@ static int ov5647_stream_on(void* handle)
 
     ret = ov5647_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(20000);
-    CLOG_INFO("finish stream on1");
+    CLOG_INFO("finish stream on");
 
     sensor_context->stream_on_flag = 1;
+out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
@@ -918,6 +920,7 @@ static int ov5647_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
             break;
         }
     }
+
     if (ret == -1) {
         for (i = 0; i < vendor_id->id_table_size; i++) {
             CLOG_INFO("read sensor vendor id (0x%04x, 0x%04x)", vendor_id_table[i].reg, vendor_id_table[i].val);
