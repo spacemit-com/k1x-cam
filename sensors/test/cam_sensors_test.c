@@ -44,6 +44,8 @@ int main(int argc, char* argv[])
         CLOG_ERROR("detect sensor fail");
         return ret;
     }
+    
+    // CLOG_INFO("detect sucess");
 
     ret = SPM_SENSORS_MODULE_Init(&sensors_handle, sensors_name, devId, &sensors_module_info, -1);
     if (ret) {
@@ -79,6 +81,7 @@ int main(int argc, char* argv[])
         goto out;
     }
 
+    // 上电
     ret = SPM_SENSOR_Open(sensors_handle, snr_custom);
     if (ret) {
         goto out;
@@ -94,7 +97,7 @@ int main(int argc, char* argv[])
         CLOG_INFO("Input a character:");
         ch = getc(stdin);
         if (ch == 'q' || ch == 'Q') {
-            CLOG_INFO("enter q exit");
+            CLOG_INFO("enter q exit"); 
             break;
         }
         if (ch <= '9' && ch >= '0') {
@@ -103,17 +106,27 @@ int main(int argc, char* argv[])
             CLOG_INFO("config sensor work mode %d", work_mode);
             continue;
         }
-        if (ch == 's' || ch == 'S') {
-            SPM_SENSOR_StreamOn(sensors_handle);
-            CLOG_INFO("sensor stream on");
-            continue;
-        }
-        if (ch == 'c' || ch == 'C') {
-            SPM_SENSOR_StreamOff(sensors_handle);
-            CLOG_INFO("sensor stream off");
-            continue;
-        }
+
+            /*
+             * 禁用 stream on:本测试程序只驱动 sensor,不初始化 SoC 的 CSI/VI 接收端。
+             * 若在此直接开流,sensor 会往 MIPI 灌数据而接收端未就绪,导致内核 CSI/DMA
+             * 驱动挂死(现象:SSH 断开、整板死机需重启)。
+             * 如需真正开流出图,请改用 cam-test 走完整 VI/ISP 通路。
+             */
+
+        // if (ch == 's' || ch == 'S') {
+        //     SPM_SENSOR_StreamOn(sensors_handle);
+        //     CLOG_INFO("sensor stream on");
+        //     continue;
+        // }
+        // if (ch == 'c' || ch == 'C') {
+        //     SPM_SENSOR_StreamOff(sensors_handle);
+        //     CLOG_INFO("sensor stream off");
+        //     continue;
+        // }
+
     }
+    
 out_sensor:
     SPM_SENSOR_Close(sensors_handle);
 
