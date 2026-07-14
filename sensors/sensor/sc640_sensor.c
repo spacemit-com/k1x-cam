@@ -31,6 +31,7 @@ static const unsigned int sc640_reg_data_byte = I2C_8BIT;
 
 #define SC640_I2C_BUFFER_RW 0x1D00
 #define SC640_STREAM_ON_CMD_SIZE 20
+#define SC640_STREAM_OFF_CMD_SIZE 20
 #define SC640_DETECT_CMD_SIZE 20
 #define SC640_STATUS_REG_SIZE 2
 #define SC640_STATUS_SIZE 1
@@ -55,6 +56,16 @@ static uint8_t sc640_stream_on_60hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
     0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
     0x32, 0x7c,
+};
+
+static uint8_t sc640_stream_off_cmd[SC640_STREAM_OFF_CMD_SIZE] = {
+    /* Matches: i2ctransfer -y 0 w20@0x3c ... */
+    0x1d, 0x00,
+    0x10, 0x10, 0x46, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x58, 0x4d,
 };
 
 static uint8_t sc640_detect_vid_cmd[SC640_DETECT_CMD_SIZE] = {
@@ -645,15 +656,18 @@ static int sc640_stream_on(void* handle)
 static int sc640_stream_off(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
+    int ret;
 
     SENSORS_CHECK_PARA_POINTER(handle);
     sensor_context = (SENSOR_CONTEXT_S*)handle;
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
+    CLOG_INFO("sc640 stream off");
+    ret = sc640_i2c_write_raw(handle, sc640_stream_off_cmd, sizeof(sc640_stream_off_cmd));
     sensor_context->stream_on_flag = 0;
     pthread_mutex_unlock(&sensor_context->apiLock);
-    return 0;
+    return ret;
 }
 
 static int sc640_get_ops(void* handle, ISP_SENSOR_REGISTER_S* pSensorFuncOps)
