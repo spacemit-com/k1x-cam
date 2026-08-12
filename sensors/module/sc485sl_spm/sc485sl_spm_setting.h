@@ -4,8 +4,17 @@
 
 #include "cam_sensors_module.h"
 
+/*
+ * 2688 x 1520, 90 fps, linear RAW10, 4 MIPI lanes.
+ * MCLK: 27 MHz; SCLK: 108 MHz; PCLK: 432 MHz.
+ * MIPI data rate: 1080 Mbps/lane; HTS: 3000; VTS: 1600.
+ * Line time: 6.944444 us; exposure step: 1 line (6.944444 us).
+ *
+ * The vendor INI table begins with software reset (0x0103 = 0x01).
+ * Reset is issued by sc485sl_global_config() instead so the settle delay
+ * completes before these mode registers are written.
+ */
 static struct regval_tab sc485sl_spm_2688x1520_10bit_90fps_tab[] = {
-    {0x0103, 0x01},
     {0x0100, 0x00},
     {0x36e9, 0x80},
     {0x37f9, 0x80},
@@ -289,8 +298,15 @@ static struct regval_tab sc485sl_spm_2688x1520_10bit_90fps_tab[] = {
     {0x57ad, 0x00},
 };
 
+/*
+ * 2688 x 1520, 90 fps, linear RAW12, 4 MIPI lanes.
+ * MCLK: 27 MHz; SCLK: 108 MHz; PCLK: 432 MHz.
+ * MIPI data rate: 1296 Mbps/lane; HTS: 3000; VTS: 1600.
+ * Line time: 6.944444 us; exposure step: 1 line (6.944444 us).
+ *
+ * ISP and CPP clocks must be increased for this RAW12 mode.
+ */
 static struct regval_tab sc485sl_spm_2688x1520_12bit_90fps_tab[] = {
-    {0x0103, 0x01},
     {0x0100, 0x00},
     {0x36e9, 0x80},
     {0x37f9, 0x80},
