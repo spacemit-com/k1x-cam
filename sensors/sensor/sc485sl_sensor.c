@@ -164,7 +164,7 @@ static int sc485sl_sensor_get_isp_black_level(void* handle, uint32_t channel,
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSORS_CHECK_PARA_POINTER(black);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
-    bit_depth = ctx->work_info.work_mode == SC485SL_SPM_2688X1520_12BIT_90FPS_4LANE ? 12 : 10;
+    bit_depth = ctx->work_info.work_mode == SC485SL_SPM_2688X1520_10BIT_90FPS_4LANE ? 10 : 12;
     black->bUpdate = false;
     black->bitDepth = bit_depth;
     for (int i = 0; i < 4; ++i)

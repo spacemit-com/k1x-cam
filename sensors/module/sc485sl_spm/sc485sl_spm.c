@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Spacemit Limited
  * All Rights Reserved.
  *
- * SC485SL module.  The two mode tables are transcribed from SmartSens
+ * SC485SL module.  The mode tables are transcribed from SmartSens
  * SC485SL 27 MHz, four-lane reference INI files.
  */
 #include <errno.h>
@@ -47,6 +47,45 @@ static int sc485sl_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABIL
     sensor_capability->snr_config_num = SC485SL_SPM_WORK_MODE_SIZE;
     for (i = 0; i < SC485SL_SPM_WORK_MODE_SIZE; i++) {
         switch (i) {
+            case SC485SL_SPM_1344X760_12BIT_180FPS_4LANE: {
+                sensor_capability->snr_config[i].width = 1344;
+                sensor_capability->snr_config[i].height = 760;
+                sensor_capability->snr_config[i].bitDepth = 12;
+                sensor_capability->snr_config[i].maxFps = 180;
+                sensor_capability->snr_config[i].minFps = 30;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = SC485SL_SPM_1344X760_12BIT_180FPS_4LANE;
+                sensor_capability->snr_config[i].setting = &sc485sl_spm_setting;
+            } break;
+            case SC485SL_SPM_1920X1080_12BIT_120FPS_4LANE: {
+                sensor_capability->snr_config[i].width = 1920;
+                sensor_capability->snr_config[i].height = 1080;
+                sensor_capability->snr_config[i].bitDepth = 12;
+                sensor_capability->snr_config[i].maxFps = 120;
+                sensor_capability->snr_config[i].minFps = 30;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = SC485SL_SPM_1920X1080_12BIT_120FPS_4LANE;
+                sensor_capability->snr_config[i].setting = &sc485sl_spm_setting;
+            } break;
+            case SC485SL_SPM_1280X720_12BIT_180FPS_4LANE: {
+                sensor_capability->snr_config[i].width = 1280;
+                sensor_capability->snr_config[i].height = 720;
+                sensor_capability->snr_config[i].bitDepth = 12;
+                sensor_capability->snr_config[i].maxFps = 180;
+                sensor_capability->snr_config[i].minFps = 30;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = SC485SL_SPM_1280X720_12BIT_180FPS_4LANE;
+                sensor_capability->snr_config[i].setting = &sc485sl_spm_setting;
+            } break;
             case SC485SL_SPM_2688X1520_10BIT_90FPS_4LANE: {
                 sensor_capability->snr_config[i].width = 2688;
                 sensor_capability->snr_config[i].height = 1520;
@@ -87,8 +126,44 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
     SENSORS_CHECK_PARA_POINTER(snr_info);
 
     switch (work_mode) {
+        case SC485SL_SPM_1344X760_12BIT_180FPS_4LANE: {
+            snr_info->linetime = SC485SL_LINETIME;  // ns
+            snr_info->vts = SC485SL_VTS_1344X760_180FPS;
+            snr_info->f32maxFps = 180;
+            snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab);
+            snr_info->mipi_clock = 648;  // Mhz
+        } break;
+        case SC485SL_SPM_1920X1080_12BIT_120FPS_4LANE: {
+            snr_info->linetime = SC485SL_LINETIME;  // ns
+            snr_info->vts = SC485SL_VTS_1920X1080_120FPS;
+            snr_info->f32maxFps = 120;
+            snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = sc485sl_spm_1920x1080_12bit_120fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1920x1080_12bit_120fps_tab);
+            snr_info->mipi_clock = 900;  // Mhz
+        } break;
+        case SC485SL_SPM_1280X720_12BIT_180FPS_4LANE: {
+            snr_info->linetime = SC485SL_LINETIME;  // ns
+            snr_info->vts = SC485SL_VTS_1280X720_180FPS;
+            snr_info->f32maxFps = 180;
+            snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;   // Q8 format
+            snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = sc485sl_spm_1280x720_12bit_180fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1280x720_12bit_180fps_tab);
+            snr_info->mipi_clock = 648;  // Mhz
+        } break;
         case SC485SL_SPM_2688X1520_10BIT_90FPS_4LANE: {
-            snr_info->linetime = SC485SL_LINETIME_2688X1520_90FPS;  // ns
+            snr_info->linetime = SC485SL_LINETIME;  // ns
             snr_info->vts = SC485SL_VTS_2688X1520_90FPS;
             snr_info->f32maxFps = 90;
             snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
@@ -100,7 +175,7 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->mipi_clock = 1080;  // Mhz
         } break;
         case SC485SL_SPM_2688X1520_12BIT_90FPS_4LANE: {
-            snr_info->linetime = SC485SL_LINETIME_2688X1520_90FPS;  // ns
+            snr_info->linetime = SC485SL_LINETIME;  // ns
             snr_info->vts = SC485SL_VTS_2688X1520_90FPS;
             snr_info->f32maxFps = 90;
             snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
