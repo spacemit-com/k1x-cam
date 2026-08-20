@@ -722,7 +722,7 @@ static int ov08d10_stream_on(void* handle)
     pthread_mutex_lock(&sensor_context->apiLock);
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
     if (ret)
-        return ret;
+        goto out;
 
     ov08d10_write_register(handle, OV08D10_PAGE_ADDR, 0x1);
     for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
@@ -735,6 +735,7 @@ static int ov08d10_stream_on(void* handle)
     ret = ov08d10_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
 
     sensor_context->stream_on_flag = 1;
+out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }

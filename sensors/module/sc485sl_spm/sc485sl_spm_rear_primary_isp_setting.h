@@ -47,7 +47,7 @@
     0,
     /* @m_nInitialExpTime  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
     /* initial exposure time, sync with sensor */
-    33333,
+    11029,
     /* @m_nInitialAnaGain  Size: 1x1  BitWidth: 32_u  Range~[0, 2147483647]  Type: firmware */
     /* initial analog gain, sync with sensor */
     256,
@@ -124,42 +124,41 @@
     0,
     /* @m_pGlobalBlackValueManual  Size: 1x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in manual mode */
-    {69, 68, 68, 68},
+    {261, 261, 261, 261},
     /* @m_pGlobalBlackValueManualCapture  Size: 1x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in manual mode, for capture */
-    {69, 68, 68, 68},
+    {259, 259, 259, 259},
     /* @m_pGlobalBlackValue  Size: 12x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in auto mode */
     {
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
+        {259, 259, 259, 259},
+        {259, 259, 259, 259},
+        {259, 259, 259, 259},
+        {259, 260, 260, 259},
+        {259, 260, 260, 259},
+        {260, 261, 261, 260},
+        {261, 262, 262, 260},
+        {261, 263, 263, 261},
+        {262, 264, 264, 261},
+        {262, 264, 264, 261},
+        {263, 265, 265, 262},
+        {263, 265, 265, 262}
     },
     /* @m_pGlobalBlackValueCapture  Size: 12x4  BitWidth: 32_u  Range~[0, 511]  Type: firmware */
     /* black level for R/GR/GB/B channel in auto mode, for capture */
     {
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68},
-        {69, 68, 68, 68}
+        {260, 260, 260, 260},
+        {262, 262, 262, 262},
+        {262, 262, 262, 262},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261},
+        {261, 262, 262, 261}
     }
 },
 
@@ -208,30 +207,30 @@
     {240, 270},
     /* @m_bUseCorrelatedCT  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - use internal CT(B/R), 1 - use correlated CT( m_pCTMatrixLow/High should be calibrated) */
-    0,
+    1,
     /* @m_pColorTemperatureIndex  Size: 1x4  BitWidth: 32_u  Range~[0, 8192]  Type: firmware */
     /* color temperature index for matrix adaptation */
-    {168, 205, 299, 356},
+    {3400, 3600, 4400, 4600},
     /* @m_pCMC0  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for low color temperature */
     {
-        {6078, 355, -2337},
-        {-941, 5954, -917},
-        {-875, -4746, 9717}
+        {5142, -1083, 37},
+        {-464, 4199, 361},
+        {1847, -3817, 6066}
     },
     /* @m_pCMC1  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for mid color temperature */
     {
-        {7694, -3244, -354},
-        {-942, 5329, -291},
-        {-159, -2773, 7028}
+        {5266, -1277, 107},
+        {-115, 4252, -41},
+        {1640, -2820, 5276}
     },
     /* @m_pCMC2  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for high color temperature */
     {
-        {6701, -1994, -611},
-        {-625, 5960, -1239},
-        {-343, -2529, 6968}
+        {5539, -1641, 198},
+        {263, 4167, -334},
+        {1568, -2467, 4995}
     },
     /* @m_pCMCManual  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for manual mode */
@@ -424,7 +423,7 @@
 {
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-disable LSC, 1-enable LSC */
-    1,
+    0,
     /* @m_bUseOTP  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0-ignore otp information, 1-use otp information */
     0,
@@ -454,7 +453,7 @@
     0,
     /* @m_nLSCStrengthManual  Size: 1x1  BitWidth: 32_u  Range~[0, 64]  Type: firmware */
     /* lens shading correction strength for manual mode */
-    64,
+    61,
     /* @m_nFOVCropRatioH  Size: 1x1  BitWidth: 32_u  Range~[1, 100]  Type: firmware */
     /* FOV horizontal crop ratio percentage */
     100,
@@ -517,13 +516,13 @@
     {3000, 5000},
     /* @m_pLSCStrength  Size: 1x12  BitWidth: 32_u  Range~[0, 64]  Type: firmware */
     /* lens shading correction strength for auto mode */
-    {62, 62, 62, 62, 58, 42, 16, 16, 16, 16, 16, 16},
+    {62, 62, 62, 62, 48, 32, 12, 12, 12, 12, 12, 12},
     /* @m_bUseCorrelatedCT  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0 - use internal CT(B/R), 1 - use correlated CT( m_pCTMatrixLow/High should be calibrated) */
-    0,
+    1,
     /* @m_pCTIndex  Size: 1x4  BitWidth: 32_u  Range~[0, 8192]  Type: firmware */
     /* CT index for profile switching */
-    {130, 180, 230, 280},
+    {3400, 3600, 4400, 4600},
     /* @m_pLSCProfile  Size: 3x576  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* profiles for low/mid/high color temperature */
     {
@@ -638,42 +637,42 @@
     },
     /* @m_pLSCProfileManual  Size: 1x576  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* manual profile */
-    {73, 92, 75, 70, 64, 61, 61, 62, 68, 74, 84, 86, 90, 72, 62, 56, 
-     52, 48, 48, 50, 54, 60, 67, 79, 70, 60, 52, 44, 39, 36, 36, 37, 
-     42, 49, 56, 65, 63, 50, 41, 33, 28, 25, 25, 27, 31, 38, 47, 56, 
-     54, 43, 32, 25, 20, 18, 17, 19, 23, 30, 39, 49, 50, 35, 25, 19, 
-     14, 11, 11, 13, 17, 23, 31, 44, 45, 31, 22, 15, 9, 5, 5, 7, 
-     14, 19, 28, 40, 43, 30, 20, 12, 6, 1, 0, 4, 11, 18, 26, 37, 
-     43, 28, 20, 12, 6, 1, 0, 4, 11, 18, 26, 36, 45, 32, 22, 15, 
-     9, 5, 5, 8, 13, 19, 28, 40, 50, 36, 25, 19, 13, 11, 10, 13, 
-     17, 23, 31, 44, 57, 43, 32, 25, 20, 18, 18, 18, 23, 29, 39, 51, 
-     63, 52, 42, 34, 28, 26, 25, 26, 31, 38, 47, 56, 71, 63, 52, 45, 
-     39, 36, 37, 39, 43, 49, 56, 68, 90, 73, 64, 56, 52, 49, 49, 50, 
-     54, 60, 67, 81, 87, 91, 78, 72, 65, 62, 62, 64, 68, 74, 85, 93, 
-     137, 129, 131, 132, 133, 133, 132, 131, 130, 133, 131, 131, 131, 132, 131, 131, 
-     131, 131, 131, 131, 131, 130, 131, 131, 132, 131, 131, 131, 131, 132, 132, 131, 
-     131, 131, 131, 130, 131, 131, 131, 130, 131, 131, 131, 131, 131, 131, 131, 133, 
-     131, 131, 130, 130, 130, 131, 131, 130, 131, 131, 130, 130, 131, 130, 130, 130, 
-     130, 130, 130, 130, 129, 131, 131, 129, 132, 130, 129, 130, 130, 131, 131, 130, 
-     130, 130, 130, 130, 131, 129, 130, 130, 130, 131, 131, 130, 130, 129, 130, 131, 
-     130, 129, 129, 129, 129, 130, 131, 130, 130, 130, 130, 131, 129, 128, 129, 128, 
-     128, 128, 130, 129, 130, 129, 129, 131, 128, 128, 128, 128, 128, 129, 129, 130, 
-     130, 129, 130, 130, 128, 128, 127, 128, 128, 128, 129, 129, 129, 129, 129, 131, 
-     128, 128, 128, 128, 127, 128, 128, 129, 129, 129, 130, 130, 129, 128, 128, 129, 
-     128, 128, 128, 129, 130, 130, 130, 127, 130, 128, 129, 129, 129, 130, 129, 130, 
-     129, 130, 129, 133, 130, 129, 128, 129, 129, 128, 129, 128, 130, 129, 130, 127, 
-     160, 146, 150, 148, 149, 150, 147, 151, 147, 150, 151, 147, 146, 149, 147, 147, 
-     146, 146, 147, 146, 148, 149, 150, 151, 149, 147, 147, 145, 144, 144, 143, 145, 
-     146, 147, 149, 148, 148, 146, 144, 143, 141, 141, 142, 142, 143, 146, 147, 149, 
-     146, 145, 143, 141, 140, 138, 139, 139, 142, 144, 146, 148, 147, 144, 141, 139, 
-     135, 134, 134, 135, 139, 141, 144, 149, 146, 144, 140, 136, 133, 131, 130, 133, 
-     137, 141, 144, 147, 145, 143, 139, 135, 131, 128, 129, 131, 135, 140, 144, 146, 
-     145, 142, 139, 134, 131, 128, 129, 131, 135, 139, 143, 147, 144, 143, 140, 136, 
-     132, 131, 130, 133, 136, 140, 144, 145, 147, 144, 141, 138, 136, 134, 134, 136, 
-     139, 142, 144, 147, 145, 145, 142, 142, 139, 138, 139, 139, 141, 143, 146, 147, 
-     149, 146, 145, 144, 143, 143, 143, 143, 144, 146, 147, 149, 147, 147, 145, 145, 
-     145, 145, 145, 145, 145, 148, 148, 151, 151, 147, 148, 148, 147, 147, 147, 147, 
-     148, 148, 150, 149, 148, 149, 149, 147, 148, 149, 148, 148, 147, 150, 148, 152},
+    {128, 128, 116, 100, 90, 86, 86, 92, 103, 117, 128, 128, 127, 93, 74, 61, 
+     53, 50, 50, 54, 63, 78, 95, 128, 94, 67, 52, 42, 37, 36, 36, 38, 
+     43, 54, 71, 99, 71, 47, 38, 31, 26, 24, 24, 27, 32, 39, 50, 77, 
+     54, 38, 29, 21, 16, 14, 14, 17, 23, 31, 39, 58, 46, 31, 21, 14, 
+     9, 7, 7, 10, 15, 23, 33, 48, 41, 26, 16, 9, 4, 3, 3, 5, 
+     11, 19, 29, 44, 38, 24, 14, 6, 2, 1, 1, 3, 8, 16, 26, 41, 
+     38, 23, 13, 6, 2, 0, 1, 3, 8, 16, 26, 41, 39, 25, 15, 8, 
+     4, 2, 2, 5, 10, 18, 28, 43, 44, 29, 20, 13, 8, 6, 6, 9, 
+     14, 22, 32, 47, 50, 36, 27, 19, 15, 12, 13, 16, 21, 29, 38, 56, 
+     66, 45, 35, 28, 23, 21, 22, 24, 30, 36, 47, 74, 88, 62, 46, 39, 
+     34, 33, 33, 35, 39, 49, 65, 94, 120, 87, 68, 56, 49, 45, 46, 50, 
+     58, 71, 92, 128, 128, 126, 105, 91, 81, 76, 77, 81, 92, 112, 128, 128, 
+     123, 116, 118, 122, 120, 117, 117, 119, 122, 119, 117, 117, 118, 118, 118, 117, 
+     116, 117, 117, 117, 117, 119, 120, 121, 118, 117, 117, 118, 118, 118, 118, 118, 
+     119, 117, 118, 122, 117, 117, 117, 118, 118, 118, 119, 118, 118, 118, 118, 119, 
+     117, 117, 117, 118, 120, 121, 120, 120, 119, 118, 118, 119, 117, 117, 119, 120, 
+     123, 123, 123, 122, 121, 119, 117, 123, 115, 118, 119, 122, 126, 127, 127, 125, 
+     122, 120, 119, 119, 117, 117, 120, 124, 127, 128, 128, 127, 123, 120, 118, 121, 
+     115, 118, 119, 124, 127, 128, 128, 127, 123, 120, 118, 120, 116, 117, 119, 123, 
+     126, 127, 127, 126, 123, 119, 118, 121, 117, 117, 118, 121, 123, 125, 124, 123, 
+     120, 118, 117, 119, 118, 116, 116, 118, 120, 120, 121, 119, 118, 117, 116, 122, 
+     117, 116, 116, 116, 117, 117, 117, 117, 116, 117, 117, 117, 116, 115, 115, 115, 
+     115, 115, 115, 115, 116, 116, 116, 119, 116, 116, 115, 115, 115, 115, 115, 115, 
+     115, 116, 116, 121, 107, 114, 116, 113, 115, 113, 113, 114, 115, 117, 116, 120, 
+     135, 134, 133, 132, 127, 128, 127, 129, 131, 136, 133, 143, 132, 132, 130, 129, 
+     129, 129, 129, 130, 131, 130, 135, 133, 134, 131, 131, 131, 130, 129, 129, 130, 
+     131, 131, 132, 132, 130, 132, 131, 131, 130, 129, 129, 130, 131, 132, 132, 134, 
+     131, 132, 131, 131, 129, 129, 129, 130, 131, 130, 134, 130, 131, 131, 131, 131, 
+     130, 129, 130, 131, 131, 131, 131, 131, 130, 131, 130, 131, 129, 129, 129, 130, 
+     130, 130, 131, 130, 132, 130, 130, 130, 129, 128, 129, 129, 130, 130, 130, 129, 
+     130, 131, 130, 130, 129, 128, 128, 130, 130, 130, 130, 129, 132, 131, 131, 131, 
+     130, 129, 129, 130, 131, 130, 130, 130, 132, 132, 131, 132, 131, 130, 130, 131, 
+     132, 132, 132, 132, 136, 132, 132, 132, 131, 130, 131, 132, 132, 132, 133, 132, 
+     132, 134, 133, 132, 131, 130, 131, 131, 132, 133, 134, 131, 131, 133, 133, 132, 
+     132, 130, 131, 132, 134, 133, 134, 132, 136, 134, 133, 132, 132, 132, 132, 132, 
+     133, 133, 134, 139, 138, 133, 134, 131, 128, 129, 129, 132, 130, 137, 137, 129},
     /* @m_pOTPProfile  Size: 1x576  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* otp profile */
     {73, 92, 75, 70, 64, 61, 61, 62, 68, 74, 84, 86, 90, 72, 62, 56, 
@@ -939,7 +938,7 @@
 {
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: disable pdc, 1: enable pdc */
-    1,
+    0,
     /* @m_bOut  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: disable pd dump, 1: enable pd dump */
     1,
@@ -1167,7 +1166,7 @@
 {
     /* @m_bEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: disable pdf, 1: enable pdf */
-    1,
+    0,
     /* @m_nExtPRm  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* 0: disable singular PD pixel correction 1: enable singular PD pixel correction */
     1,
@@ -1361,13 +1360,13 @@
     /* Manual WB gain for custom/D75/D65/D50/CWF/TL84/A/H */
     {
         {7264, 4096, 6336},
-        {8780, 4096, 5150},
-        {8660, 4096, 5450},
-        {7040, 4096, 6210},
-        {6890, 4096, 7470},
-        {8110, 4096, 6140},
-        {5060, 4096, 8440},
-        {9220, 4096, 4900}
+        {8477, 4096, 5518},
+        {8430, 4096, 5809},
+        {7108, 4096, 6765},
+        {7001, 4096, 8019},
+        {6292, 4096, 7781},
+        {4845, 4096, 9845},
+        {4096, 4096, 11397}
     },
     /* @m_nAWBStableRange  Size: 1x1  BitWidth: 32_u  Range~[0, 16384]  Type: firmware */
     /* AWB stable range in */
@@ -1409,16 +1408,16 @@
     /* @m_pCTMatrixLow  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix low */
     {
-        {1.912078, -1.211287, 0.245800},
-        {-0.352426, 1.316971, 0.463755},
-        {0.124928, -0.008208, 1.162228}
+        {1.366474, -0.330137, -0.370356},
+        {-0.094302, 1.273487, -0.212915},
+        {-0.047854, 0.213361, 0.378352}
     },
     /* @m_pCTMatrixHigh  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix high */
     {
-        {1.017682, -0.346087, -0.115089},
-        {-0.215331, 1.001323, 0.258485},
-        {0.106983, 0.047955, 0.676944}
+        {0.982170, -0.334595, -0.089297},
+        {-0.112534, 1.024551, 0.146682},
+        {-0.037075, 0.162100, 0.400008}
     }
 },
 
@@ -1772,7 +1771,7 @@
     256,
     /* @m_nCurveAlpha  Size: 1x1  BitWidth: 32_u  Range~[0, 8191]  Type: firmware */
     /* convergence rate of curve blend, 0: max */
-    7000,
+    8000,
     /* @m_nSlopeThr  Size: 1x1  BitWidth: 32_u  Range~[16, 256]  Type: firmware */
     /* block Drc*Dark threshold, Q4 */
     32,
@@ -1953,21 +1952,21 @@
      32},
     /* @m_pCurveFreqTxP  Size: 1x17  BitWidth: 5_u  Range~[0, 31]  Type: firmware */
     /* positive Frequence curve */
-    {8, 10, 12, 14, 16, 17, 18, 19, 20, 21, 23, 25, 27, 29, 30, 31, 
-     31},
+    {7, 11, 15, 19, 22, 25, 27, 28, 28, 26, 24, 20, 17, 14, 11, 8, 
+     5},
     /* @m_pCurveFreqTxN  Size: 1x17  BitWidth: 5_u  Range~[0, 31]  Type: firmware */
     /* negative Frequence curve */
-    {4, 8, 12, 16, 16, 17, 18, 19, 20, 21, 23, 25, 27, 29, 30, 31, 
-     31},
+    {7, 11, 15, 19, 22, 25, 27, 28, 28, 26, 24, 20, 17, 14, 11, 8, 
+     5},
     /* @m_nNodeFreq  Size: 1x1  BitWidth: 5_u  Range~[0, 16]  Type: firmware */
     /* segment point */
     6,
     /* @m_pGlobal_SharpenStrengthP  Size: 1x12  BitWidth: 7_u  Range~[0, 127]  Type: firmware */
     /* Positive EE Sharpen Strength */
-    {50, 36, 32, 24, 18, 15, 15, 14, 13, 11, 8, 4},
+    {26, 24, 23, 21, 19, 17, 15, 13, 11, 9, 7, 5},
     /* @m_pGlobal_SharpenStrengthN  Size: 1x12  BitWidth: 7_u  Range~[0, 127]  Type: firmware */
     /* Negative EE Sharpen Strength */
-    {65, 50, 50, 35, 28, 22, 22, 22, 20, 18, 12, 8},
+    {29, 29, 28, 26, 24, 22, 19, 16, 14, 11, 8, 5},
     /* @m_pGlobal_SharpenStrengthPCapture  Size: 1x12  BitWidth: 7_u  Range~[0, 127]  Type: firmware */
     /* Positive EE Sharpen Strength */
     {16, 16, 15, 14, 13, 12, 12, 11, 11, 9, 7, 5},
@@ -1977,23 +1976,23 @@
     /* @m_pLPF1  Size: 4x2  BitWidth: 8_u  Range~[0, 128]  Type: firmware */
     /* low pass filter1, filter is [a0 a1 256-2*(a0+a1) a1 a0] */
     {
-        {0, 66},
-        {6, 52},
-        {13, 62},
-        {33, 59}
+        {0, 20},
+        {0, 20},
+        {0, 20},
+        {0, 20}
     },
     /* @m_pLPF2  Size: 4x2  BitWidth: 8_u  Range~[0, 128]  Type: firmware */
     /* low pass filter2, filter is [a0 a1 256-2*(a0+a1) a1 a0] */
     {
-        {51, 51},
-        {51, 51},
-        {51, 51},
-        {51, 51}
+        {0, 60},
+        {0, 51},
+        {0, 51},
+        {0, 51}
     },
     /* @m_pLPF1Capture  Size: 4x2  BitWidth: 8_u  Range~[0, 128]  Type: firmware */
     /* low pass filter1, filter is [a0 a1 256-2*(a0+a1) a1 a0] */
     {
-        {0, 0},
+        {0, 20},
         {6, 58},
         {13, 62},
         {33, 59}
@@ -2001,46 +2000,46 @@
     /* @m_pLPF2Capture  Size: 4x2  BitWidth: 8_u  Range~[0, 128]  Type: firmware */
     /* low pass filter2, filter is [a0 a1 256-2*(a0+a1) a1 a0] */
     {
-        {51, 51},
+        {20, 51},
         {51, 51},
         {51, 51},
         {51, 51}
     },
     /* @m_pFreqExpLevel1  Size: 1x12  BitWidth: 6_u  Range~[1, 63]  Type: firmware */
     /* frequence scaling 1 */
-    {16, 16, 16, 16, 14, 12, 12, 12, 12, 12, 12, 12},
+    {30, 30, 30, 30, 30, 31, 32, 32, 32, 32, 32, 32},
     /* @m_pFreqExpLevel2  Size: 1x12  BitWidth: 6_u  Range~[0, 63]  Type: firmware */
     /* frequence scaling 2 */
-    {12, 12, 14, 16, 16, 16, 16, 16, 16, 16, 16, 16},
+    {8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
     /* @m_pFreqOffsetTx  Size: 1x12  BitWidth: 7_u  Range~[0, 127]  Type: firmware */
     /* frequence offset  */
-    {0, 0, 7, 9, 10, 12, 14, 15, 16, 17, 17, 17},
+    {0, 0, 1, 1, 1, 4, 8, 10, 12, 12, 12, 12},
     /* @m_pTxClipP  Size: 1x12  BitWidth: 9_u  Range~[0, 511]  Type: firmware */
     /* positive texutre threshold */
-    {128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128},
+    {128, 128, 128, 128, 128, 128, 120, 110, 100, 100, 100, 100},
     /* @m_pTxClipN  Size: 1x12  BitWidth: 9_u  Range~[0, 511]  Type: firmware */
     /* negative texutre threshold */
-    {60, 60, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48},
+    {128, 128, 128, 128, 128, 128, 120, 110, 100, 100, 100, 100},
     /* @m_pTxThrdP  Size: 1x12  BitWidth: 5_u  Range~[0, 31]  Type: firmware */
     /* positive texutre clamp */
-    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* @m_pTxThrdN  Size: 1x12  BitWidth: 5_u  Range~[0, 31]  Type: firmware */
     /* negative texutre clamp */
-    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* @m_pClipPos  Size: 1x12  BitWidth: 8_u  Range~[0, 255]  Type: firmware */
     /* positive sharpen clamp */
-    {32, 32, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28},
+    {24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24},
     /* @m_pClipNeg  Size: 1x12  BitWidth: 8_u  Range~[0, 255]  Type: firmware */
     /* negative sharpen clamp */
-    {32, 32, 32, 28, 28, 28, 28, 28, 28, 28, 28, 28},
+    {64, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44},
     /* @m_pHCStrength  Size: 1x12  BitWidth: 6_u  Range~[0, 32]  Type: firmware */
     /* halo control strength */
-    {8, 8, 8, 10, 12, 15, 15, 15, 16, 16, 16, 16},
+    {10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 14, 14},
     /* @m_pCoffW  Size: 2x12  BitWidth: 8_u  Range~[0, 255]  Type: firmware */
     /* halo control range */
     {
-        {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
-        {128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128}
+        {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
+        {160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160}
     },
     /* @m_bManualMode  Size: 1x1  BitWidth: 1_u  Range~[0, 1]  Type: firmware */
     /* 0--off 1--on */
@@ -2238,8 +2237,8 @@
         {30000, 1024, 256},
         {40000, 1024, 256},
         {50000, 1024, 256},
-        {60000, 16384, 256},
-        {0, 0, 0},
+        {60000, 4096, 256},
+        {70000, 16384, 256},
         {0, 0, 0},
         {0, 0, 0},
         {0, 0, 0},
@@ -2296,15 +2295,13 @@
     {50, 50},
     /* @m_pMaxExpTime  Size: 1x2  BitWidth: 32_u  Range~[1, 2147483647]  Type: firmware */
     /* Limit: m_pMaxExpTime >= m_pMinExpTime. [0]:long, [1]:short, maximum exposure time, unit us */
-    {66746, 61999},
+    {33218, 61999},
     /* @m_pMinAnaGain  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* Limit: m_pMinAnaGain <= m_pMaxAnaGain. [0]:long, [1]:short, minimum analog gain, Q8 format */
     {256, 256},
     /* @m_pMaxAnaGain  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* Limit: m_pMaxAnaGain >= m_pMinAnaGain. [0]:long, [1]:short, maximum analog gain, Q8 format */
-    /* NOTE: OV13850 analog gain physical max is 15.5x (0xf8), but R/B channel
-     * linearity degrades above 8x causing greenish tint. Cap at 8x (2048 in Q8). */
-    {2048, 2048},
+    {3968, 3968},
     /* @m_pMinSnsDGain  Size: 1x2  BitWidth: 32_u  Range~[4096, 4096000]  Type: firmware */
     /* Limit: m_pMinSnsDGain <= m_pMaxSnsDGain. [0]:long, [1]:short, minimum sensor digital gain, Q12 format */
     {4096, 4096},
@@ -2322,13 +2319,13 @@
     {20000, 1000},
     /* @m_pAnaGainManual  Size: 1x2  BitWidth: 32_u  Range~[256, 256000]  Type: firmware */
     /* [0]:long, [1]:short, manual analog gain, Q8 format */
-    {4096, 256},
+    {256000, 256},
     /* @m_pSnsDGainManual  Size: 1x2  BitWidth: 32_u  Range~[4096, 4096000]  Type: firmware */
     /* [0]:long, [1]:short, manual sensor digital gain, Q12 format */
     {4096, 4096},
     /* @m_pTotalGainManual  Size: 1x2  BitWidth: 32_u  Range~[256, 524287]  Type: firmware */
     /* [0]:long, [1]:short, manual total gain, Q8 format */
-    {4096, 256},
+    {262144, 256},
     /* @m_pExpIndexManual  Size: 1x2  BitWidth: 32_u  Range~[0, 4294967295]  Type: firmware */
     /* [0]:long, [1]:short, manual exposure index, Q4 format */
     {2560000, 2560000},
@@ -2373,10 +2370,10 @@
     },
     /* @m_nFaceTarget  Size: 1x1  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* target luma in face mode */
-    30,
+    29,
     /* @m_nDualTargetBlendWeight  Size: 1x1  BitWidth: 32_u  Range~[0, 16]  Type: firmware */
     /* previous target luma and current target luma blend weight */
-    8,
+    9,
     /* @m_pAjustSplitFrameNum  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* the number of frames to be split for each adjustment */
     {1, 1},
@@ -2454,38 +2451,38 @@
     {1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000},
     /* @m_nCalibExposureIndex  Size: 1x1  BitWidth: 32_u  Range~[0, 4294967295]  Type: firmware */
     /* exposure index of calibrated scene */
-    73515,
+    12656,
     /* @m_nCalibSceneLuma  Size: 1x1  BitWidth: 32_u  Range~[0, 65535]  Type: firmware */
     /* calibrate scene luminance, Q8 format */
-    19350,
+    7265,
     /* @m_nCalibSceneLux  Size: 1x1  BitWidth: 32_u  Range~[0, 4294967295]  Type: firmware */
     /* calibrate scene lux */
-    800
+    808
 },
 
 //CAFFilter
 {
     /* @m_nAFMode  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - SAF, 1 - CAF */
-    1,
+    0,
     /* @m_bHybridAFEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - disable, 1 - enable. 0:disable hybrid AF with PD information, 1:enable hybrid AF with PD information */
-    1,
+    0,
     /* @m_bAFTrigger  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* auto focus trigger */
-    1,
+    0,
     /* @m_bMotorManualTrigger  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* manual position trigger */
     0,
     /* @m_nManualMotorPosition  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* manual motor position */
-    290,
+    650,
     /* @m_nMinMotorPosition  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* the actual min motor position that the motor starts to move */
-    290,
+    300,
     /* @m_nMaxMotorPosition  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* the acutal max motor position that the motor stops to move */
-    710,
+    700,
     /* @m_nFirstStepDirectionJudgeRatio  Size: 1x1  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* for first step direction judgement */
     70,
@@ -2503,7 +2500,7 @@
     1,
     /* @m_nBackTimeDivisor  Size: 1x1  BitWidth: 32_u  Range~[1, 1000]  Type: firmware */
     /* skip frame control for first movement to predetermined position */
-    9,
+    2,
     /* @m_nPreMoveTimeRatio  Size: 1x1  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* pre move step skip frame control */
     1,
@@ -2527,7 +2524,7 @@
     1,
     /* @m_nMaxSafeStep  Size: 1x1  BitWidth: 32_u  Range~[0, 2048]  Type: firmware */
     /* max safe step for software motor control, when move to infinity */
-    28,
+    30,
     /* @m_nMinSafePositionMacro  Size: 1x1  BitWidth: 32_u  Range~[0, 2048]  Type: firmware */
     /* min safe position for software motor control, when move to macro */
     1024,
@@ -2536,7 +2533,7 @@
     1,
     /* @m_nMaxSafeStepMacro  Size: 1x1  BitWidth: 32_u  Range~[0, 2048]  Type: firmware */
     /* max safe step for software motor control, when move to macro */
-    28,
+    30,
     /* @m_nMinMacroReverseStepNum  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* minimum required step number when moving from macro and FV decrease detected */
     1,
@@ -2551,10 +2548,10 @@
     0,
     /* @m_nCoarseStep  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* coarse step */
-    28,
+    30,
     /* @m_nFineStep  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* fine step */
-    14,
+    15,
     /* @m_nVCMStep1Ratio  Size: 1x1  BitWidth: 32_u  Range~[0, 1000]  Type: firmware */
     /* step 1 ratio for adaptive step mode */
     8,
@@ -2575,10 +2572,10 @@
     1,
     /* @m_nFailMotorPositionOption  Size: 1x1  BitWidth: 32_u  Range~[0, 5]  Type: firmware */
     /*  motor stop position choice when AF fail, when auto select, hyperfocal postion should be set correctly. Enum: 0 - auto_select, 1 - sharpest_position, 2 - infinity_position, 3 - hyperfocal_position, 4 - macro_position, 5 - current_position */
-    0,
+    1,
     /* @m_nHyperFocalMotorPosition  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* hyperfocal position */
-    325,
+    320,
     /* @m_pFVDropPercentage  Size: 12x6  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* FV drop percentage for direction detection */
     {
@@ -2679,16 +2676,16 @@
     150,
     /* @m_nPDCoarseStep  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* pd coarse step */
-    14,
+    30,
     /* @m_nPDFineStep  Size: 1x1  BitWidth: 32_u  Range~[0, 1024]  Type: firmware */
     /* pd fine step */
-    7,
+    15,
     /* @m_nPDStepDiscountRatio  Size: 1x1  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* discount ratio of step calculated by pd shift */
-    70,
+    80,
     /* @m_pPDConfThr  Size: 1x12  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* PD confidence threshold for PD information use or not */
-    {10, 20, 30, 40, 60, 80, 100, 120, 120, 120, 120, 120},
+    {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120},
     /* @m_pPDFVIncreaseRatio  Size: 1x6  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* FV value increase ratio for hybrid AF direction judgement */
     {102, 102, 102, 102, 102, 102},
@@ -2713,210 +2710,210 @@
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-603, 0, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 
-         603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603, 603}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_0_1  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [0,1] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-455, 0, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 
-         455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455, 455}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_0_2  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [0,2] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-433, 0, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 
-         433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433, 433}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_0_3  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [0,3] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-444, 0, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 
-         444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_0_4  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [0,4] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-586, 0, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 
-         586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586, 586}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_1_0  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [1,0] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-554, 0, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 
-         554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554, 554}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_1_1  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [1,1] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-439, 0, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 
-         439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439, 439}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_1_2  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [1,2] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-427, 0, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 
-         427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427, 427}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_1_3  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [1,3] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-444, 0, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 
-         444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444, 444}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_1_4  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [1,4] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-518, 0, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 
-         518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518, 518}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_2_0  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [2,0] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-558, 0, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 
-         558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558, 558}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_2_1  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [2,1] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-456, 0, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 
-         456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456, 456}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_2_2  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [2,2] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-425, 0, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 
-         425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425, 425}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_2_3  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [2,3] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-443, 0, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 
-         443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443, 443}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_2_4  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [2,4] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-530, 0, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 
-         530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_3_0  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [3,0] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-556, 0, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 
-         556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_3_1  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [3,1] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-446, 0, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 
-         446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446, 446}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_3_2  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [3,2] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-411, 0, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 
-         411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411, 411}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_3_3  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [3,3] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-448, 0, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 
-         448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448, 448}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_3_4  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [3,4] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-525, 0, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 
-         525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525, 525}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_4_0  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [4,0] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-560, 0, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 
-         560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_4_1  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [4,1] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-452, 0, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 
-         452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452, 452}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_4_2  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [4,2] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-430, 0, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 
-         430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430, 430}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_4_3  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [4,3] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-434, 0, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 
-         434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434, 434}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_pPDShiftPositionLUT_4_4  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [4,4] */
     {
         {-512, 0, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
-        {-538, 0, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 
-         538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538, 538}
+        {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
+         323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
     },
     /* @m_bCAFForce  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* interrupt the processing of caf and trigger a single focus */
-    0,
+    1,
     /* @m_bCAFHold  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* af holds the current status */
     0,
     /* @m_nCAFHoldPDShiftThr  Size: 1x1  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* Limit: m_nPDShiftStableThr <= m_nPDShiftChangeThr. the pd shift threshold to determine whether the scene is not changed in CAF */
-    35,
+    20,
     /* @m_nCAFHoldPDConfThr  Size: 1x1  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* the pd confidence threshold to determine whether the scene is not changed in CAF */
     80,
@@ -2937,7 +2934,7 @@
     4,
     /* @m_bReFocusEnable  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - disable, 1 - enable.  */
-    1,
+    0,
     /* @m_nReFocusPDShiftThr  Size: 1x1  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* the pd shift threshold to determine whether to force trigger af at the end of saf which triggered by CAF, only valid in face mode */
     60,
@@ -2946,22 +2943,22 @@
     80,
     /* @m_pRefocusLumaSADThr  Size: 1x12  BitWidth: 32_u  Range~[0, 19125]  Type: firmware */
     /* the luma sad threshold to decide whether to force trigger af in the saf process triggered by CAF */
-    {400, 500, 600, 700, 800, 900, 1000, 1000, 1000, 1000, 1000, 1000},
+    {300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300},
     /* @m_bStableJudgeOpt  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - fv_luma_one_met, 1 - fv_luma_all_met */
     1,
     /* @m_nRefStableFrameNum  Size: 1x1  BitWidth: 32_u  Range~[0, 14]  Type: firmware */
     /* the number of frame to determine whether the scene is stable in reference state in CAF */
-    5,
+    2,
     /* @m_nDetStableFrameNum  Size: 1x1  BitWidth: 32_u  Range~[0, 14]  Type: firmware */
     /* the number of frame to determine whether the scene is stable in detect state in CAF */
-    8,
+    2,
     /* @m_pStableExpIndexPercentage  Size: 1x12  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* the tolerance of exposure index to determine whether the scene is stable in CAF */
-    {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5},
+    {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10},
     /* @m_pStableFVSADPercentage  Size: 1x12  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* the fv sad threshold to determine whether the scene is stable in CAF */
-    {15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 20, 20},
+    {15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26},
     /* @m_pStableLumaSADThr  Size: 1x12  BitWidth: 32_u  Range~[0, 19125]  Type: firmware */
     /* the luma sad threshold to determine whether the scene is stable in CAF */
     {300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300},
@@ -2970,7 +2967,7 @@
     0,
     /* @m_nChangeFrameNum  Size: 1x1  BitWidth: 32_u  Range~[0, 15]  Type: firmware */
     /* the number of frame to determine whether the scene is changed in CAF */
-    5,
+    3,
     /* @m_nChangeStatAreaPercentage  Size: 1x1  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* the afm stat window area change percentage to determine whether the scene is changed in CAF, only valid in face mode */
     40,
@@ -2982,13 +2979,13 @@
     {20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20},
     /* @m_pChangeFVSADPercentage  Size: 1x12  BitWidth: 32_u  Range~[0, 100]  Type: firmware */
     /* the fv change percentage to determine whether the scene is changed in CAF */
-    {20, 21, 22, 23, 24, 25, 25, 25, 25, 25, 25, 25},
+    {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31},
     /* @m_pChangeLumaSADThr  Size: 1x12  BitWidth: 32_u  Range~[0, 19125]  Type: firmware */
     /* the luma change percentage to determine whether the scene is changed in CAF */
-    {800, 800, 800, 800, 1000, 1200, 1600, 1600, 1600, 1600, 1600, 1600},
+    {800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800},
     /* @m_pChangePDShiftThr  Size: 1x12  BitWidth: 32_u  Range~[0, 512]  Type: firmware */
     /* the pd shift threshold to determine whether the scene is changed in CAF */
-    {60, 60, 70, 70, 80, 80, 80, 80, 80, 80, 80, 80},
+    {60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60},
     /* @m_bForeGroundTrackInCoarse  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* Enum: 0 - disable, 1 - enable. disable/enable foreground track in coarse step.  */
     0,
@@ -3046,16 +3043,16 @@
     /* @m_pRoiBound  Size: 16x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary : x_high x_low y_high y_low */
     {
-        {608, 300, 504, 293},
-        {577, 334, 719, 504},
-        {510, 400, 1075, 719},
-        {400, 291, 1075, 719},
-        {501, 392, 1501, 1075},
-        {392, 307, 1501, 1075},
-        {468, 390, 1897, 1501},
-        {390, 309, 1897, 1501},
-        {480, 329, 2764, 1897},
-        {480, 329, 2764, 1897},
+        {302, 191, 262, 171},
+        {319, 216, 378, 262},
+        {299, 246, 628, 378},
+        {246, 196, 628, 378},
+        {299, 241, 945, 628},
+        {241, 198, 945, 628},
+        {293, 246, 1179, 945},
+        {246, 198, 1179, 945},
+        {326, 229, 1645, 1179},
+        {326, 229, 1645, 1179},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
@@ -3065,7 +3062,7 @@
     },
     /* @m_pRoiBoundG  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary of G: x_high x_low y_high y_low */
-    {244, 46, 1589, 750},
+    {168, 68, 1003, 397},
     /* @m_pRoiLumLutHigh  Size: 16x11  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* high threshold for lum of each exposure level */
     {
@@ -3143,40 +3140,40 @@
     0,
     /* @m_nRoiCtHigh  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary */
-    1954,
+    1142,
     /* @m_nRoiCtLow  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary */
-    420,
+    723,
     /* @m_nRoiXMax  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary */
-    608,
+    560,
     /* @m_nRoiXMin  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary */
-    291,
+    198,
     /* @m_pRoiCtHighAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary in different lum */
-    {1341, 1341, 1504, 1639, 1639, 1954, 1954, 1954, 1954, 1954, 1954},
+    {831, 831, 947, 1034, 1034, 1210, 1210, 1210, 1210, 1210, 1210},
     /* @m_pRoiCtLowAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary in different lum */
-    {1278, 1278, 1278, 1278, 1278, 420, 420, 420, 420, 420, 420},
+    {784, 784, 784, 784, 784, 227, 227, 227, 227, 227, 227},
     /* @m_pRoiCtLow2Auto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* 2nd color temperature low boundary in different lum */
-    {1278, 1278, 1278, 1278, 1278, 420, 420, 420, 420, 420, 420},
+    {784, 784, 784, 784, 784, 227, 227, 227, 227, 227, 227},
     /* @m_pRoiXMaxAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary in different lum */
-    {608, 608, 608, 608, 608, 608, 608, 608, 608, 608, 608},
+    {326, 326, 326, 326, 326, 326, 326, 326, 326, 326, 326},
     /* @m_pRoiXMinAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary in different lum */
-    {291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291},
+    {191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191},
     /* @m_pAWBGainLimit  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit of AWB Gain [low, high, x_min, x_max] */
     {0, 4095, 0, 4095},
     /* @m_nAWBCTShift  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* awb ct shift range for low ct */
-    145,
+    105,
     /* @m_pAWBCTShiftThr  Size: 1x2  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit for ct shift */
-    {860, 1005},
+    {471, 576},
     /* @m_bGreenShiftEn  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* green shift enable */
     1,
@@ -3191,7 +3188,7 @@
     {120, 20},
     /* @m_pOutdoorGain  Size: 1x3  BitWidth: 32_u  Range~[0, 65536]  Type: firmware */
     /* outdoor gain */
-    {8311, 4096, 4960},
+    {8303, 4096, 7877},
     /* @m_nValidNum  Size: 1x1  BitWidth: 32_u  Range~[0, 768]  Type: firmware */
     /* valid threshold for ROI Sum */
     4,

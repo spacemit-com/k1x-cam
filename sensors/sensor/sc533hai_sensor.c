@@ -55,6 +55,28 @@ static struct regval_tab color_bar_regs[] = {
 
 #define SC533HAI_GROUP_ACCESS (0x3812)
 #define SC533HAI_GROUP_DELAY (0x3802)
+
+#define SC533HAI_ANA_GAIN_MIN_Q8  (0x100)
+#define SC533HAI_ARRAY_SIZE(a)    (sizeof(a) / sizeof((a)[0]))
+
+typedef struct SC533HAI_GAIN_MAP {
+    uint32_t gain_q8;
+    uint8_t again;
+    uint8_t fine_min;
+    uint8_t fine_max;
+} SC533HAI_GAIN_MAP_S;
+
+static const SC533HAI_GAIN_MAP_S sc533hai_again_map[] = {
+    {0x100, 0x00, 0x20, 0x3f},  /* 1.000x ~ 1.969x */
+    {0x200, 0x01, 0x20, 0x2a},  /* 2.000x ~ 2.625x */
+    {0x2a9, 0x80, 0x20, 0x3f},  /* 2.660x ~ 5.237x */
+    {0x552, 0x81, 0x20, 0x3f},  /* 5.320x ~ 10.474x */
+    {0xaa4, 0x83, 0x20, 0x3f},  /* 10.640x ~ 20.948x */
+    {0x1548, 0x87, 0x20, 0x3f}, /* 21.280x ~ 41.895x */
+    {0x2a8f, 0x8f, 0x20, 0x3f}, /* 42.560x ~ 83.790x */
+};
+
+#define SC533HAI_ANA_GAIN_MAX_Q8     ((sc533hai_again_map[SC533HAI_ARRAY_SIZE(sc533hai_again_map) - 1].gain_q8 * 0x3f) / 0x20)
 /*******************************************************************/
 
 static uint16_t gain2reg(const uint16_t gain)
@@ -475,6 +497,10 @@ static int sc533hai_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId
                                                                        : expLine;
     sensor_context->hdrIntTime[u32ChanelId] = expLine * sensor_context->lineTime / 1000;
 
+    if (expLine > (sensor_context->initVTS - SC533HAI_VTS_ADJUST))
+        sensor_context->vts[0] = expLine + SC533HAI_VTS_ADJUST;
+    else
+        sensor_context->vts[0] = sensor_context->initVTS;
 
     sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
     sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
@@ -498,10 +524,11 @@ static int sc533hai_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, ui
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret = 0;
-    uint32_t AGain_Reg, AGain_Reg_Fine = 0;
-    uint32_t AGain_Val, step;
+    uint32_t req_gain, actual_gain;
+    uint32_t fine;
+    uint32_t i;
+    const SC533HAI_GAIN_MAP_S* gain_map = &sc533hai_again_map[0];
 
-    // 参数合法性检查（与SC501AI保持一致）
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     SENSORS_CHECK_PARA_POINTER(pAgainVal);
     SENSORS_CHECK_PARA_POINTER(pDgainVal);
@@ -509,43 +536,30 @@ static int sc533hai_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, ui
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    AGain_Val = (*pAgainVal >> 2);  // Q12 -> Q10
+    req_gain = *pAgainVal;  // Q8, 0x100 means 1x.
+    req_gain = (req_gain < SC533HAI_ANA_GAIN_MIN_Q8) ? SC533HAI_ANA_GAIN_MIN_Q8 : req_gain;
+    req_gain = (req_gain > SC533HAI_ANA_GAIN_MAX_Q8) ? SC533HAI_ANA_GAIN_MAX_Q8 : req_gain;
 
-    if (AGain_Val <= 0x80) { /* 1.000~2.000x 增益（ANA GAIN=0x00） */
-        step = (AGain_Val - 0x40) * 32 / 0x40;  // 0x40(Q10)=1.0x，0x80(Q10)=2.0x，映射到0x20~0x3F
-        AGain_Reg = 0x00;
-        AGain_Reg_Fine = 0x20 + step;
-    } else if (AGain_Val <= 0x100) { /* 2.660~5.237x 增益（ANA GAIN=0x80，DCG使能） */
-        step = (AGain_Val - 0x80) * 32 / 0x80;  // 0x80(Q10)=2.66x，0x100(Q10)=5.237x
-        AGain_Reg = 0x80;
-        AGain_Reg_Fine = 0x20 + step;
-    } else if (AGain_Val <= 0x180) { /* 5.320~8.313x 增益（ANA GAIN=0x81） */
-        step = (AGain_Val - 0x100) * 32 / 0x80;  // 0x100(Q10)=5.32x，0x180(Q10)=8.313x
-        AGain_Reg = 0x81;
-        AGain_Reg_Fine = 0x20 + step;
-    } else if (AGain_Val <= 0x280) { /* 18.567~20.948x 增益（ANA GAIN=0x83） */
-        step = (AGain_Val - 0x180) * 32 / 0x100;  // 0x180(Q10)=18.567x，0x280(Q10)=20.948x
-        AGain_Reg = 0x83;
-        AGain_Reg_Fine = 0x20 + step;
-    } else if (AGain_Val <= 0x480) { /* 21.280~41.895x 增益（ANA GAIN=0x87） */
-        step = (AGain_Val - 0x280) * 32 / 0x200;  // 0x280(Q10)=21.28x，0x480(Q10)=41.895x
-        AGain_Reg = 0x87;
-        AGain_Reg_Fine = 0x20 + step;
-    } else { /* 42.560~83.790x 增益（ANA GAIN=0x8f，最大模拟增益） */
-        step = (AGain_Val - 0x480) * 32 / 0x400;  // 0x480(Q10)=42.56x，0x880(Q10)=83.79x
-        AGain_Reg = 0x8f;
-        AGain_Reg_Fine = 0x20 + (step > 31 ? 31 : step);
+    for (i = 0; i < SC533HAI_ARRAY_SIZE(sc533hai_again_map); i++) {
+        if (req_gain >= sc533hai_again_map[i].gain_q8)
+            gain_map = &sc533hai_again_map[i];
+        else
+            break;
     }
 
-    sensor_context->sensorRegs[0].astI2cData[3].u32Data = AGain_Reg;
-    sensor_context->sensorRegs[0].astI2cData[4].u32Data = AGain_Reg_Fine;
+    fine = req_gain * 0x20 / gain_map->gain_q8;
+    fine = (fine < gain_map->fine_min) ? gain_map->fine_min : fine;
+    fine = (fine > gain_map->fine_max) ? gain_map->fine_max : fine;
+    actual_gain = gain_map->gain_q8 * fine / 0x20;
 
-    // Q10 → Q12
-    *pAgainVal = AGain_Val << 2;
+    sensor_context->sensorRegs[0].astI2cData[3].u32Data = gain_map->again;
+    sensor_context->sensorRegs[0].astI2cData[4].u32Data = fine;
+
+    *pAgainVal = actual_gain;
     *pDgainVal = 4096;
 
     pthread_mutex_unlock(&sensor_context->apiLock);
-    printf("sc533hai again: 0x%x, AGain_Reg: 0x%x, AGain_Reg_Fine: 0x%x\n", *pAgainVal, AGain_Reg, AGain_Reg_Fine);
+    printf("sc533hai again: 0x%x, AGain_Reg: 0x%x, AGain_Reg_Fine: 0x%x\n", *pAgainVal, gain_map->again, fine);
 
     return ret;
 }
@@ -830,7 +844,7 @@ static int sc533hai_stream_on(void* handle)
     pthread_mutex_lock(&sensor_context->apiLock);
     ret = sensor_mipi_clock_set(sensor_context->devId, sensor_context->work_info.mipi_clock);
     if (ret)
-        return ret;
+        goto out;
 
     // for (i = 0; i < sensor_context->sensorRegs[0].u32RegNum; i++) {
     //     sc533hai_write_register(handle, sensor_context->sensorRegs[0].astI2cData[i].u32RegAddr,
@@ -840,6 +854,7 @@ static int sc533hai_stream_on(void* handle)
     ret = sc533hai_write_burst_register(handle, stream_on_regs, ARRAY_SIZE(stream_on_regs));
     usleep(1000);
     sensor_context->stream_on_flag = 1;
+out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
