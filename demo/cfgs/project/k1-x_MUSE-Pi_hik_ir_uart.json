@@ -29,7 +29,7 @@
 			"sensor_name":	"hik_ir_uart_spm",
 			"sensor_id":	0,
 			"sensor_work_mode":	0,
-			"fps":	30,
+			"fps":	50,
 			"src_file":	"/tmp/1920x1080_raw12_long_packed.vrf",
 			"bit_depth":	8,
 			"in_width":	640,

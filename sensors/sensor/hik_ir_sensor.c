@@ -21,7 +21,7 @@
 #include "../module/hik_ir_spm/hik_ir_spm.h"
 
 #define SENSOR_MAGIC 0x36400340
-#define SC640_NAME "hik_ir_uart"
+#define HIK_IR_NAME "hik_ir_uart"
 #define HIK_IR_UART_DEVICE "/dev/ttyS8"
 #define HIK_IR_DEVICE_ADDR 0x36
 
@@ -29,19 +29,19 @@
 #define I2C_SLAVE 0x0703
 #endif
 
-static const unsigned int sc640_reg_addr_byte = I2C_16BIT;
-static const unsigned int sc640_reg_data_byte = I2C_8BIT;
+static const unsigned int hik_ir_reg_addr_byte = I2C_16BIT;
+static const unsigned int hik_ir_reg_data_byte = I2C_8BIT;
 
-#define SC640_I2C_BUFFER_RW 0x1D00
-#define SC640_STREAM_ON_CMD_SIZE 20
-#define SC640_STREAM_OFF_CMD_SIZE 20
-#define SC640_DETECT_CMD_SIZE 20
-#define SC640_STATUS_REG_SIZE 2
-#define SC640_STATUS_SIZE 1
-#define SC640_VID_REG_SIZE 2
-#define SC640_VID_SIZE 2
+#define HIK_IR_I2C_BUFFER_RW 0x1D00
+#define HIK_IR_STREAM_ON_CMD_SIZE 20
+#define HIK_IR_STREAM_OFF_CMD_SIZE 20
+#define HIK_IR_DETECT_CMD_SIZE 20
+#define HIK_IR_STATUS_REG_SIZE 2
+#define HIK_IR_STATUS_SIZE 1
+#define HIK_IR_VID_REG_SIZE 2
+#define HIK_IR_VID_SIZE 2
 
-static uint8_t sc640_stream_on_30hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
+static uint8_t hik_ir_stream_on_30hz_cmd[HIK_IR_STREAM_ON_CMD_SIZE] = {
     /* Matches: i2ctransfer -y 0 w20@0x3c ... */
     0x1d, 0x00,
     0x10, 0x10, 0x46, 0x00,
@@ -51,7 +51,7 @@ static uint8_t sc640_stream_on_30hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
     0xb5, 0x9b,
 };
 
-static uint8_t sc640_stream_on_60hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
+static uint8_t hik_ir_stream_on_60hz_cmd[HIK_IR_STREAM_ON_CMD_SIZE] = {
     /* Matches: i2ctransfer -y 0 w20@0x3c ... */
     0x1d, 0x00,
     0x10, 0x10, 0x46, 0x00,
@@ -61,7 +61,7 @@ static uint8_t sc640_stream_on_60hz_cmd[SC640_STREAM_ON_CMD_SIZE] = {
     0x32, 0x7c,
 };
 
-static uint8_t sc640_stream_off_cmd[SC640_STREAM_OFF_CMD_SIZE] = {
+static uint8_t hik_ir_stream_off_cmd[HIK_IR_STREAM_OFF_CMD_SIZE] = {
     /* Matches: i2ctransfer -y 0 w20@0x3c ... */
     0x1d, 0x00,
     0x10, 0x10, 0x46, 0x00,
@@ -71,7 +71,7 @@ static uint8_t sc640_stream_off_cmd[SC640_STREAM_OFF_CMD_SIZE] = {
     0x58, 0x4d,
 };
 
-static uint8_t sc640_detect_vid_cmd[SC640_DETECT_CMD_SIZE] = {
+static uint8_t hik_ir_detect_vid_cmd[HIK_IR_DETECT_CMD_SIZE] = {
     /* Matches: i2ctransfer -y 0 w20@0x3c 0x1d 0x00 ... */
     0x1d, 0x00,
     0x01, 0x01, 0x81, 0x00,
@@ -81,12 +81,12 @@ static uint8_t sc640_detect_vid_cmd[SC640_DETECT_CMD_SIZE] = {
     0x7b, 0xca,
 };
 
-static uint8_t sc640_status_reg[SC640_STATUS_REG_SIZE] = {
+static uint8_t hik_ir_status_reg[HIK_IR_STATUS_REG_SIZE] = {
     /* Matches: i2ctransfer -y 0 w2@0x3c 0x02 0x00 r1 */
     0x02, 0x00,
 };
 
-static uint8_t sc640_vid_reg[SC640_VID_REG_SIZE] = {
+static uint8_t hik_ir_vid_reg[HIK_IR_VID_REG_SIZE] = {
     /* Matches: i2ctransfer -y 0 w2@0x3c 0x1d 0x12 r2 */
     0x1d, 0x12,
 };
@@ -159,7 +159,7 @@ static int hik_ir_uart_read_version(uint8_t version[3])
     return 0;
 }
 
-static int sc640_i2c_write_raw(void* handle, uint8_t* data, uint32_t size)
+static int hik_ir_i2c_write_raw(void* handle, uint8_t* data, uint32_t size)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     char dev_name[32];
@@ -198,7 +198,7 @@ static int sc640_i2c_write_raw(void* handle, uint8_t* data, uint32_t size)
     return 0;
 }
 
-static int sc640_i2c_write_read_raw(void* handle, uint8_t* wdata, uint32_t wsize, uint8_t* rdata, uint32_t rsize)
+static int hik_ir_i2c_write_read_raw(void* handle, uint8_t* wdata, uint32_t wsize, uint8_t* rdata, uint32_t rsize)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     char dev_name[32];
@@ -244,7 +244,7 @@ static int sc640_i2c_write_read_raw(void* handle, uint8_t* wdata, uint32_t wsize
     return 0;
 }
 
-static int sc640_write_register(void* handle, uint16_t regAddr, uint16_t value)
+static int hik_ir_write_register(void* handle, uint16_t regAddr, uint16_t value)
 {
     (void)handle;
     (void)regAddr;
@@ -252,7 +252,7 @@ static int sc640_write_register(void* handle, uint16_t regAddr, uint16_t value)
     return -EOPNOTSUPP;
 }
 
-static int sc640_read_register(void* handle, uint16_t regAddr, uint16_t* value)
+static int hik_ir_read_register(void* handle, uint16_t regAddr, uint16_t* value)
 {
     (void)handle;
     (void)regAddr;
@@ -260,7 +260,7 @@ static int sc640_read_register(void* handle, uint16_t regAddr, uint16_t* value)
     return -EOPNOTSUPP;
 }
 
-static int sc640_write_packet(void* handle, uint16_t regAddr, uint8_t* packet, uint32_t size)
+static int hik_ir_write_packet(void* handle, uint16_t regAddr, uint8_t* packet, uint32_t size)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct regval_tab* table = NULL;
@@ -283,8 +283,8 @@ static int sc640_write_packet(void* handle, uint16_t regAddr, uint8_t* packet, u
     }
 
     reg_table_data.addr = sensor_context->i2c_addr;
-    reg_table_data.reg_len = sc640_reg_addr_byte;
-    reg_table_data.val_len = sc640_reg_data_byte;
+    reg_table_data.reg_len = hik_ir_reg_addr_byte;
+    reg_table_data.val_len = hik_ir_reg_data_byte;
     reg_table_data.tab = table;
     reg_table_data.num = size;
     ret = sensor_write_burst_register(sensor_context->devId, &reg_table_data);
@@ -293,7 +293,7 @@ static int sc640_write_packet(void* handle, uint16_t regAddr, uint8_t* packet, u
     return ret;
 }
 
-static int sc640_sensor_write_reg(void* snsHandle, uint32_t regAddr, uint32_t value)
+static int hik_ir_sensor_write_reg(void* snsHandle, uint32_t regAddr, uint32_t value)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret;
@@ -303,24 +303,24 @@ static int sc640_sensor_write_reg(void* snsHandle, uint32_t regAddr, uint32_t va
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    ret = sc640_write_register(snsHandle, regAddr, value);
+    ret = hik_ir_write_register(snsHandle, regAddr, value);
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
 }
 
-static int sc640_sensor_group_reg_start(void* snsHandle)
+static int hik_ir_sensor_group_reg_start(void* snsHandle)
 {
     (void)snsHandle;
     return 0;
 }
 
-static int sc640_sensor_group_reg_done(void* snsHandle)
+static int hik_ir_sensor_group_reg_done(void* snsHandle)
 {
     (void)snsHandle;
     return 0;
 }
 
-static int sc640_sensor_get_isp_default(void* snsHandle, uint32_t u32ChanelId, uint32_t camScene,
+static int hik_ir_sensor_get_isp_default(void* snsHandle, uint32_t u32ChanelId, uint32_t camScene,
                                         ISP_SENSOR_DEFAULT_S* pstDef)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -342,7 +342,7 @@ static int sc640_sensor_get_isp_default(void* snsHandle, uint32_t u32ChanelId, u
     return 0;
 }
 
-static int sc640_sensor_get_isp_black_level(void* snsHandle, uint32_t u32ChanelId,
+static int hik_ir_sensor_get_isp_black_level(void* snsHandle, uint32_t u32ChanelId,
                                             ISP_SENSOR_BLACK_LEVEL_S* pstBlackLevel)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -365,7 +365,7 @@ static int sc640_sensor_get_isp_black_level(void* snsHandle, uint32_t u32ChanelI
     return 0;
 }
 
-static int sc640_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* pstSensorRegsInfo)
+static int hik_ir_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* pstSensorRegsInfo)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -389,7 +389,7 @@ static int sc640_sensor_get_reg_info(void* snsHandle, ISP_SENSOR_REGS_INFO_S* ps
     return 0;
 }
 
-static int sc640_sensor_dump_info(void* snsHandle)
+static int hik_ir_sensor_dump_info(void* snsHandle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -398,13 +398,13 @@ static int sc640_sensor_dump_info(void* snsHandle)
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    CLOG_INFO("sc640 struct(initVTS=%d,initFps=%f,vts=%d)", sensor_context->initVTS, sensor_context->initFps,
+    CLOG_INFO("hik_ir struct(initVTS=%d,initFps=%f,vts=%d)", sensor_context->initVTS, sensor_context->initFps,
               sensor_context->vts[0]);
     pthread_mutex_unlock(&sensor_context->apiLock);
     return 0;
 }
 
-static int sc640_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, ISP_SENSOR_AE_DEFAULT_S* pstSensorAeDft)
+static int hik_ir_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, ISP_SENSOR_AE_DEFAULT_S* pstSensorAeDft)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -426,7 +426,7 @@ static int sc640_sensor_get_ae_default(void* snsHandle, uint32_t u32ChanelId, IS
     return 0;
 }
 
-static int sc640_sensor_get_expotime_by_fps(void* snsHandle, float f32Fps)
+static int hik_ir_sensor_get_expotime_by_fps(void* snsHandle, float f32Fps)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     uint32_t vts = 0;
@@ -448,7 +448,7 @@ static int sc640_sensor_get_expotime_by_fps(void* snsHandle, float f32Fps)
     return vts * sensor_context->lineTime / 1000;
 }
 
-static int sc640_sensor_fps_set(void* snsHandle, float f32Fps)
+static int hik_ir_sensor_fps_set(void* snsHandle, float f32Fps)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     uint32_t lines;
@@ -473,7 +473,7 @@ static int sc640_sensor_fps_set(void* snsHandle, float f32Fps)
     return 0;
 }
 
-static int sc640_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, uint32_t u32ExpoTime,
+static int hik_ir_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, uint32_t u32ExpoTime,
                                         ISP_SENSOR_VTS_INFO_S* pstSensorVtsInfo)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
@@ -495,7 +495,7 @@ static int sc640_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId, u
     return 0;
 }
 
-static int sc640_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
+static int hik_ir_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint32_t* pAgainVal, uint32_t* pDgainVal)
 {
     (void)snsHandle;
     (void)u32ChanelId;
@@ -504,7 +504,7 @@ static int sc640_sensor_gain_update(void* snsHandle, uint32_t u32ChanelId, uint3
     return 0;
 }
 
-static int sc640_get_aelib_default_settings(void* snsHandle, uint32_t u32ChanelId,
+static int hik_ir_get_aelib_default_settings(void* snsHandle, uint32_t u32ChanelId,
                                             AE_LIB_DEFAULT_SETTING_S** ppstAeLibDefault)
 {
     (void)snsHandle;
@@ -514,7 +514,7 @@ static int sc640_get_aelib_default_settings(void* snsHandle, uint32_t u32ChanelI
     return 0;
 }
 
-static int sc640_sensor_get_awb_default(void* snsHandle, uint32_t u32ChanelId, ISP_SENSOR_AWB_DEFAULT_S* pstSensorAwbDft)
+static int hik_ir_sensor_get_awb_default(void* snsHandle, uint32_t u32ChanelId, ISP_SENSOR_AWB_DEFAULT_S* pstSensorAwbDft)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -533,7 +533,7 @@ static int sc640_sensor_get_awb_default(void* snsHandle, uint32_t u32ChanelId, I
     return 0;
 }
 
-static int sc640_get_awblib_default_settings(void* snsHandle, uint32_t u32ChanelId,
+static int hik_ir_get_awblib_default_settings(void* snsHandle, uint32_t u32ChanelId,
                                              AWB_LIB_DEFAULT_SETTING_S** ppstAwbLibDefault)
 {
     (void)snsHandle;
@@ -543,7 +543,7 @@ static int sc640_get_awblib_default_settings(void* snsHandle, uint32_t u32Chanel
     return 0;
 }
 
-static int sc640_power_on(SENSOR_CONTEXT_S* sensor_context)
+static int hik_ir_power_on(SENSOR_CONTEXT_S* sensor_context)
 {
     SENSORS_CHECK_PARA_POINTER(sensor_context);
 
@@ -559,7 +559,7 @@ static int sc640_power_on(SENSOR_CONTEXT_S* sensor_context)
     return 0;
 }
 
-static int sc640_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
+static int hik_ir_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     struct cam_sensor_info sensor_hw_info;
@@ -572,7 +572,7 @@ static int sc640_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
     if (NULL == sensor_context) {
         return -ENOMEM;
     }
-    sensor_context->name = SC640_NAME;
+    sensor_context->name = HIK_IR_NAME;
     sensor_context->devId = sns_id;
     sensor_context->i2c_addr = sns_addr;
     sensor_context->magic = SENSOR_MAGIC;
@@ -586,7 +586,7 @@ static int sc640_init(void** pHandle, SENSOR_CUSTOM_S snr_custom)
     return 0;
 }
 
-static int sc640_power_off(SENSOR_CONTEXT_S* sensor_context)
+static int hik_ir_power_off(SENSOR_CONTEXT_S* sensor_context)
 {
     SENSORS_CHECK_PARA_POINTER(sensor_context);
 
@@ -599,7 +599,7 @@ static int sc640_power_off(SENSOR_CONTEXT_S* sensor_context)
     return 0;
 }
 
-static int sc640_deinit(void* handle)
+static int hik_ir_deinit(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -621,7 +621,7 @@ static int sc640_deinit(void* handle)
     return 0;
 }
 
-static int sc640_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
+static int hik_ir_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -651,7 +651,7 @@ static int sc640_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
     return 0;
 }
 
-static int sc640_set_param(void* handle, const SENSOR_INIT_ATTR_S* init_attr)
+static int hik_ir_set_param(void* handle, const SENSOR_INIT_ATTR_S* init_attr)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -664,7 +664,7 @@ static int sc640_set_param(void* handle, const SENSOR_INIT_ATTR_S* init_attr)
     return 0;
 }
 
-static int sc640_stream_on(void* handle)
+static int hik_ir_stream_on(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret;
@@ -683,7 +683,7 @@ static int sc640_stream_on(void* handle)
     return ret;
 }
 
-static int sc640_stream_off(void* handle)
+static int hik_ir_stream_off(void* handle)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
     int ret;
@@ -700,7 +700,7 @@ static int sc640_stream_off(void* handle)
     return ret;
 }
 
-static int sc640_get_ops(void* handle, ISP_SENSOR_REGISTER_S* pSensorFuncOps)
+static int hik_ir_get_ops(void* handle, ISP_SENSOR_REGISTER_S* pSensorFuncOps)
 {
     SENSOR_CONTEXT_S* sensor_context = NULL;
 
@@ -711,23 +711,23 @@ static int sc640_get_ops(void* handle, ISP_SENSOR_REGISTER_S* pSensorFuncOps)
 
     pthread_mutex_lock(&sensor_context->apiLock);
     pSensorFuncOps->snsHandle = handle;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_write_reg = sc640_sensor_write_reg;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_get_isp_default = sc640_sensor_get_isp_default;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_get_isp_black_level = sc640_sensor_get_isp_black_level;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_get_reg_info = sc640_sensor_get_reg_info;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_dump_info = sc640_sensor_dump_info;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_group_regs_start = sc640_sensor_group_reg_start;
-    pSensorFuncOps->stSensorFunc.pfn_sensor_group_regs_done = sc640_sensor_group_reg_done;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_write_reg = hik_ir_sensor_write_reg;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_get_isp_default = hik_ir_sensor_get_isp_default;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_get_isp_black_level = hik_ir_sensor_get_isp_black_level;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_get_reg_info = hik_ir_sensor_get_reg_info;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_dump_info = hik_ir_sensor_dump_info;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_group_regs_start = hik_ir_sensor_group_reg_start;
+    pSensorFuncOps->stSensorFunc.pfn_sensor_group_regs_done = hik_ir_sensor_group_reg_done;
 
-    pSensorFuncOps->stSensorAeFunc.pfn_sensor_get_ae_default = sc640_sensor_get_ae_default;
-    pSensorFuncOps->stSensorAeFunc.pfn_sensor_fps_set = sc640_sensor_fps_set;
-    pSensorFuncOps->stSensorAeFunc.pfn_sensor_get_expotime_by_fps = sc640_sensor_get_expotime_by_fps;
-    pSensorFuncOps->stSensorAeFunc.pfn_sensor_expotime_update = sc640_sensor_expotime_update;
-    pSensorFuncOps->stSensorAeFunc.pfn_sensor_gain_update = sc640_sensor_gain_update;
-    pSensorFuncOps->stSensorAeFunc.pfn_get_aelib_default_settings = sc640_get_aelib_default_settings;
+    pSensorFuncOps->stSensorAeFunc.pfn_sensor_get_ae_default = hik_ir_sensor_get_ae_default;
+    pSensorFuncOps->stSensorAeFunc.pfn_sensor_fps_set = hik_ir_sensor_fps_set;
+    pSensorFuncOps->stSensorAeFunc.pfn_sensor_get_expotime_by_fps = hik_ir_sensor_get_expotime_by_fps;
+    pSensorFuncOps->stSensorAeFunc.pfn_sensor_expotime_update = hik_ir_sensor_expotime_update;
+    pSensorFuncOps->stSensorAeFunc.pfn_sensor_gain_update = hik_ir_sensor_gain_update;
+    pSensorFuncOps->stSensorAeFunc.pfn_get_aelib_default_settings = hik_ir_get_aelib_default_settings;
 
-    pSensorFuncOps->stSensorAwbFunc.pfn_sensor_get_awb_default = sc640_sensor_get_awb_default;
-    pSensorFuncOps->stSensorAwbFunc.pfn_get_awblib_default_settings = sc640_get_awblib_default_settings;
+    pSensorFuncOps->stSensorAwbFunc.pfn_sensor_get_awb_default = hik_ir_sensor_get_awb_default;
+    pSensorFuncOps->stSensorAwbFunc.pfn_get_awblib_default_settings = hik_ir_get_awblib_default_settings;
     pthread_mutex_unlock(&sensor_context->apiLock);
     return 0;
 }
@@ -754,15 +754,15 @@ static int hik_ir_detect_sensor(void* handle, SENSOR_VENDOR_ID_S* vendor_id)
 }
 
 SENSOR_OBJ_S hik_irObj = {
-    .name = SC640_NAME,
-    .pfnInit = sc640_init,
-    .pfnDeinit = sc640_deinit,
-    .pfnGloablConfig = sc640_global_config,
-    .pfnSetParam = sc640_set_param,
-    .pfnStreamOn = sc640_stream_on,
-    .pfnStreamOff = sc640_stream_off,
-    .pfnGetSensorOps = sc640_get_ops,
+    .name = HIK_IR_NAME,
+    .pfnInit = hik_ir_init,
+    .pfnDeinit = hik_ir_deinit,
+    .pfnGloablConfig = hik_ir_global_config,
+    .pfnSetParam = hik_ir_set_param,
+    .pfnStreamOn = hik_ir_stream_on,
+    .pfnStreamOff = hik_ir_stream_off,
+    .pfnGetSensorOps = hik_ir_get_ops,
     .pfnDetectSns = hik_ir_detect_sensor,
-    .pfnWriteReg = sc640_write_register,
-    .pfnReadReg = sc640_read_register,
+    .pfnWriteReg = hik_ir_write_register,
+    .pfnReadReg = hik_ir_read_register,
 };

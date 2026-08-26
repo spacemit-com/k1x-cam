@@ -12,13 +12,13 @@ extern "C" {
 #endif /* extern "C" */
 
 typedef enum HIK_IR_SPM_WORK_MODE {
-    HIK_IR_SPM_640x512_8bit_LINEAR_30_1LANE = 0,
+    HIK_IR_SPM_640x512_8bit_LINEAR_50_1LANE = 0,
 
     HIK_IR_SPM_WORK_MODE_SIZE,
 } HIK_IR_SPM_WORK_MODE_E;
 
-#define HIK_IR_VMAX_512P30_8bit_LINEAR (512)
-#define HIK_IR_LINETIME_512P30_8bit_LINEAR 65104
+#define HIK_IR_VMAX_512P50_8bit_LINEAR (512)
+#define HIK_IR_LINETIME_512P50_8bit_LINEAR 39062
 
 #ifdef __cplusplus
 }
