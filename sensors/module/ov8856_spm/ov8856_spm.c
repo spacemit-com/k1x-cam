@@ -91,7 +91,7 @@ static int ov8856_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].minFps = 5;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 4;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = OV8856_SPM_3264x2448_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &ov8856_spm_setting;
@@ -104,7 +104,7 @@ static int ov8856_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILI
                 sensor_capability->snr_config[i].minFps = 25;
                 sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
                 sensor_capability->snr_config[i].lane_num = 4;
-                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_GRBG;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
                 sensor_capability->snr_config[i].supportPDAF = 0;
                 sensor_capability->snr_config[i].work_mode = OV8856_SPM_1632x1224_10bit_LINEAR_30_4LANE;
                 sensor_capability->snr_config[i].setting = &ov8856_spm_setting;

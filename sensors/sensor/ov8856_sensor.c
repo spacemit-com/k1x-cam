@@ -47,6 +47,7 @@ static struct regval_tab color_bar_regs[] = {
 // #define OV8856_DGAIN_H    (0x350a)
 // #define OV8856_DGAIN_L    (0x350b)
 #define OV8856_GROUP_ACCESS (0x3208)
+#define OV8856_GROUP_MANUAL (0x320B)
 #define OV8856_SENSOR_REGS_NUM (7)
 
 /*******************************************************************/
@@ -186,7 +187,10 @@ static int ov8856_sensor_group_reg_done(void* snsHandle)
     SENSOR_CHECK_HANDLE_IS_ERR(sensor_context);
 
     pthread_mutex_lock(&sensor_context->apiLock);
-    ret = ov8856_write_register(snsHandle, OV8856_GROUP_ACCESS, 0x10);
+    /* OV8856 quick manual launch (0xe0) requires manual group mode. */
+    ret = ov8856_write_register(snsHandle, OV8856_GROUP_MANUAL, 0x00);
+    if (!ret)
+        ret = ov8856_write_register(snsHandle, OV8856_GROUP_ACCESS, 0x10);
     if (!ret) {
         ret = ov8856_write_register(snsHandle, OV8856_GROUP_ACCESS, 0xe0);
     }
@@ -451,6 +455,8 @@ static int ov8856_sensor_fps_set(void* snsHandle, float f32Fps)
     uint32_t lines;
     float minFps;
     uint32_t expLine = 0;
+    uint32_t maxExpLine;
+    uint32_t regExpo;
 
     SENSORS_CHECK_PARA_POINTER(snsHandle);
     sensor_context = (SENSOR_CONTEXT_S*)snsHandle;
@@ -469,11 +475,18 @@ static int ov8856_sensor_fps_set(void* snsHandle, float f32Fps)
     sensor_context->initFps = f32Fps;
 
     expLine = sensor_context->hdrIntTime[0] * 1000 / sensor_context->lineTime;
-    if (expLine <= (sensor_context->initVTS - OV8856_VTS_ADJUST)) {
-        sensor_context->vts[0] = sensor_context->initVTS;
-        sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
-        sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
+    maxExpLine = sensor_context->initVTS - OV8856_VTS_ADJUST;
+    if (expLine > maxExpLine) {
+        expLine = maxExpLine;
+        sensor_context->hdrIntTime[0] = expLine * sensor_context->lineTime / 1000;
+        regExpo = expLine << 4;
+        sensor_context->sensorRegs[0].astI2cData[0].u32Data = regExpo & 0xFF;
+        sensor_context->sensorRegs[0].astI2cData[1].u32Data = (regExpo >> 8) & 0xFF;
+        sensor_context->sensorRegs[0].astI2cData[2].u32Data = (regExpo >> 16) & 0x0F;
     }
+    sensor_context->vts[0] = sensor_context->initVTS;
+    sensor_context->sensorRegs[0].astI2cData[5].u32Data = LOW_8BITS(sensor_context->vts[0]);
+    sensor_context->sensorRegs[0].astI2cData[6].u32Data = HIGH_8BITS(sensor_context->vts[0]);
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
     return ret;
