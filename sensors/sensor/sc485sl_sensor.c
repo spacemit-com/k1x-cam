@@ -17,21 +17,57 @@
 #define SC485SL_NAME "sc485sl"
 #define SC485SL_VTS_ADJUST 8U
 #define SC485SL_VTS_MAX 0x3ffff0U
-#define SC485SL_EXPOSURE_MIN 2U
+#define SC485SL_EXPOSURE_MIN 1U
 
-#define SC485SL_VTS_H 0x320e
+#define SC485SL_VTS_H 0x326d
+#define SC485SL_VTS_M 0x320e
 #define SC485SL_VTS_L 0x320f
+#define SC485SL_EXP_HH 0x3e20
 #define SC485SL_EXP_H 0x3e00
 #define SC485SL_EXP_M 0x3e01
 #define SC485SL_EXP_L 0x3e02
 #define SC485SL_AGAIN 0x3e08
 #define SC485SL_AGAIN_FINE 0x3e09
-#define SC485SL_DGAIN 0x3e06
-#define SC485SL_DGAIN_FINE 0x3e07
 #define SC485SL_GROUP_HOLD 0x3812
+
+#define SC485SL_AGAIN_MIN_Q8 0x100U
+#define SC485SL_DGAIN_1X_Q12 0x1000U
+
+enum {
+    SC485SL_INFO_EXP_L,
+    SC485SL_INFO_EXP_M,
+    SC485SL_INFO_EXP_H,
+    SC485SL_INFO_EXP_HH,
+    SC485SL_INFO_AGAIN,
+    SC485SL_INFO_AGAIN_FINE,
+    SC485SL_INFO_VTS_L,
+    SC485SL_INFO_VTS_M,
+    SC485SL_INFO_VTS_H,
+    SC485SL_INFO_REG_NUM,
+};
+
+typedef struct {
+    uint32_t gain_q8;
+    uint8_t coarse;
+    uint8_t fine_max;
+} SC485SL_GAIN_MAP_S;
+
+static const SC485SL_GAIN_MAP_S sc485sl_again_map[] = {
+    {0x0100, 0x00, 0x3f}, /* 1.000x ~ 1.969x */
+    {0x0200, 0x01, 0x36}, /* 2.000x ~ 3.375x */
+    {0x0369, 0x80, 0x3f}, /* 3.410x ~ 6.713x */
+    {0x06d2, 0x81, 0x3f}, /* 6.820x ~ 13.427x */
+    {0x0da4, 0x83, 0x3f}, /* 13.640x ~ 26.854x */
+    {0x1b48, 0x87, 0x3f}, /* 27.280x ~ 53.708x */
+    {0x3690, 0x8f, 0x3f}, /* 54.560x ~ 107.415x */
+};
+
+#define SC485SL_AGAIN_MAX_Q8 \
+    (sc485sl_again_map[ARRAY_SIZE(sc485sl_again_map) - 1].gain_q8 * 0x3fU / 0x20U)
 
 static const unsigned int sc485sl_reg_addr_byte = I2C_16BIT;
 static const unsigned int sc485sl_reg_data_byte = I2C_8BIT;
+static uint8_t sc485sl_vts_h_base;
 
 static struct regval_tab sc485sl_stream_on_regs[] = {
     {0x302c, 0x00},
@@ -50,6 +86,18 @@ static struct regval_tab sc485sl_stream_off_regs[] = {
 static struct regval_tab sc485sl_soft_reset_regs[] = {
     {0x0103, 0x01},
 };
+
+static struct regval_tab sc485sl_gain_1x_regs[] = {
+    {SC485SL_AGAIN, 0x00},
+    {SC485SL_AGAIN_FINE, 0x20},
+    {0x3e06, 0x00},
+    {0x3e07, 0x80},
+};
+
+static uint8_t sc485sl_vts_h_data(uint32_t vts)
+{
+    return (sc485sl_vts_h_base & ~0x3fU) | ((vts >> 16) & 0x3fU);
+}
 
 static int sc485sl_write_register(void* handle, uint16_t reg, uint16_t val)
 {
@@ -177,11 +225,12 @@ static int sc485sl_sensor_get_reg_info(void* handle, ISP_SENSOR_REGS_INFO_S* inf
 {
     SENSOR_CONTEXT_S* ctx = handle;
     static const uint16_t regs[] = {
-        SC485SL_EXP_L, SC485SL_EXP_M, SC485SL_EXP_H,
-        SC485SL_AGAIN, SC485SL_AGAIN_FINE, SC485SL_DGAIN, SC485SL_DGAIN_FINE,
-        SC485SL_VTS_L, SC485SL_VTS_H,
+        SC485SL_EXP_L, SC485SL_EXP_M, SC485SL_EXP_H, SC485SL_EXP_HH,
+        SC485SL_AGAIN, SC485SL_AGAIN_FINE,
+        SC485SL_VTS_L, SC485SL_VTS_M, SC485SL_VTS_H,
     };
 
+    _Static_assert(ARRAY_SIZE(regs) == SC485SL_INFO_REG_NUM, "SC485SL register index mismatch");
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSORS_CHECK_PARA_POINTER(info);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
@@ -198,6 +247,9 @@ static int sc485sl_sensor_get_reg_info(void* handle, ISP_SENSOR_REGS_INFO_S* inf
             ctx->sensorRegs[0].astI2cData[i].u32DataWidth = sc485sl_reg_data_byte;
             ctx->sensorRegs[0].astI2cData[i].u32RegAddr = regs[i];
         }
+        ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_L].u32Data = LOW_8BITS(ctx->vts[0]);
+        ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_M].u32Data = HIGH_8BITS(ctx->vts[0]);
+        ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_H].u32Data = sc485sl_vts_h_data(ctx->vts[0]);
         ctx->syncInit = true;
     } else {
         for (unsigned int i = 0; i < ctx->sensorRegs[0].u32RegNum; ++i)
@@ -214,13 +266,15 @@ static int sc485sl_sensor_get_reg_info(void* handle, ISP_SENSOR_REGS_INFO_S* inf
 static int sc485sl_sensor_dump_info(void* handle)
 {
     SENSOR_CONTEXT_S* ctx = handle;
-    uint16_t hi, lo;
+    uint16_t hi, mid, lo;
 
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
     if (!sc485sl_read_register(ctx, SC485SL_VTS_H, &hi) &&
+        !sc485sl_read_register(ctx, SC485SL_VTS_M, &mid) &&
         !sc485sl_read_register(ctx, SC485SL_VTS_L, &lo))
-        CLOG_INFO("sc485sl: VTS=%u", ((uint32_t)hi << 8) | lo);
+        CLOG_INFO("sc485sl: VTS=%u",
+                  (((uint32_t)hi & 0x3fU) << 16) | ((uint32_t)mid << 8) | lo);
     return 0;
 }
 
@@ -246,35 +300,36 @@ static int sc485sl_sensor_get_expotime_by_fps(void* handle, float fps)
 {
     SENSOR_CONTEXT_S* ctx = handle;
     uint32_t vts;
+    float min_fps;
 
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
-    if (fps > ctx->maxFps || fps <= 0)
+    min_fps = (ctx->minVTS * ctx->maxFps) / SC485SL_VTS_MAX;
+    if (fps > ctx->maxFps || fps < min_fps)
         return -EINVAL;
     vts = ctx->minVTS * ctx->maxFps / fps;
-    if (vts > SC485SL_VTS_MAX)
-        return -EINVAL;
-    return (vts - SC485SL_VTS_ADJUST) * ctx->lineTime / 1000;
+    return (uint64_t)(vts - SC485SL_VTS_ADJUST) * ctx->lineTime / 1000U;
 }
 
 static int sc485sl_sensor_fps_set(void* handle, float fps)
 {
     SENSOR_CONTEXT_S* ctx = handle;
     uint32_t vts;
+    float min_fps;
 
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
-    if (fps > ctx->maxFps || fps <= 0)
+    min_fps = (ctx->minVTS * ctx->maxFps) / SC485SL_VTS_MAX;
+    if (fps > ctx->maxFps || fps < min_fps)
         return -EINVAL;
     vts = ctx->minVTS * ctx->maxFps / fps;
-    if (vts > SC485SL_VTS_MAX)
-        return -EINVAL;
     pthread_mutex_lock(&ctx->apiLock);
     ctx->initVTS = vts;
     ctx->initFps = fps;
     ctx->vts[0] = vts;
-    ctx->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(vts);
-    ctx->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(vts);
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_L].u32Data = LOW_8BITS(vts);
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_M].u32Data = HIGH_8BITS(vts);
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_H].u32Data = sc485sl_vts_h_data(vts);
     pthread_mutex_unlock(&ctx->apiLock);
     return 0;
 }
@@ -283,25 +338,31 @@ static int sc485sl_sensor_expotime_update(void* handle, uint32_t channel, uint32
                                            ISP_SENSOR_VTS_INFO_S* vts_info)
 {
     SENSOR_CONTEXT_S* ctx = handle;
-    uint32_t lines;
+    uint32_t lines, reg_exposure;
 
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSORS_CHECK_PARA_POINTER(vts_info);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
     pthread_mutex_lock(&ctx->apiLock);
-    lines = exposure * 1000 / ctx->lineTime;
+    lines = (uint64_t)exposure * 1000U / ctx->lineTime;
     if (lines < SC485SL_EXPOSURE_MIN)
         lines = SC485SL_EXPOSURE_MIN;
     if (lines > SC485SL_VTS_MAX - SC485SL_VTS_ADJUST)
         lines = SC485SL_VTS_MAX - SC485SL_VTS_ADJUST;
-    if (lines + SC485SL_VTS_ADJUST > ctx->vts[0])
+    if (lines > ctx->initVTS - SC485SL_VTS_ADJUST)
         ctx->vts[0] = lines + SC485SL_VTS_ADJUST;
+    else
+        ctx->vts[0] = ctx->initVTS;
     ctx->hdrIntTime[channel] = lines * ctx->lineTime / 1000;
-    ctx->sensorRegs[0].astI2cData[0].u32Data = (lines << 4) & 0xf0;
-    ctx->sensorRegs[0].astI2cData[1].u32Data = (lines >> 4) & 0xff;
-    ctx->sensorRegs[0].astI2cData[2].u32Data = (lines >> 12) & 0x0f;
-    ctx->sensorRegs[0].astI2cData[7].u32Data = LOW_8BITS(ctx->vts[0]);
-    ctx->sensorRegs[0].astI2cData[8].u32Data = HIGH_8BITS(ctx->vts[0]);
+    reg_exposure = lines << 4;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_EXP_L].u32Data = reg_exposure & 0xf0;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_EXP_M].u32Data = (reg_exposure >> 8) & 0xff;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_EXP_H].u32Data = (reg_exposure >> 16) & 0xff;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_EXP_HH].u32Data = (reg_exposure >> 24) & 0x0f;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_L].u32Data = LOW_8BITS(ctx->vts[0]);
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_M].u32Data = HIGH_8BITS(ctx->vts[0]);
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_H].u32Data =
+        sc485sl_vts_h_data(ctx->vts[0]);
     vts_info->snsLineTime = ctx->lineTime;
     vts_info->snsVts = ctx->vts[0];
     vts_info->snsFps = ctx->initFps * ctx->initVTS / ctx->vts[0];
@@ -309,34 +370,29 @@ static int sc485sl_sensor_expotime_update(void* handle, uint32_t channel, uint32
     return 0;
 }
 
-static void sc485sl_again_to_reg(uint32_t gain_q8, uint8_t* coarse, uint8_t* fine, uint32_t* actual_q8)
+static void sc485sl_again_to_reg(uint32_t gain_q8, uint8_t* coarse, uint8_t* fine,
+                                 uint32_t* actual_q8)
 {
-    static const struct {
-        uint8_t coarse;
-        uint32_t base_q8;
-        uint32_t step_q8;
-    } stages[] = {
-        {0x00, 256, 8},
-        {0x01, 512, 16},
-        {0x80, 873, 27},
-        {0x81, 1746, 55},
-        {0x83, 3492, 109},
-        {0x87, 6984, 218},
-        {0x8f, 13968, 436},
-    };
-    unsigned int stage = 0;
-    unsigned int step;
+    const SC485SL_GAIN_MAP_S* gain_map = &sc485sl_again_map[0];
+    uint32_t stage = 0;
+    uint32_t fine_reg;
 
-    if (gain_q8 < 256)
-        gain_q8 = 256;
-    while (stage + 1 < ARRAY_SIZE(stages) && gain_q8 >= stages[stage + 1].base_q8)
+    if (gain_q8 < SC485SL_AGAIN_MIN_Q8)
+        gain_q8 = SC485SL_AGAIN_MIN_Q8;
+    if (gain_q8 > SC485SL_AGAIN_MAX_Q8)
+        gain_q8 = SC485SL_AGAIN_MAX_Q8;
+    while (stage + 1 < ARRAY_SIZE(sc485sl_again_map) &&
+           gain_q8 >= sc485sl_again_map[stage + 1].gain_q8)
         ++stage;
-    step = (gain_q8 - stages[stage].base_q8 + stages[stage].step_q8 / 2) / stages[stage].step_q8;
-    if (step > 31)
-        step = 31;
-    *coarse = stages[stage].coarse;
-    *fine = 0x20 + step;
-    *actual_q8 = stages[stage].base_q8 + step * stages[stage].step_q8;
+    gain_map = &sc485sl_again_map[stage];
+    fine_reg = gain_q8 * 0x20U / gain_map->gain_q8;
+    if (fine_reg < 0x20U)
+        fine_reg = 0x20U;
+    if (fine_reg > gain_map->fine_max)
+        fine_reg = gain_map->fine_max;
+    *coarse = gain_map->coarse;
+    *fine = fine_reg;
+    *actual_q8 = gain_map->gain_q8 * fine_reg / 0x20U;
 }
 
 static int sc485sl_sensor_gain_update(void* handle, uint32_t channel, uint32_t* again, uint32_t* dgain)
@@ -344,30 +400,18 @@ static int sc485sl_sensor_gain_update(void* handle, uint32_t channel, uint32_t* 
     SENSOR_CONTEXT_S* ctx = handle;
     uint8_t coarse, fine;
     uint32_t actual;
-    uint32_t dgain_q12, integer, fractional;
 
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSORS_CHECK_PARA_POINTER(again);
     SENSORS_CHECK_PARA_POINTER(dgain);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
     sc485sl_again_to_reg(*again, &coarse, &fine, &actual);
-    dgain_q12 = *dgain < 0x1000 ? 0x1000 : *dgain;
-    integer = dgain_q12 / 0x1000;
-    if (integer > 8)
-        integer = 8;
-    fractional = (dgain_q12 * 128 + (integer * 0x1000) / 2) / (integer * 0x1000);
-    if (fractional < 0x80)
-        fractional = 0x80;
-    if (fractional > 0xff)
-        fractional = 0xff;
     pthread_mutex_lock(&ctx->apiLock);
-    ctx->sensorRegs[0].astI2cData[3].u32Data = coarse;
-    ctx->sensorRegs[0].astI2cData[4].u32Data = fine;
-    ctx->sensorRegs[0].astI2cData[5].u32Data = integer - 1;
-    ctx->sensorRegs[0].astI2cData[6].u32Data = fractional;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_AGAIN].u32Data = coarse;
+    ctx->sensorRegs[0].astI2cData[SC485SL_INFO_AGAIN_FINE].u32Data = fine;
     pthread_mutex_unlock(&ctx->apiLock);
     *again = actual;
-    *dgain = integer * fractional * 0x1000 / 128;
+    *dgain = SC485SL_DGAIN_1X_Q12;
     (void)channel;
     return 0;
 }
@@ -475,6 +519,8 @@ static int sc485sl_global_config(void* handle, SENSOR_WORK_INFO_S* work)
 {
     SENSOR_CONTEXT_S* ctx = handle;
     int ret;
+    uint16_t reg_val;
+
     SENSORS_CHECK_PARA_POINTER(ctx);
     SENSORS_CHECK_PARA_POINTER(work);
     SENSOR_CHECK_HANDLE_IS_ERR(ctx);
@@ -499,6 +545,17 @@ static int sc485sl_global_config(void* handle, SENSOR_WORK_INFO_S* work)
         usleep(1000);
     if (!ret)
         ret = sc485sl_write_burst_register(ctx, work->setting_table, work->setting_table_size);
+    if (!ret)
+        ret = sc485sl_write_burst_register(ctx, sc485sl_gain_1x_regs,
+                                           ARRAY_SIZE(sc485sl_gain_1x_regs));
+    if (!ret)
+        ret = sc485sl_read_register(ctx, SC485SL_VTS_H, &reg_val);
+    if (!ret)
+        sc485sl_vts_h_base = reg_val & ~0x3fU;
+    if (!ret) {
+        ctx->sensorRegs[0].astI2cData[SC485SL_INFO_VTS_H].u32Data =
+            sc485sl_vts_h_data(ctx->vts[0]);
+    }
     pthread_mutex_unlock(&ctx->apiLock);
     return ret;
 }
