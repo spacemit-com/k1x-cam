@@ -214,23 +214,23 @@
     /* @m_pCMC0  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for low color temperature */
     {
-        {6433, -1190, -1147},
-        {-2771, 7660, -793},
-        {970, -5769, 8895}
+        {6440, -1092, -1252},
+        {-2838, 7809, -875},
+        {903, -5730, 8923}
     },
     /* @m_pCMC1  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for mid color temperature */
     {
-        {6624, -1668, -860},
-        {-2189, 7628, -1343},
-        {651, -4269, 7714}
+        {6640, -1597, -947},
+        {-2254, 7772, -1422},
+        {600, -4249, 7745}
     },
     /* @m_pCMC2  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for high color temperature */
     {
-        {6988, -2228, -664},
-        {-1681, 7566, -1789},
-        {428, -3676, 7344}
+        {6997, -2152, -749},
+        {-1733, 7711, -1882},
+        {370, -3628, 7354}
     },
     /* @m_pCMCManual  Size: 3x3  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* color matrix for manual mode */
@@ -1408,16 +1408,16 @@
     /* @m_pCTMatrixLow  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix low */
     {
-        {1.366474, -0.330137, -0.370356},
-        {-0.094302, 1.273487, -0.212915},
-        {-0.047854, 0.213361, 0.378352}
+        {1.599342, -0.549027, -0.361255},
+        {-0.115603, 1.259939, -0.108507},
+        {-0.009307, 0.168141, 0.410183}
     },
     /* @m_pCTMatrixHigh  Size: 3x3  BitWidth: 32_fp  Range~[-32768.000000, 32767.000000]  Type: firmware */
     /* color temperature matrix high */
     {
-        {1.469681, -0.532663, -0.220698},
-        {-0.717894, 1.635781, 0.111137},
-        {-0.296471, 0.459674, 0.346979}
+        {0.982170, -0.334595, -0.089297},
+        {-0.112534, 1.024551, 0.146682},
+        {-0.037075, 0.162100, 0.400008}
     }
 },
 
@@ -3043,16 +3043,16 @@
     /* @m_pRoiBound  Size: 16x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary : x_high x_low y_high y_low */
     {
-        {302, 191, 262, 171},
-        {328, 221, 356, 262},
-        {345, 283, 538, 356},
-        {283, 226, 538, 356},
-        {375, 294, 757, 538},
-        {294, 238, 757, 538},
-        {379, 304, 928, 757},
-        {304, 234, 928, 757},
-        {414, 250, 1368, 928},
-        {414, 250, 1368, 928},
+        {334, 211, 259, 168},
+        {337, 227, 376, 259},
+        {302, 248, 630, 376},
+        {248, 197, 630, 376},
+        {297, 239, 947, 630},
+        {239, 195, 947, 630},
+        {292, 245, 1179, 947},
+        {245, 197, 1179, 947},
+        {326, 229, 1645, 1179},
+        {326, 229, 1645, 1179},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
@@ -3062,7 +3062,7 @@
     },
     /* @m_pRoiBoundG  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* ROI boundary of G: x_high x_low y_high y_low */
-    {202, 95, 798, 370},
+    {165, 64, 1005, 396},
     /* @m_pRoiLumLutHigh  Size: 16x11  BitWidth: 32_u  Range~[0, 255]  Type: firmware */
     /* high threshold for lum of each exposure level */
     {
@@ -3140,40 +3140,40 @@
     0,
     /* @m_nRoiCtHigh  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary */
-    819,
+    1035,
     /* @m_nRoiCtLow  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary */
-    646,
+    786,
     /* @m_nRoiXMax  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary */
-    414,
+    337,
     /* @m_nRoiXMin  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary */
-    191,
+    195,
     /* @m_pRoiCtHighAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature high boundary in different lum */
-    {679, 679, 759, 819, 819, 956, 956, 956, 956, 956, 956},
+    {833, 833, 949, 1035, 1035, 1210, 1210, 1210, 1210, 1210, 1210},
     /* @m_pRoiCtLowAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature low boundary in different lum */
-    {646, 646, 646, 646, 646, 227, 227, 227, 227, 227, 227},
+    {786, 786, 786, 786, 786, 223, 223, 223, 223, 223, 223},
     /* @m_pRoiCtLow2Auto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* 2nd color temperature low boundary in different lum */
-    {646, 646, 646, 646, 646, 227, 227, 227, 227, 227, 227},
+    {786, 786, 786, 786, 786, 223, 223, 223, 223, 223, 223},
     /* @m_pRoiXMaxAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x max boundary in different lum */
-    {414, 414, 414, 414, 414, 414, 414, 414, 414, 414, 414},
+    {337, 337, 337, 337, 337, 337, 337, 337, 337, 337, 337},
     /* @m_pRoiXMinAuto  Size: 1x11  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature x min boundary in different lum */
-    {191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191},
+    {195, 195, 195, 195, 195, 195, 195, 195, 195, 195, 195},
     /* @m_pAWBGainLimit  Size: 1x4  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit of AWB Gain [low, high, x_min, x_max] */
     {0, 4095, 0, 4095},
     /* @m_nAWBCTShift  Size: 1x1  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* awb ct shift range for low ct */
-    76,
+    107,
     /* @m_pAWBCTShiftThr  Size: 1x2  BitWidth: 32_u  Range~[0, 4095]  Type: firmware */
     /* color temperature limit for ct shift */
-    {424, 500},
+    {470, 577},
     /* @m_bGreenShiftEn  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* green shift enable */
     1,
@@ -3188,7 +3188,7 @@
     {120, 20},
     /* @m_pOutdoorGain  Size: 1x3  BitWidth: 32_u  Range~[0, 65536]  Type: firmware */
     /* outdoor gain */
-    {6586, 4096, 7925},
+    {8317, 4096, 7885},
     /* @m_nValidNum  Size: 1x1  BitWidth: 32_u  Range~[0, 768]  Type: firmware */
     /* valid threshold for ROI Sum */
     4,
