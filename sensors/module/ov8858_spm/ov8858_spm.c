@@ -1,0 +1,204 @@
+/*
+ * Copyright (C) 2023 Spacemit Limited
+ * All Rights Reserved.
+ */
+#include "ov8858_spm.h"
+
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "ov8858_spm_setting.h"
+
+static const uint8_t module_i2c_addr = 0x36; /* I2C Address 7-bit */
+
+struct regval_tab ov8858_spm_vendor_id[] = {
+    {0x300A, 0x00},
+    {0x300B, 0x88},
+    {0x300C, 0x58},
+};
+
+static SENSOR_MODULE_SETTING_S ov8858_spm_setting = {
+    .ispPreviewSetting =
+    {
+#include "ov8858_spm_rear_primary_isp_setting.h"
+    }
+};
+
+const CapabilityElement ov8858BackCapCfg[] = {
+    {"capSensorPhysicalSize", "4.7, 3.5"},
+    {"capLensFocalLength", "3.64"},
+    {"capLensOpticalStabMode", "off"},
+    {"capLensMinFocusDistanc", "10"},
+    {"capLensFocusDistanceCalibration", "uncalibrated"},
+    {"capLensApertures", "2.2"},
+    {"capLensFilterDensities", "0"},
+};
+
+static int ov8858_spm_get_sensor_cap_size(int32_t* capArraySize)
+{
+    SENSORS_CHECK_PARA_POINTER(capArraySize);
+    *capArraySize = OV8858_SPM_WORK_MODE_SIZE;
+    return 0;
+}
+
+static int ov8858_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABILITY_S* sensor_capability)
+{
+    int i;
+
+    SENSORS_CHECK_PARA_POINTER(sensor_capability);
+    SENSORS_CHECK_PARA_POINTER(sensor_capability->snr_config);
+    if (capArraySize != OV8858_SPM_WORK_MODE_SIZE) {
+        CLOG_ERROR("%s: snr_config_num(%d) is not equal with work_mode size(%d)", __FUNCTION__,
+                   sensor_capability->snr_config_num, OV8858_SPM_WORK_MODE_SIZE);
+        return -EINVAL;
+    }
+
+    sensor_capability->snr_config_num = OV8858_SPM_WORK_MODE_SIZE;
+    for (i = 0; i < OV8858_SPM_WORK_MODE_SIZE; i++) {
+        switch (i) {
+            case OV8858_SPM_R2A_3264x2448_10bit_LINEAR_15_2LANE:
+            {
+                sensor_capability->snr_config[i].width = 3264;
+                sensor_capability->snr_config[i].height = 2448;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 15;
+                sensor_capability->snr_config[i].minFps = 5;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 2;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = i;
+                sensor_capability->snr_config[i].setting = &ov8858_spm_setting;
+            } break;
+            case OV8858_SPM_R2A_1632x1224_10bit_LINEAR_30_2LANE:
+            {
+                sensor_capability->snr_config[i].width = 1632;
+                sensor_capability->snr_config[i].height = 1224;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 30;
+                sensor_capability->snr_config[i].minFps = 5;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 2;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = i;
+                sensor_capability->snr_config[i].setting = &ov8858_spm_setting;
+            } break;
+            case OV8858_SPM_R2A_3264x2448_10bit_LINEAR_30_4LANE:
+            {
+                sensor_capability->snr_config[i].width = 3264;
+                sensor_capability->snr_config[i].height = 2448;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 30;
+                sensor_capability->snr_config[i].minFps = 5;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = i;
+                sensor_capability->snr_config[i].setting = &ov8858_spm_setting;
+            } break;
+            default: {
+                CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, i,
+                           OV8858_SPM_WORK_MODE_SIZE);
+            } break;
+        }
+    }
+
+    return 0;
+}
+
+static int ov8858_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S* snr_info)
+{
+    SENSORS_CHECK_PARA_POINTER(snr_info);
+
+    switch (work_mode) {
+        case OV8858_SPM_R2A_3264x2448_10bit_LINEAR_15_2LANE: {
+            snr_info->linetime = OV8858_LINETIME_R2A_3264x2448_2LANE;
+            snr_info->vts = OV8858_VMAX_R2A_3264x2448_2LANE;
+            snr_info->f32maxFps = 15;
+            snr_info->exp_time[0] = (snr_info->vts - OV8858_VTS_ADJUST) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;
+            snr_info->dgain[0] = 1 * 0x1000;
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = ov8858_spm_r2a_3264x2448_10bit_15fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov8858_spm_r2a_3264x2448_10bit_15fps_tab);
+            snr_info->mipi_clock = 720;  // XVCLK=24MHz, pll1_pre_div=2, pll1_multi=0x1e=30 -> VCO=360MHz
+        } break;
+        case OV8858_SPM_R2A_1632x1224_10bit_LINEAR_30_2LANE: {
+            snr_info->linetime = OV8858_LINETIME_R2A_1632x1224_2LANE;
+            snr_info->vts = OV8858_VMAX_R2A_1632x1224_2LANE;
+            snr_info->f32maxFps = 30;
+            snr_info->exp_time[0] = (snr_info->vts - OV8858_VTS_ADJUST) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;
+            snr_info->dgain[0] = 1 * 0x1000;
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = ov8858_spm_r2a_1632x1224_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov8858_spm_r2a_1632x1224_10bit_30fps_tab);
+            snr_info->mipi_clock = 720;  // XVCLK=24MHz, pll1_pre_div=2, pll1_multi=0x1e=30 -> VCO=360MHz
+        } break;
+        case OV8858_SPM_R2A_3264x2448_10bit_LINEAR_30_4LANE: {
+            snr_info->linetime = OV8858_LINETIME_R2A_3264x2448_4LANE;
+            snr_info->vts = OV8858_VMAX_R2A_3264x2448_4LANE;
+            snr_info->f32maxFps = 30;
+            snr_info->exp_time[0] = (snr_info->vts - OV8858_VTS_ADJUST) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;
+            snr_info->dgain[0] = 1 * 0x1000;
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = ov8858_spm_r2a_3264x2448_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(ov8858_spm_r2a_3264x2448_10bit_30fps_tab);
+            snr_info->mipi_clock = 720;
+        } break;
+        default: {
+            CLOG_ERROR("%s: invalid work mode (%d) for max workmode (%d)", __FUNCTION__, work_mode,
+                       OV8858_SPM_WORK_MODE_SIZE);
+        } break;
+    }
+
+    snr_info->work_mode = work_mode;
+    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_PREVIEW] = &ov8858_spm_setting.ispPreviewSetting;
+    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_VIDEO] = &ov8858_spm_setting.ispVideoSetting;
+
+    return 0;
+}
+
+static int ov8858_spm_get_device_info(int devId, CapDeviceCapInfo* dev_info)
+{
+    switch (devId) {
+        case 0:
+            dev_info->deviceConfig = ov8858BackCapCfg;
+            dev_info->deviceConfigCnt = sizeof(ov8858BackCapCfg) / sizeof(ov8858BackCapCfg[0]);
+            break;
+        default:
+            CLOG_ERROR("%s: find no invalid device info for device %d", __FUNCTION__, devId);
+            break;
+    }
+    return 0;
+}
+
+static int ov8858_spm_get_sensor_vendor_id(SENSOR_VENDOR_ID_S* vendor_id)
+{
+    SENSORS_CHECK_PARA_POINTER(vendor_id);
+    vendor_id->id_table = ov8858_spm_vendor_id;
+    vendor_id->id_table_size = ARRAY_SIZE(ov8858_spm_vendor_id);
+    return 0;
+}
+
+static int ov8858_spm_get_sensor_i2c_addr(uint8_t* i2c_addr)
+{
+    SENSORS_CHECK_PARA_POINTER(i2c_addr);
+    *i2c_addr = module_i2c_addr;
+    return 0;
+}
+
+MODULE_OBJ_S ov8858_spm_Obj = {
+    .name = "ov8858_spm",
+    .pfnGetsnrCapSize = ov8858_spm_get_sensor_cap_size,
+    .pfnGetsnrCapbility = ov8858_spm_get_sensor_capbility,
+    .pfnGetSnrWorkInfo = ov8858_spm_get_sensor_work_info,
+    .pfnGetDevInfo = ov8858_spm_get_device_info,
+    .pfnGetSnrVendorId = ov8858_spm_get_sensor_vendor_id,
+    .pfnGetSnrI2cAddr = ov8858_spm_get_sensor_i2c_addr,
+};
