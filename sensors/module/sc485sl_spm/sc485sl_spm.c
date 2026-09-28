@@ -16,14 +16,22 @@ static SENSOR_MODULE_SETTING_S sc485sl_spm_setting = {
         {
 #include "sc485sl_spm_rear_primary_isp_setting.h"
         },
+        .cppPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_cpp_preview_setting.h"
+        },
 };
 
-// static SENSOR_MODULE_SETTING_S sc485sl_spm_binning_setting = {
-//     .ispPreviewSetting =
-//         {
-// #include "sc485sl_spm_rear_primary_binning_isp_setting.h"
-//         },
-// };
+static SENSOR_MODULE_SETTING_S sc485sl_spm_binning_setting = {
+    .ispPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_binning_isp_setting.h"
+        },
+        .cppPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_cpp_preview_setting.h"
+        },
+};
 
 static const uint8_t module_i2c_addr = 0x30;
 
@@ -146,7 +154,7 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->setting_table = sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab;
             snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab);
             snr_info->mipi_clock = 1080;  // Mbps per lane, per vendor setting
-            module_setting = &sc485sl_spm_setting;
+            module_setting = &sc485sl_spm_binning_setting;
         } break;
         case SC485SL_SPM_1920X1080_12BIT_120FPS_4LANE: {
             snr_info->linetime = SC485SL_LINETIME;  // ns

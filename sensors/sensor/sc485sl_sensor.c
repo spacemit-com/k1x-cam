@@ -429,6 +429,8 @@ static int sc485sl_sensor_get_expotime_by_fps(void* snsHandle, float f32Fps)
         pthread_mutex_unlock(&sensor_context->apiLock);
         return -EINVAL;
     }
+    /* 模式 0 保持 180fps 常态（客户需求）：曝光上限钉在帧长 5.5ms，不按 AE 的
+     * 30fps 规划拉伸 VTS——帧率模型不一致的拉伸会造成违约瞬态导致 AE 失稳。 */
     if (sensor_context->work_info.work_mode == SC485SL_SPM_1344X760_12BIT_180FPS_4LANE)
         vts = sensor_context->minVTS;
     else
@@ -481,18 +483,19 @@ static int sc485sl_sensor_expotime_update(void* snsHandle, uint32_t u32ChanelId,
     pthread_mutex_lock(&sensor_context->apiLock);
     expLine = (uint64_t)u32ExpoTime * 1000 / sensor_context->lineTime;
     expLine = (expLine < SC485SL_EXPOSURE_MIN) ? SC485SL_EXPOSURE_MIN : expLine;
-    if (sensor_context->work_info.work_mode == SC485SL_SPM_1344X760_12BIT_180FPS_4LANE)
+    /* 模式 0：曝光与 VTS 钳位在 180fps 帧长内，禁止拉伸（见 get_expotime_by_fps 注释）。 */
+    if (sensor_context->work_info.work_mode == SC485SL_SPM_1344X760_12BIT_180FPS_4LANE) {
         maxExpLine = sensor_context->initVTS - SC485SL_VTS_ADJUST;
-    else
+        expLine = (expLine > maxExpLine) ? maxExpLine : expLine;
+        sensor_context->vts[0] = sensor_context->initVTS;
+    } else {
         maxExpLine = SC485SL_VTS_MAX - SC485SL_VTS_ADJUST;
-    expLine = (expLine > maxExpLine) ? maxExpLine : expLine;
-
-    if (sensor_context->work_info.work_mode == SC485SL_SPM_1344X760_12BIT_180FPS_4LANE)
-        sensor_context->vts[0] = sensor_context->initVTS;
-    else if (expLine > sensor_context->initVTS - SC485SL_VTS_ADJUST)
-        sensor_context->vts[0] = expLine + SC485SL_VTS_ADJUST;
-    else
-        sensor_context->vts[0] = sensor_context->initVTS;
+        expLine = (expLine > maxExpLine) ? maxExpLine : expLine;
+        if (expLine > sensor_context->initVTS - SC485SL_VTS_ADJUST)
+            sensor_context->vts[0] = expLine + SC485SL_VTS_ADJUST;
+        else
+            sensor_context->vts[0] = sensor_context->initVTS;
+    }
 
     actualExpoTime = (uint64_t)expLine * sensor_context->lineTime / 1000;
     sensor_context->hdrIntTime[u32ChanelId] = actualExpoTime;
@@ -741,6 +744,20 @@ static int sc485sl_global_config(void* handle, SENSOR_WORK_INFO_S* work_info)
         goto out;
     }
     sc485sl_vts_h_base = reg_val & ~0x3f;
+
+    /* ISP 的寄存器同步机制只在值于 AE 更新间变化时才写硬件，首次批量写不会落地；
+     * VTS 恒定不变的模式（如 30fps/VTS=4800）必须在这里直接写硬件，否则 sensor
+     * 按初始化表值出流（实测停留 800 行 = 180fps，AE 按 30fps 规划会严重违约）。 */
+    ret = sc485sl_write_register(handle, SC485SL_VTS_L, LOW_8BITS(work_info->vts));
+    if (!ret)
+        ret = sc485sl_write_register(handle, SC485SL_VTS_M, HIGH_8BITS(work_info->vts));
+    if (!ret)
+        ret = sc485sl_write_register(handle, SC485SL_VTS_H,
+                                     (sc485sl_vts_h_base & ~0x3f) | ((work_info->vts >> 16) & 0x3f));
+    if (ret) {
+        CLOG_ERROR("sensor write VTS(%u) fail", work_info->vts);
+        goto out;
+    }
 
 out:
     pthread_mutex_unlock(&sensor_context->apiLock);
