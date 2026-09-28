@@ -2378,10 +2378,10 @@
     9,
     /* @m_pAjustSplitFrameNum  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* the number of frames to be split for each adjustment */
-    {3, 3},
+    {1, 1},
     /* @m_pSingleStepAdjustLumaThr  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* single adjust luma = max((target - mean)/AjustSplitFrameNum, SingleStepAdjustLumaThr) */
-    {2, 2},
+    {255, 255},
     /* @m_pFaceAjustSplitFrameNum  Size: 1x2  BitWidth: 32_u  Range~[1, 255]  Type: firmware */
     /* the number of frames to be split for each adjustment in face mode */
     {12, 12},
@@ -2707,6 +2707,7 @@
         {95, 95, 95, 95, 95, 95},
         {95, 95, 95, 95, 95, 95}
     },
+    {
     /* @m_pPDShiftPositionLUT_0_0  Size: 2x31  BitWidth: 32_s  Range~[-32768, 32767]  Type: firmware */
     /* PD shift/step look up table for AF window position [0,0] */
     {
@@ -2906,6 +2907,7 @@
          512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512},
         {-323, 0, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 
          323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323, 323}
+    },
     },
     /* @m_bCAFForce  Size: 1x1  BitWidth: 32_u  Range~[0, 1]  Type: firmware */
     /* interrupt the processing of caf and trigger a single focus */
