@@ -621,13 +621,22 @@ static int sc285sl_get_awblib_default_settings(void* snsHandle, uint32_t u32Chan
 
 static int sc285sl_power_on(SENSOR_CONTEXT_S* sensor_context)
 {
-	SENSORS_CHECK_PARA_POINTER(sensor_context);
+	int ret = 0;
 
-	sensor_set_mclk_enable(sensor_context->devId, 1);
-	sensor_set_mclk_rate(sensor_context->devId, 27000000);
+	SENSORS_CHECK_PARA_POINTER(sensor_context);
 
 	sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_PWDN, 0);
 	sensor_set_gpio_enable(sensor_context->devId, SENSOR_GPIO_RST, 0);
+
+	ret = sensor_set_mclk_rate(sensor_context->devId,
+			sensor_context->work_info.mclk ? sensor_context->work_info.mclk : 27000000);
+	if (ret) {
+		CLOG_ERROR("sc285sl set power-on MCLK fail");
+		return ret;
+	}
+	ret = sensor_set_mclk_enable(sensor_context->devId, 1);
+	if (ret)
+		return ret;
 
 	sensor_set_power_voltage(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1800000);
 	sensor_set_power_on(sensor_context->devId, SENSOR_REGULATOR_DOVDD, 1);
