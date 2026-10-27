@@ -37,12 +37,14 @@ extern SENSOR_OBJ_S sc501aiObj;
 extern SENSOR_OBJ_S sc520csObj;
 extern SENSOR_OBJ_S sc533haiObj;
 extern SENSOR_OBJ_S ov8856Obj;
+extern SENSOR_OBJ_S ov8858Obj;
 extern SENSOR_OBJ_S og02b10Obj;
 extern SENSOR_OBJ_S mlx75027Obj;
 extern SENSOR_OBJ_S bf2257csObj;
 extern SENSOR_OBJ_S max96716Obj;
 extern SENSOR_OBJ_S rn6752Obj;
 extern SENSOR_OBJ_S sc640Obj;
+extern SENSOR_OBJ_S hik_irObj;
 /*module*/
 extern MODULE_OBJ_S os05a10_spm_Obj;
 extern MODULE_OBJ_S ov13b10_spm_Obj;
@@ -70,11 +72,13 @@ extern MODULE_OBJ_S sc501ai_spm_Obj;
 extern MODULE_OBJ_S sc520cs_spm_Obj;
 extern MODULE_OBJ_S sc533hai_spm_Obj;
 extern MODULE_OBJ_S ov8856_spm_Obj;
+extern MODULE_OBJ_S ov8858_spm_Obj;
 extern MODULE_OBJ_S og02b10_spm_Obj;
 extern MODULE_OBJ_S mlx75027_spm_Obj;
 extern MODULE_OBJ_S max96716_spm_Obj;
 extern MODULE_OBJ_S rn6752_spm_Obj;
 extern MODULE_OBJ_S sc640_spm_Obj;
+extern MODULE_OBJ_S hik_ir_spm_Obj;
 /*vcm*/
 extern VCM_OBJ_S gt9772VcmObj;
 extern VCM_OBJ_S dw9714VcmObj;
@@ -117,12 +121,14 @@ SENSORS_MODULE_OBJ_S sensors_module_list[] = {
     {&sc520cs_spm_Obj, &sc520csObj, NULL, NULL},
     {&sc533hai_spm_Obj, &sc533haiObj, NULL, NULL},
     {&ov8856_spm_Obj, &ov8856Obj, NULL, NULL},
+    {&ov8858_spm_Obj, &ov8858Obj, NULL, NULL},
     {&og02b10_spm_Obj, &og02b10Obj, NULL, NULL},
     {&mlx75027_spm_Obj, &mlx75027Obj, NULL, NULL},
     {&bf2257cs_spm_Obj, &bf2257csObj, NULL, NULL},
     {&max96716_spm_Obj, &max96716Obj, NULL, NULL},
     {&rn6752_spm_Obj, &rn6752Obj, NULL, NULL},
     {&sc640_spm_Obj, &sc640Obj, NULL, NULL},
+    {&hik_ir_spm_Obj, &hik_irObj, NULL, NULL},
 };
 
 VCM_OBJ_S *sensors_vcms_list[] = {

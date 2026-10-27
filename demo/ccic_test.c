@@ -356,31 +356,66 @@ int only_ccic_test(struct testConfig *config)
     //     }
     //     CLOG_INFO("ASR_CCIC_EnableChn sub \n");
     // }
-    // stream on sensor
-    // sensor_handle = sensorHandle->sensors_handle;
-    ret = testSensorStart(sensorHandle);
-    // ret = SPM_SENSOR_StreamOn(sensor_handle);
-    if (ret) {
-        stream_on0 = false;
-        CLOG_INFO("SPM_SENSOR_StreamOn failed\n");
-        goto disable_rawdump;
-    } else {
+    if (config->autoRun) {
+        ret = testSensorStart(sensorHandle);
+        if (ret) {
+            CLOG_INFO("SPM_SENSOR_StreamOn failed\n");
+            goto disable_rawdump;
+        }
         stream_on0 = true;
+        testAutoRunFlag0 = 1;
+        condition_init(&testAutoRunCond0);
+        streamOnFlags0 = 1;
+        CLOG_INFO("sensor stream on");
+        condition_wait(&testAutoRunCond0);
+        streamOnFlags0 = 0;
+        CLOG_INFO("sensor stream off");
+        condition_deinit(&testAutoRunCond0);
+    } else {
+        CLOG_INFO("CCIC manual mode: s=start, d=dump one frame, c=stop, q=exit");
+        while (true) {
+            char ch;
+
+            CLOG_INFO("Input a character:");
+            ch = getc(stdin);
+            if (ch == EOF || ch == 'q' || ch == 'Q')
+                break;
+            if (ch == 's' || ch == 'S') {
+                if (stream_on0) {
+                    CLOG_INFO("sensor stream is already on");
+                    continue;
+                }
+                ret = testSensorStart(sensorHandle);
+                if (ret) {
+                    CLOG_ERROR("SPM_SENSOR_StreamOn failed: %d", ret);
+                    continue;
+                }
+                stream_on0 = true;
+                streamOnFlags0 = 1;
+                CLOG_INFO("sensor stream on");
+                continue;
+            }
+            if (ch == 'd' || ch == 'D') {
+                if (!stream_on0) {
+                    CLOG_INFO("sensor stream is off; press s before d");
+                    continue;
+                }
+                outputDumpFlag0[0] = 1;
+                CLOG_INFO("dump one frame");
+                continue;
+            }
+            if (ch == 'c' || ch == 'C') {
+                if (!stream_on0) {
+                    CLOG_INFO("sensor stream is already off");
+                    continue;
+                }
+                testSensorStop(sensorHandle);
+                stream_on0 = false;
+                streamOnFlags0 = 0;
+                CLOG_INFO("sensor stream off");
+            }
+        }
     }
-
-    testAutoRunFlag0 = 1;
-    condition_init(&testAutoRunCond0);
-
-    streamOnFlags0 = 1;
-    CLOG_INFO("sensor stream on");
-
-    condition_wait(&testAutoRunCond0);
-
-    streamOnFlags0 = 0;
-
-    CLOG_INFO("sensor stream off");
-
-    condition_deinit(&testAutoRunCond0);
 
 disable_rawdump:
     // ASR_CCIC_DisableChn(subChn);

@@ -70,6 +70,20 @@ static int sc285sl_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABIL
                 sensor_capability->snr_config[i].setting = NULL; /* driver uses global table in sensor file */
             } break;
 
+            case SC285SL_SPM_1920x1080_10bit_30fps_4LANE: {
+                sensor_capability->snr_config[i].width = 1920;
+                sensor_capability->snr_config[i].height = 1080;
+                sensor_capability->snr_config[i].bitDepth = 10;
+                sensor_capability->snr_config[i].maxFps = 30;
+                sensor_capability->snr_config[i].minFps = 30;
+                sensor_capability->snr_config[i].image_mode = SENSOR_LINEAR_MODE;
+                sensor_capability->snr_config[i].lane_num = 4;
+                sensor_capability->snr_config[i].pattern = ISP_BAYER_PATTERN_BGGR;
+                sensor_capability->snr_config[i].supportPDAF = 0;
+                sensor_capability->snr_config[i].work_mode = SC285SL_SPM_1920x1080_10bit_30fps_4LANE;
+                sensor_capability->snr_config[i].setting = NULL;
+            } break;
+
             default:
                 CLOG_ERROR("invalid work_mode(%d), max=%d", i, SC285SL_SPM_WORK_MODE_SIZE);
                 break;
@@ -95,7 +109,24 @@ static int sc285sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->image_mode = SENSOR_LINEAR_MODE;
             snr_info->setting_table = sc285sl_spm_1920x1080_10bit_90fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(sc285sl_spm_1920x1080_10bit_90fps_tab);
+            snr_info->mclk = 27000000;
             snr_info->mipi_clock = 560;
+        } break;
+
+        case SC285SL_SPM_1920x1080_10bit_30fps_4LANE: {
+            /* Vendor 0x81 INI: 24 MHz input, 216 Mbps/lane, 27.777778 us/line. */
+            snr_info->linetime = 27778; /* ns, rounded from 1 / (30 * 1200) */
+            snr_info->vts = 1200;
+            snr_info->f32maxFps = 30;
+            /* 0x3e00/01/02 = 0x00/0x4a/0x80: 1192 exposure lines. */
+            snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
+            snr_info->again[0] = 1 * 0x100;
+            snr_info->dgain[0] = 1 * 0x1000;
+            snr_info->image_mode = SENSOR_LINEAR_MODE;
+            snr_info->setting_table = sc285sl_spm_1920x1080_10bit_30fps_tab;
+            snr_info->setting_table_size = ARRAY_SIZE(sc285sl_spm_1920x1080_10bit_30fps_tab);
+            snr_info->mclk = 24000000; /* Hz, sensor reference input */
+            snr_info->mipi_clock = 216; /* Mbps/lane; CLK lane is 108 MHz */
         } break;
 
         default:{

@@ -16,6 +16,21 @@ static SENSOR_MODULE_SETTING_S sc485sl_spm_setting = {
         {
 #include "sc485sl_spm_rear_primary_isp_setting.h"
         },
+        .cppPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_cpp_preview_setting.h"
+        },
+};
+
+static SENSOR_MODULE_SETTING_S sc485sl_spm_binning_setting = {
+    .ispPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_binning_isp_setting.h"
+        },
+        .cppPreviewSetting =
+        {
+#include "sc485sl_spm_rear_primary_cpp_preview_setting.h"
+        },
 };
 
 static const uint8_t module_i2c_addr = 0x30;
@@ -123,6 +138,8 @@ static int sc485sl_spm_get_sensor_capbility(int32_t capArraySize, SENSOR_CAPABIL
 
 static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_S* snr_info)
 {
+    SENSOR_MODULE_SETTING_S* module_setting = &sc485sl_spm_setting;
+
     SENSORS_CHECK_PARA_POINTER(snr_info);
 
     switch (work_mode) {
@@ -130,13 +147,14 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->linetime = SC485SL_LINETIME;  // ns
             snr_info->vts = SC485SL_VTS_1344X760_180FPS;
             snr_info->f32maxFps = 180;
-            snr_info->exp_time[0] = (snr_info->vts - 8) * snr_info->linetime / 1000;
+            snr_info->exp_time[0] = 1000;
             snr_info->again[0] = 1 * 0x100;   // Q8 format
             snr_info->dgain[0] = 1 * 0x1000;  // Q12 format
             snr_info->image_mode = SENSOR_LINEAR_MODE;
             snr_info->setting_table = sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab;
             snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1344x760_12bit_180fps_hbin_vbin_tab);
-            snr_info->mipi_clock = 648;  // Mhz
+            snr_info->mipi_clock = 1080;  // Mbps per lane, per vendor setting
+            module_setting = &sc485sl_spm_binning_setting;
         } break;
         case SC485SL_SPM_1920X1080_12BIT_120FPS_4LANE: {
             snr_info->linetime = SC485SL_LINETIME;  // ns
@@ -148,7 +166,7 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->image_mode = SENSOR_LINEAR_MODE;
             snr_info->setting_table = sc485sl_spm_1920x1080_12bit_120fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1920x1080_12bit_120fps_tab);
-            snr_info->mipi_clock = 900;  // Mhz
+            snr_info->mipi_clock = 1080;  // Mbps per lane, per vendor setting
         } break;
         case SC485SL_SPM_1280X720_12BIT_180FPS_4LANE: {
             snr_info->linetime = SC485SL_LINETIME;  // ns
@@ -160,8 +178,8 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
             snr_info->image_mode = SENSOR_LINEAR_MODE;
             snr_info->setting_table = sc485sl_spm_1280x720_12bit_180fps_tab;
             snr_info->setting_table_size = ARRAY_SIZE(sc485sl_spm_1280x720_12bit_180fps_tab);
-            snr_info->mipi_clock = 648;  // Mhz
-        } break;
+            snr_info->mipi_clock = 1080;  // Mbps per lane, per vendor setting
+        } break; 
         case SC485SL_SPM_2688X1520_10BIT_90FPS_4LANE: {
             snr_info->linetime = SC485SL_LINETIME;  // ns
             snr_info->vts = SC485SL_VTS_2688X1520_90FPS;
@@ -193,8 +211,8 @@ static int sc485sl_spm_get_sensor_work_info(int32_t work_mode, SENSOR_WORK_INFO_
     }
 
     snr_info->work_mode = work_mode;
-    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_PREVIEW] = &sc485sl_spm_setting.ispPreviewSetting;
-    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_VIDEO] = &sc485sl_spm_setting.ispVideoSetting;
+    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_PREVIEW] = &module_setting->ispPreviewSetting;
+    snr_info->pstIspDefaultSettings[CAM_ISP_SCENE_VIDEO] = &module_setting->ispVideoSetting;
     return 0;
 }
 
